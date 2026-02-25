@@ -1,6 +1,6 @@
 # Full local stack - all services + infrastructure
 # Run with: docker-compose up -d
-version: '3.8'
+
 
 services:
   # Frontend
