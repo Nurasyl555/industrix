@@ -1,60 +1,319 @@
-# Infrastructure only - PG, Mongo, Redis, Kafka, etc.
+# Infrastructure only - PG, Mongo, Redis, Kafka, OpenSearch, MinIO, etc.
 # Run with: docker-compose -f docker-compose.infra.yml up -d
 version: '3.8'
 
 services:
+  # PostgreSQL
   postgres:
     image: postgres:15
+    container_name: industrix-postgres
     ports:
       - "5432:5432"
     environment:
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=devpassword
+      - POSTGRES_MULTIPLE_DATABASES=identity_db,catalog_db,listing_db,booking_db,deal_db,payment_db,doc_db,review_db,services_db,engagement_db,integrity_db,analytics_db,media_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MongoDB (for Chat and Notifications)
   mongodb:
     image: mongo:7
+    container_name: industrix-mongodb
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    command: ["--replicaSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Redis (Cache)
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    container_name: industrix-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_cache_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Redis (Sessions)
+  redis-sessions:
+    image: redis:7-alpine
+    container_name: industrix-redis-sessions
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_session_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: industrix-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    healthcheck:
+      test: echo stat | nc localhost 2181
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: industrix-kafka
     ports:
       - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      - zookeeper
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+  # Kafka UI (for development)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: industrix-kafka-ui
+    ports:
+      - "8081:8080"
+    depends_on:
+      - kafka
     environment:
-      - ZOOKEEPER_CLIENT_PORT=2181
+      - KAFKA_CLUSTERS_0_NAME=industrix
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
 
+  # OpenSearch
   opensearch:
-    image: opensearchproject/opensearch:2
+    image: opensearchproject/opensearch:2.11.0
+    container_name: industrix-opensearch
     ports:
       - "9200:9200"
+      - "9600:9600"
     environment:
       - discovery.type=single-node
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
+      - plugins.security.ssl.http.enabled=false
+      - plugins.security.disabled=true
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: curl -f http://localhost:9200/_cluster/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
+  # MinIO (S3-compatible storage)
   minio:
     image: minio/minio:latest
+    container_name: industrix-minio
     ports:
       - "9000:9000"
+      - "9001:9001"
     environment:
       - MINIO_ROOT_USER=minio
       - MINIO_ROOT_PASSWORD=minio123
     command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: curl -f http://localhost:9000/minio/health/live || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # imgproxy (Image processing)
+  imgproxy:
+    image: dvich/imgproxy:latest
+    container_name: industrix-imgproxy
+    ports:
+      - "8082:8080"
+    environment:
+      - IMGPROXY_KEY=your-imgproxy-signing-key
+      - IMGPROXY_SECRET=your-imgproxy-secret
+      - IMGPROXY_MAX_SOURCE_SIZE=50000000
+      - IMGPROXY_MAX_RESIZING_DURATION=30s
+      - IMGPRODOWNLOAD_TIMEOUT=60s
+    healthcheck:
+      test: curl -f http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Gotenberg (PDF generation)
+  gotenberg:
+    image: gotenberg/gotenberg:7
+    container_name: industrix-gotenberg
+    ports:
+      - "8083:3000"
+    environment:
+      - GOTENBERG_GLOBALURL=http://localhost:8083
+      - GOTENBERG_DISABLEHTTPS=true
+      - GOTENBERG_LOG_FORMAT=json
+    healthcheck:
+      test: curl -f http://localhost:3000/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Postal SMTP (Email server)
+  postal:
+    image: postal/postal:latest
+    container_name: industrix-postal
+    ports:
+      - "25:25"
+      - "5000:5000"
+    environment:
+      - POSTAL_HOST=postal
+      - POSTAL_PORT=25
+      - POSTAL_SMTP_HOST=0.0.0.0
+      - POSTAL_WEB_HOST=0.0.0.0
+      - POSTAL_DB_TYPE=sqlite
+      - POSTAL_DB_DATABASE=/var/lib/postal/postal.db
+      - POSTAL_DEFAULT_USER=admin@industrix.local
+      - POSTAL_DEFAULT_PASSWORD=postal
+      - POSTAL_MAIL_SERVER_HOSTNAME=industrix.local
+    volumes:
+      - postal_data:/var/lib/postal
+      - postal_log:/var/log/postal
+
+  # NGINX (Reverse Proxy)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: industrix-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - gateway
+      - frontend
+    healthcheck:
+      test: curl -f http://localhost/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus (Metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: industrix-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    healthcheck:
+      test: curl -f http://localhost:9090/-/healthy || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana (Dashboards)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: industrix-grafana
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: curl -f http://localhost:3000/api/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Jaeger (Distributed Tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: industrix-jaeger
+    ports:
+      - "16686:16686"
+      - "6831:6831/udp"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - SPAN_STORAGE_TYPE=badger
+    volumes:
+      - jaeger_data:/var/lib/jaeger
+
+  # Loki (Log aggregation)
+  loki:
+    image: grafana/loki:2.8.0
+    container_name: industrix-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
 
 volumes:
   postgres_data:
   mongodb_data:
+  redis_cache_data:
+  redis_session_data:
+  kafka_data:
+  opensearch_data:
+  minio_data:
+  postal_data:
+  postal_log:
+  prometheus_data:
+  grafana_data:
+  jaeger_data:
+  loki_data:

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/industrix/gen/go/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ============ Messages ============
+
+message Escrow {
+  string id = 1;
+  string deal_id = 2;
+  double amount = 3;
+  string currency = 4;
+  string status = 5; // PENDING, HELD, RELEASED, REFUNDED, CANCELLED
+  string buyer_id = 6;
+  string seller_id = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp released_at = 9;
+}
+
+message Receipt {
+  string id = 1;
+  string company_id = 2;
+  string plan_id = 3;
+  double amount = 4;
+  string currency = 5;
+  string status = 6;
+  string payment_method = 7;
+  google.protobuf.Timestamp paid_at = 8;
+  google.protobuf.Timestamp expires_at = 9;
+}
+
+message Subscription {
+  string id = 1;
+  string company_id = 2;
+  string plan_id = 3;
+  string status = 4; // ACTIVE, CANCELLED, EXPIRED
+  google.protobuf.Timestamp start_date = 5;
+  google.protobuf.Timestamp end_date = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// ============ Requests/Responses ============
+
+message InitiateEscrowRequest {
+  string deal_id = 1;
+  double amount = 2;
+  string currency = 3;
+}
+
+message InitiateEscrowResponse {
+  string escrow_id = 1;
+  string status = 2;
+}
+
+message ReleaseEscrowRequest {
+  string escrow_id = 1;
+}
+
+message ReleaseEscrowResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message RefundEscrowRequest {
+  string escrow_id = 1;
+  string reason = 2;
+}
+
+message RefundEscrowResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ChargeSubscriptionRequest {
+  string company_id = 1;
+  string plan_id = 2;
+  string payment_method = 3;
+}
+
+message ChargeSubscriptionResponse {
+  Receipt receipt = 1;
+}
+
+// ============ Service ============
+
+service PaymentService {
+  rpc InitiateEscrow(InitiateEscrowRequest) returns (InitiateEscrowResponse);
+  rpc ReleaseEscrow(ReleaseEscrowRequest) returns (ReleaseEscrowResponse);
+  rpc RefundEscrow(RefundEscrowRequest) returns (RefundEscrowResponse);
+  rpc ChargeSubscription(ChargeSubscriptionRequest) returns (ChargeSubscriptionResponse);
+}
