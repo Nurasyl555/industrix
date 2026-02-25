@@ -1,0 +1,18 @@
+# Local dev overrides - hot reload, ports
+# Used with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+version: '3.8'
+
+services:
+  gateway:
+    environment:
+      - ENV=development
+      - DEBUG=true
+    ports:
+      - "8080:8080"
+
+  # Add hot reload volumes for services
+  frontend:
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend/src:/app/src
