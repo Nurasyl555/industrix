@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package booking.v1;
+
+option go_package = "github.com/industrix/gen/go/booking/v1;bookingv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// ============ Messages ============
+
+message DateRange {
+  google.protobuf.Timestamp start_date = 1;
+  google.protobuf.Timestamp end_date = 2;
+}
+
+message Hold {
+  string id = 1;
+  string listing_id = 2;
+  string renter_id = 3;
+  DateRange dates = 4;
+  string status = 5; // PENDING, CONFIRMED, EXPIRED, CANCELLED
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message Booking {
+  string id = 1;
+  string hold_id = 2;
+  string listing_id = 3;
+  string renter_id = 4;
+  string owner_id = 5;
+  DateRange dates = 6;
+  double total_price = 7;
+  string currency = 8;
+  string status = 9; // CONFIRMED, CANCELLED, COMPLETED
+  google.protobuf.Timestamp confirmed_at = 10;
+  google.protobuf.Timestamp completed_at = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+message Availability {
+  bool available = 1;
+  repeated DateRange blocked_dates = 2;
+}
+
+// ============ Requests/Responses ============
+
+message CreateHoldRequest {
+  string listing_id = 1;
+  DateRange dates = 2;
+  string renter_id = 3;
+}
+
+message CreateHoldResponse {
+  string hold_id = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message ConfirmBookingRequest {
+  string hold_id = 1;
+}
+
+message ConfirmBookingResponse {
+  Booking booking = 1;
+}
+
+message CancelBookingRequest {
+  string booking_id = 1;
+  string reason = 2;
+}
+
+message CancelBookingResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CheckAvailabilityRequest {
+  string listing_id = 1;
+  DateRange dates = 2;
+}
+
+message CheckAvailabilityResponse {
+  Availability availability = 1;
+}
+
+// ============ Service ============
+
+service BookingService {
+  rpc CreateHold(CreateHoldRequest) returns (CreateHoldResponse);
+  rpc ConfirmBooking(ConfirmBookingRequest) returns (ConfirmBookingResponse);
+  rpc CancelBooking(CancelBookingRequest) returns (CancelBookingResponse);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+}

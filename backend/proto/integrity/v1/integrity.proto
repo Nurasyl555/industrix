@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package integrity.v1;
+
+option go_package = "github.com/industrix/gen/go/integrity/v1;integrityv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ============ Messages ============
+
+message Subscription {
+  string id = 1;
+  string company_id = 2;
+  string plan_id = 3;
+  string status = 4; // ACTIVE, CANCELLED, EXPIRED
+  google.protobuf.Timestamp start_date = 5;
+  google.protobuf.Timestamp end_date = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message Plan {
+  string id = 1;
+  string name = 2;
+  string name_kz = 3;
+  double price = 4;
+  string currency = 5;
+  int32 duration_days = 6;
+  Features features = 7;
+}
+
+message Features {
+  int32 max_listings = 1;
+  int32 max_images_per_listing = 2;
+  bool priority_support = 3;
+  bool analytics = 4;
+  bool escrow_enabled = 5;
+  int32 max_active_bookings = 6;
+  bool api_access = 7;
+  bool custom_branding = 8;
+}
+
+message LimitCheck {
+  string action = 1;
+  bool allowed = 2;
+  string reason = 3;
+  int32 current_usage = 4;
+  int32 limit = 5;
+}
+
+// ============ Requests/Responses ============
+
+message CheckPlanLimitsRequest {
+  string company_id = 1;
+  string action = 2; // CREATE_LISTING, UPLOAD_IMAGE, CREATE_BOOKING, etc.
+}
+
+message CheckPlanLimitsResponse {
+  LimitCheck check = 1;
+}
+
+message GetSubscriptionRequest {
+  string company_id = 1;
+}
+
+message GetSubscriptionResponse {
+  Subscription subscription = 1;
+  Plan plan = 2;
+}
+
+message GetPlanFeaturesRequest {
+  string plan_id = 1;
+}
+
+message GetPlanFeaturesResponse {
+  Plan plan = 1;
+}
+
+message GetAllPlansRequest {}
+
+message GetAllPlansResponse {
+  repeated Plan plans = 1;
+}
+
+// ============ Service ============
+
+service IntegrityService {
+  rpc CheckPlanLimits(CheckPlanLimitsRequest) returns (CheckPlanLimitsResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc GetPlanFeatures(GetPlanFeaturesRequest) returns (GetPlanFeaturesResponse);
+  rpc GetAllPlans(GetAllPlansRequest) returns (GetAllPlansResponse);
+}

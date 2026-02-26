@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/industrix/gen/go/catalog/v1;catalogv1";
+
+// ============ Messages ============
+
+message Equipment {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string category_id = 4;
+  repeated Attribute attributes = 5;
+  repeated string media_urls = 6;
+  string condition = 7; // NEW, USED, REFURBISHED
+  string location = 8;
+  string region = 9;
+  double price = 10;
+  string price_type = 11; // SALE, RENT, LEASE
+  double rent_price = 12;
+  string rent_period = 13;
+  string seller_id = 14;
+  string company_id = 15;
+  bool active = 16;
+  int64 views = 17;
+  int64 created_at = 18;
+  int64 updated_at = 19;
+}
+
+message Attribute {
+  string key = 1;
+  string value = 2;
+  string type = 3; // STRING, NUMBER, BOOLEAN, SELECT
+}
+
+message Category {
+  string id = 1;
+  string name = 2;
+  string name_kz = 3;
+  string parent_id = 4;
+  string icon = 5;
+  int32 sort_order = 6;
+  repeated CategoryAttribute schema = 7;
+}
+
+message CategoryAttribute {
+  string key = 1;
+  string name = 2;
+  string name_kz = 3;
+  string type = 4;
+  bool required = 5;
+  repeated string options = 6;
+  string unit = 7;
+}
+
+message ValidationResult {
+  bool valid = 1;
+  repeated ValidationError errors = 2;
+}
+
+message ValidationError {
+  string field = 1;
+  string message = 2;
+  string message_kz = 3;
+}
+
+message Schema {
+  string category_id = 1;
+  repeated CategoryAttribute attributes = 2;
+}
+
+// ============ Requests/Responses ============
+
+message GetEquipmentRequest {
+  string id = 1;
+}
+
+message GetEquipmentResponse {
+  Equipment equipment = 1;
+}
+
+message ValidateAttributesRequest {
+  string category_id = 1;
+  repeated Attribute attributes = 2;
+}
+
+message ValidateAttributesResponse {
+  ValidationResult result = 1;
+}
+
+message GetCategorySchemaRequest {
+  string id = 1;
+}
+
+message GetCategorySchemaResponse {
+  Schema schema = 1;
+}
+
+// ============ Service ============
+
+service CatalogService {
+  rpc GetEquipment(GetEquipmentRequest) returns (GetEquipmentResponse);
+  rpc ValidateAttributes(ValidateAttributesRequest) returns (ValidateAttributesResponse);
+  rpc GetCategorySchema(GetCategorySchemaRequest) returns (GetCategorySchemaResponse);
+}
