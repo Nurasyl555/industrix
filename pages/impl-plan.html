@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEM — Implementation Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg:     #090b0e;
+  --bg2:    #0f1318;
+  --bg3:    #151b22;
+  --bg4:    #1c242e;
+  --border: #1e2a38;
+  --borderb:#263244;
+  --text:   #c5d4e8;
+  --dim:    #4d6680;
+  --bright: #e8f2ff;
+
+  --p1: #f77f00;   /* Phase 1 — Foundation */
+  --p2: #06d6a0;   /* Phase 2 — Core Marketplace */
+  --p3: #00b4d8;   /* Phase 3 — Transactions */
+  --p4: #8338ec;   /* Phase 4 — Communication */
+  --p5: #ffd166;   /* Phase 5 — Intelligence */
+  --p6: #ef476f;   /* Phase 6 — Integrity & Monetisation */
+  --p7: #a8dadc;   /* Phase 7 — Hardening */
+
+  --be: #06d6a0;
+  --fe: #00b4d8;
+  --inf:#f77f00;
+  --proto:#8338ec;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.55;padding:32px}
+
+/* ── nav ── */
+nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--borderb)}
+.nav-home{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:color .3s ease}
+.nav-home:hover{color:var(--text)}
+.nav-arrows{display:flex;gap:12px;align-items:center}
+.nav-link{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:color .3s ease;padding:4px 8px;border-radius:3px}
+.nav-link:hover{color:var(--text);background:var(--bg2)}
+.nav-divider{color:var(--borderb)}
+
+/* ── header ── */
+header{border-bottom:1px solid var(--borderb);padding-bottom:20px;margin-bottom:28px}
+header h1{font-size:20px;font-weight:700;color:var(--bright);letter-spacing:-.4px}
+header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px}
+
+/* ── legend ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.leg{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+
+/* ── phase block ── */
+.phase{margin-bottom:4px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.phase-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none;background:var(--bg2)}
+.phase-header:hover{background:var(--bg3)}
+.phase-num{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:2px 7px;border-radius:2px;border:1px solid}
+.phase-title{font-size:13px;font-weight:600;color:var(--bright)}
+.phase-meta{margin-left:auto;display:flex;align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.phase-toggle{font-size:10px;color:var(--dim);transition:transform .2s}
+.phase-toggle.open{transform:rotate(180deg)}
+.phase-body{display:none;padding:0 0 8px}
+.phase-body.open{display:block}
+
+/* ── service section inside phase ── */
+.svc-section{margin:8px 12px 0}
+.svc-header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:4px;cursor:pointer;user-select:none}
+.svc-header:hover{background:var(--bg4)}
+.svc-name{font-weight:600;font-size:12px;color:var(--bright)}
+.svc-stack{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim);margin-left:auto}
+.svc-toggle{font-size:9px;color:var(--dim);transition:transform .15s;margin-left:8px}
+.svc-toggle.open{transform:rotate(180deg)}
+.svc-body{display:none;padding:8px 12px 4px}
+.svc-body.open{display:block}
+
+/* ── task table ── */
+.task-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:4px}
+.task-table th{text-align:left;padding:5px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border)}
+.task-table tr:hover td{background:var(--bg3)}
+.task-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.task-table tr:last-child td{border-bottom:none}
+.fn{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--bright)}
+.fn-desc{color:var(--dim);font-size:11px;line-height:1.35}
+
+/* type badges */
+.badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid;white-space:nowrap}
+.b-be {color:var(--be);border-color:var(--be)}
+.b-fe {color:var(--fe);border-color:var(--fe)}
+.b-inf{color:var(--inf);border-color:var(--inf)}
+.b-proto{color:var(--proto);border-color:var(--proto)}
+.b-shared{color:var(--p5);border-color:var(--p5)}
+
+/* priority */
+.p-must{color:#ef476f;font-family:'IBM Plex Mono',monospace;font-size:9px}
+.p-should{color:var(--p5);font-family:'IBM Plex Mono',monospace;font-size:9px}
+.p-nice{color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:9px}
+
+/* progress summary */
+.summary-bar{display:flex;gap:3px;margin-bottom:24px;flex-wrap:wrap}
+.sum-phase{flex:1;min-width:120px;padding:12px 14px;border-radius:4px;border:1px solid var(--border);background:var(--bg2)}
+.sum-phase-num{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px}
+.sum-phase-name{font-size:11px;color:var(--bright);margin-top:2px;font-weight:600}
+.sum-phase-tasks{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px}
+.sum-phase-weeks{font-family:'IBM Plex Mono',monospace;font-size:9px;margin-top:2px}
+
+/* section label */
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim);border-top:1px solid var(--border);padding:12px 0 6px;margin-top:12px}
+.section-label:first-child{border-top:none;margin-top:0;padding-top:0}
+
+/* infra note */
+.infra-note{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--inf);border-radius:4px;padding:10px 14px;font-size:11px;color:var(--dim);margin:8px 12px 0}
+.infra-note strong{color:var(--text)}
+
+@media(max-width:700px){
+  body{padding:12px}
+  .summary-bar{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-home">← Back to Docs</a>
+  <div class="nav-arrows">
+    <a href="design-plan.html" class="nav-link">← Prev</a>
+    <span class="nav-divider">│</span>
+    <span class="nav-link" style="cursor:not-allowed;opacity:.5">Next →</span>
+  </div>
+</nav>
+
+<header>
+  <h1>Industrial Equipment Marketplace — Implementation Plan</h1>
+  <p>// 7 phases · 12 services + frontend + infra · KZ-compliant · monorepo</p>
+</header>
+
+<!-- legend -->
+<div class="legend">
+  <span class="leg"><span class="leg-dot" style="background:var(--be)"></span>Backend (Go)</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--fe)"></span>Frontend (Next.js)</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--inf)"></span>Infra / DevOps</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--proto)"></span>Proto / Shared</span>
+  <span class="leg"><span class="leg-dot" style="background:#ef476f"></span>MUST</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--p5)"></span>SHOULD</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--dim)"></span>NICE</span>
+</div>
+
+<!-- phase summary -->
+<div class="summary-bar">
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p1)">PHASE 1</div><div class="sum-phase-name">Foundation</div><div class="sum-phase-tasks">~48 tasks</div><div class="sum-phase-weeks" style="color:var(--p1)">Weeks 1–3</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p2)">PHASE 2</div><div class="sum-phase-name">Core Marketplace</div><div class="sum-phase-tasks">~72 tasks</div><div class="sum-phase-weeks" style="color:var(--p2)">Weeks 4–8</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p3)">PHASE 3</div><div class="sum-phase-name">Transactions</div><div class="sum-phase-tasks">~65 tasks</div><div class="sum-phase-weeks" style="color:var(--p3)">Weeks 9–13</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p4)">PHASE 4</div><div class="sum-phase-name">Communication</div><div class="sum-phase-tasks">~42 tasks</div><div class="sum-phase-weeks" style="color:var(--p4)">Weeks 14–17</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p5)">PHASE 5</div><div class="sum-phase-name">Intelligence</div><div class="sum-phase-tasks">~38 tasks</div><div class="sum-phase-weeks" style="color:var(--p5)">Weeks 18–21</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p6)">PHASE 6</div><div class="sum-phase-name">Integrity & Monetisation</div><div class="sum-phase-tasks">~44 tasks</div><div class="sum-phase-weeks" style="color:var(--p6)">Weeks 22–26</div></div>
+  <div class="sum-phase"><div class="sum-phase-num" style="color:var(--p7)">PHASE 7</div><div class="sum-phase-name">Hardening & Launch</div><div class="sum-phase-tasks">~30 tasks</div><div class="sum-phase-weeks" style="color:var(--p7)">Weeks 27–30</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 1 — FOUNDATION
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p1);border-color:var(--p1)">PHASE 1</span>
+    <span class="phase-title">Foundation — Repo, Infra, Shared Packages, Identity</span>
+    <div class="phase-meta"><span>~48 tasks</span><span style="color:var(--p1)">Weeks 1–3</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body open">
+
+    <!-- Monorepo & Infra -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-inf">INFRA</span>
+        <span class="svc-name">Monorepo Setup & Docker Infrastructure</span>
+        <span class="svc-stack">Docker Compose · NGINX · Makefile</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">init monorepo</span><div class="fn-desc">Initialize git repo, root go.work, .gitignore, .env.example with all vars documented</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>go.work for multi-module workspace</td></tr>
+            <tr><td><span class="fn">docker-compose.infra.yml</span><div class="fn-desc">PostgreSQL 15, MongoDB 7, Redis 7 (×2 instances), Kafka+Zookeeper (3-node), OpenSearch, MinIO, imgproxy, Gotenberg, Postal SMTP</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>All self-hosted, KZ-compliant</td></tr>
+            <tr><td><span class="fn">docker-compose.yml</span><div class="fn-desc">All 12 services + frontend + all infra in one compose for CI and full local testing</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">docker-compose.override.yml</span><div class="fn-desc">Dev overrides: port mappings, volume mounts, air hot-reload commands for Go services</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Makefile</span><div class="fn-desc">up, down, up-infra, dev-svc, dev-frontend, proto, migrate, migrate-svc, seed, test, test-svc, lint, logs, health targets</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">nginx.conf + conf.d/</span><div class="fn-desc">gateway.conf (proxy to API gateway), frontend.conf (Next.js SSR), minio.conf (public bucket), ws.conf (WebSocket upgrade for chat)</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>TLS via Let's Encrypt</td></tr>
+            <tr><td><span class="fn">infra/postgres/init/00_create_databases.sql</span><div class="fn-desc">CREATE DATABASE for each service: identity_db, catalog_db, listing_db, booking_db, deal_db, payment_db, doc_db, review_db, services_db, engagement_db, integrity_db, analytics_db, media_db</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">infra/kafka/topics.sh</span><div class="fn-desc">Create all 14 Kafka topics with correct partition counts and retention. Run once on first start.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">infra/minio/buckets.sh</span><div class="fn-desc">Create buckets: equipment-media, documents, chat-files, dispute-evidence. Set public/private policies.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">infra/opensearch/mappings/equipment.json</span><div class="fn-desc">Index mapping with dynamic templates for technical attributes, geo_point for location, keyword fields for filters</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">scripts/healthcheck.sh</span><div class="fn-desc">Poll all service /health endpoints, report which are up/down</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">GitHub Actions: ci.yml</span><div class="fn-desc">On PR: go test ./..., golangci-lint, ESLint, proto generation check (no diff)</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Grafana + Prometheus + Loki + Jaeger</span><div class="fn-desc">docker-compose entries for observability stack. Base dashboards imported.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-should">SHOULD</span></td><td>Add in phase 1, tune later</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Shared packages -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-shared">SHARED</span>
+        <span class="svc-name">pkg/ — Shared Go Packages</span>
+        <span class="svc-stack">Go · used by all services</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">pkg/postgres.NewClient()</span><div class="fn-desc">PG connection pool with pgx, health check, migration runner (golang-migrate)</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/redis.NewClient()</span><div class="fn-desc">Redis client with sentinel support, typed key helpers</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/mongo.NewClient()</span><div class="fn-desc">MongoDB client with replica set connection, context timeout helpers</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/kafka.NewProducer() / NewConsumer()</span><div class="fn-desc">Sarama-based producer with retry, consumer with consumer group + DLQ (dead letter queue) support</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/minio.NewClient() / PresignURL()</span><div class="fn-desc">MinIO client, presigned PUT URL generation, presigned GET URL generation</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/jwt.ParseClaims() / IssuePair()</span><div class="fn-desc">Shared JWT claims struct (userID, companyID, role, verified), access+refresh token issuance</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/logger.New()</span><div class="fn-desc">zerolog setup: structured JSON, trace-id injection, log level from env, service name field</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/tracer.Init()</span><div class="fn-desc">OpenTelemetry tracer setup → Jaeger exporter. Provides TraceFromContext() helper.</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/errors.New() / Wrap()</span><div class="fn-desc">Typed error codes: NOT_FOUND, UNAUTHORIZED, VALIDATION, CONFLICT, INTERNAL. HTTP status mapping.</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pkg/geo.LookupRegion() / Geocode()</span><div class="fn-desc">KZ/CIS region lookup table in PG, 2GIS API client for address geocoding (no PII sent)</div></td><td><span class="badge b-shared">SHARED</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Proto -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-proto">PROTO</span>
+        <span class="svc-name">Protobuf Definitions — All Services</span>
+        <span class="svc-stack">proto3 · buf · gen Go + TS</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>File / RPC</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">identity/v1/identity.proto</span><div class="fn-desc">GetUser(id) → User, GetCompany(id) → Company, VerifyToken(token) → Claims, GetUserBatch(ids) → []User</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">catalog/v1/catalog.proto</span><div class="fn-desc">GetEquipment(id) → Equipment, ValidateAttributes(categoryID, attrs) → ValidationResult, GetCategorySchema(id) → Schema</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">payment/v1/payment.proto</span><div class="fn-desc">InitiateEscrow(dealID, amount) → EscrowID, ReleaseEscrow(escrowID) → Result, RefundEscrow(escrowID) → Result, ChargeSubscription(companyID, planID) → Receipt</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">booking/v1/booking.proto</span><div class="fn-desc">CreateHold(listingID, dates) → HoldID, ConfirmBooking(holdID) → Booking, CancelBooking(bookingID) → Result, CheckAvailability(listingID, dates) → Available</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">integrity/v1/integrity.proto</span><div class="fn-desc">CheckPlanLimits(companyID, action) → Allowed/Blocked, GetSubscription(companyID) → Plan, GetPlanFeatures(planID) → Features</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">scripts/proto-gen.sh</span><div class="fn-desc">buf generate all protos → pkg/gen/go/ and pkg/gen/ts/. Committed to repo.</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Identity service -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Identity Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Redis</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <div class="section-label">Auth Module</div>
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /auth/register</span><div class="fn-desc">Register with email+phone+password. Hash with bcrypt. Send OTP to phone (Kcell/Beeline SMPP). Return pending state until OTP confirmed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/verify-otp</span><div class="fn-desc">Validate OTP from Redis (TTL 5min). Activate account. Issue JWT access+refresh pair.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/login</span><div class="fn-desc">Email+password login. bcrypt compare. Issue JWT pair. Store refresh token in Redis with device fingerprint.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/refresh</span><div class="fn-desc">Validate refresh token from Redis. Rotate tokens (old refresh invalidated). Return new pair.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/logout</span><div class="fn-desc">Invalidate refresh token in Redis. Optionally revoke all sessions for user.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/forgot-password</span><div class="fn-desc">Send reset OTP/link to phone or email. Store token in Redis (TTL 15min).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /auth/reset-password</span><div class="fn-desc">Validate reset token, hash new password, invalidate all existing sessions.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Profile Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">GET /users/me</span><div class="fn-desc">Return authenticated user's profile with company info if attached.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me</span><div class="fn-desc">Update name, avatar (trigger media upload), contact details. Emit user.profile.updated to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me/avatar</span><div class="fn-desc">Request presigned upload URL from Media service. Store resulting MinIO URL on profile.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /users/:id/public</span><div class="fn-desc">Public profile: name, avatar, company name, verified badge, rating, reviews count.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me/notification-preferences</span><div class="fn-desc">Toggle push/SMS/email per event type. Stored in PG, read by Notification service.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: GetUser() / GetUserBatch() / GetCompany()</span><div class="fn-desc">Internal gRPC endpoints consumed by Deal, Chat, Review, Admin services.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Company & Verification Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">POST /companies</span><div class="fn-desc">Create company profile. БИН/ИНН format validation (12-digit KZ BIN). Set status = pending.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /companies/me</span><div class="fn-desc">Update company info. If already verified, changes require re-verification for legal fields.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /companies/me/documents</span><div class="fn-desc">Upload verification docs (БИН cert, charter, director ID). Get presigned URL, store metadata. Move status to under_review.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /companies/me/verification-status</span><div class="fn-desc">Return current verification state, reviewer notes, list of submitted docs.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">verification state machine</span><div class="fn-desc">pending → under_review → verified / rejected. On verified: emit company.verified to Kafka. On rejected: emit company.rejected with reason.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: review.created</span><div class="fn-desc">On new review for a company member, recalculate and update company reputation score.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">DB Migrations</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">001_users.sql</span><div class="fn-desc">users, sessions, otp_codes tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">002_companies.sql</span><div class="fn-desc">companies, company_documents, verification_history tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Gateway -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">API Gateway</span>
+        <span class="svc-stack">Go · Fiber</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">middleware/auth.go: ValidateJWT()</span><div class="fn-desc">Extract Bearer token, validate signature, inject userID+role into request context. Calls Identity grpc.VerifyToken() for revocation check.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">middleware/ratelimit.go: SlidingWindow()</span><div class="fn-desc">Redis-based sliding window rate limiter. Per-user and per-IP limits. Configurable per route.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">middleware/tracing.go: InjectTraceID()</span><div class="fn-desc">Generate or propagate X-Trace-ID header. Inject into downstream request headers and context.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">middleware/logging.go: RequestLogger()</span><div class="fn-desc">Log method, path, status, latency, trace-id for every request using zerolog.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">proxy/router.go: RegisterRoutes()</span><div class="fn-desc">Map all API routes to downstream services. Reverse proxy with header forwarding. Separate admin route group with stricter auth scope check.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /health</span><div class="fn-desc">Gateway liveness check. Optionally aggregate downstream /health responses.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Frontend shell -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend Shell — Next.js Setup + Design System</span>
+        <span class="svc-stack">Next.js 14 · TypeScript · Tailwind</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">Next.js App Router scaffold</span><div class="fn-desc">Route groups: (auth), (marketplace), (deals), (account), (chat), (admin). Root layout with providers.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">lib/api/ typed client</span><div class="fn-desc">Typed fetch wrappers per service (identity.ts, catalog.ts, search.ts…). Automatic JWT injection. 401 → refresh → retry logic.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Zustand auth store</span><div class="fn-desc">user, company, token, isVerified state. Persist access token in memory, refresh token in httpOnly cookie.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">components/ui/ design system</span><div class="fn-desc">Button, Input, Select, Modal, Badge, Spinner, Toast, Table, Pagination, Tabs — base components</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">components/layout/ Header / Sidebar / Footer</span><div class="fn-desc">Responsive layout. Auth-aware nav (show/hide links by role). Notification bell with unread count.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Login page / Register page</span><div class="fn-desc">Forms with validation. OTP verification flow. Role selection (buyer/seller/service provider). i18n: RU + KK.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 2 — CORE MARKETPLACE
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p2);border-color:var(--p2)">PHASE 2</span>
+    <span class="phase-title">Core Marketplace — Catalog, Listing, Search, Booking, Media</span>
+    <div class="phase-meta"><span>~72 tasks</span><span style="color:var(--p2)">Weeks 4–8</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body open">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Catalog Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Redis</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <div class="section-label">Category & Schema Management</div>
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /categories</span><div class="fn-desc">Return full category tree with parent-child hierarchy. Cached in Redis (TTL 1h). Bust cache on admin update.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /categories/:id/schema</span><div class="fn-desc">Return dynamic attribute schema for category: field name, type (number/string/enum), unit, required flag, filterable flag.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /categories (admin)</span><div class="fn-desc">Create category. Define attribute schema. Validate parent category exists.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /categories/:id (admin)</span><div class="fn-desc">Update category name/schema. Breaking schema changes require migration plan for existing equipment.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: ValidateAttributes() / GetCategorySchema()</span><div class="fn-desc">Called by Listing Service before saving a listing to ensure attributes match category schema.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Equipment CRUD</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">POST /equipment</span><div class="fn-desc">Create equipment record. Validate attributes against category schema. Verify company.verified status via Identity gRPC. Emit equipment.created to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /equipment/:id</span><div class="fn-desc">Equipment detail with media URLs, technical specs, owner company info (from Identity gRPC). Cache hot items in Redis.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /equipment/:id</span><div class="fn-desc">Update equipment. Re-validate attributes. Emit equipment.updated to Kafka (triggers OpenSearch sync + Price History snapshot).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">DELETE /equipment/:id</span><div class="fn-desc">Soft delete. Check no active deals reference equipment. Emit equipment.deleted to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /equipment (paginated list)</span><div class="fn-desc">My equipment list for seller dashboard. Filter by status, category.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /catalog/compare?ids=1,2,3</span><div class="fn-desc">Fetch N equipment items, normalize specs into unified comparison matrix respecting each category's schema. Return as structured table data.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td>No separate service needed</td></tr>
+            <tr><td><span class="fn">Kafka consumer: company.verified</span><div class="fn-desc">On company verified event, unlock equipment publishing for that company's users.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">DB Migrations</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">001_categories.sql / 002_equipment.sql / 003_attributes.sql</span><div class="fn-desc">categories (tree), equipment, equipment_attributes (JSONB), equipment_media tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Listing Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /listings</span><div class="fn-desc">Create listing. Calls Catalog gRPC to validate attributes. Calls Integrity gRPC to check plan limits (max active listings). Sets status=draft.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /listings/:id</span><div class="fn-desc">Update listing content, price, availability. If price changes, emit listing.updated (price change picked up by Engagement service).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /listings/:id/submit</span><div class="fn-desc">Submit draft for moderation. Status → under_review. Emit listing.submitted to Kafka → Admin moderation queue.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /listings/:id/publish (admin)</span><div class="fn-desc">Admin approves listing. Status → active. Emit listing.created to Kafka → OpenSearch index.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /listings/:id/deactivate</span><div class="fn-desc">Seller or admin deactivates. Status → archived. Emit listing.deactivated → remove from search index.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /listings/:id</span><div class="fn-desc">Listing detail. Increment view counter (Redis incr, batch persist). Include seller info, equipment specs, availability calendar.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /listings (my listings)</span><div class="fn-desc">Seller's own listings with status, view count, contact count, deal count.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /listings/:id/stats</span><div class="fn-desc">Views over time, contacts, conversion rate. For seller dashboard.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">listing state machine</span><div class="fn-desc">draft → under_review → active / rejected → archived. Transitions validated, illegal transitions rejected with typed error.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: deal.status.changed</span><div class="fn-desc">On deal confirmed: mark equipment as reserved. On deal cancelled/completed: release back to available.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: subscription.expired</span><div class="fn-desc">On subscription expiry: auto-deactivate listings that exceed free tier limits.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">001_listings.sql</span><div class="fn-desc">listings, listing_media, listing_pricing, listing_stats tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Search Service</span>
+        <span class="svc-stack">Go · Gin · OpenSearch · Redis · pkg/geo</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /search</span><div class="fn-desc">Full-text + faceted search. Params: q, category, region, price_min/max, condition (new/used), sale_type (sale/rental), custom attribute filters. MD5 hash → Redis cache (TTL 60s).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /search/suggest</span><div class="fn-desc">Autocomplete suggestions from OpenSearch completion suggester. Cache results 5min.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /search/filters</span><div class="fn-desc">Return available filter options for a given category (min/max price, available regions, attribute value ranges). Computed from OpenSearch aggregations.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /search/similar/:listingID</span><div class="fn-desc">More-like-this query on OpenSearch. Return similar equipment recommendations.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /search/history (auth)</span><div class="fn-desc">Return user's last N search queries from Redis sorted set.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-nice">NICE</span></td><td></td></tr>
+            <tr><td><span class="fn">indexer/kafka consumer: equipment.* + listing.*</span><div class="fn-desc">Consume events from Kafka. On created/updated: upsert OpenSearch document. On deleted/deactivated: delete document. Idempotent — safe to replay.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">geo/regions.go: LookupRegion() / ListRegions()</span><div class="fn-desc">KZ oblast/city lookup table. Seed from CSV. Used for region filter dropdown and geo queries in OpenSearch.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">geo/twogis.go: Geocode() / ReverseGeocode()</span><div class="fn-desc">2GIS API client. Only called for address → coordinates conversion. No personal data sent.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Booking & Availability Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Redis</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /listings/:id/availability</span><div class="fn-desc">Return availability calendar: booked slots, held slots, available windows. For rental listings only.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: CreateHold(listingID, dates)</span><div class="fn-desc">Atomic slot reservation. Check no conflict in PG. Store hold in Redis with TTL (e.g. 30min). Return holdID. Called by Deal Service on inquiry.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: ConfirmBooking(holdID)</span><div class="fn-desc">Promote Redis hold to confirmed PG record. Remove from Redis. Emit booking.confirmed to Kafka → update Listing availability.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: CancelBooking(bookingID)</span><div class="fn-desc">Release slot. Emit booking.cancelled. Allow other buyers to book released slot.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: CheckAvailability(listingID, dates)</span><div class="fn-desc">Fast conflict check before creating a hold. Used by frontend for availability preview.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">hold expiry cleanup</span><div class="fn-desc">Background goroutine or Redis keyspace events: when hold TTL expires, clean up any PG hold records. Release slot.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">001_bookings.sql</span><div class="fn-desc">bookings, booking_holds tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Media Service</span>
+        <span class="svc-stack">Go · Fiber · MinIO · imgproxy</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /media/upload-url</span><div class="fn-desc">Generate presigned MinIO PUT URL. Validate file type (image/video), max size. Return uploadURL + finalURL. Client uploads directly to MinIO.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /media/confirm</span><div class="fn-desc">Client calls after upload. Media Service verifies file exists in MinIO. Stores metadata in PG. Emits media.uploaded to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">process/consumer.go: Kafka media.uploaded</span><div class="fn-desc">On upload confirmed: call imgproxy to generate WebP versions at multiple sizes (thumb 200px, medium 800px, large 1600px). Store URLs in metadata. Emit media.processed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">imgproxy.go: Transform()</span><div class="fn-desc">Build imgproxy URL with HMAC signature. Request resize + WebP conversion. Self-hosted imgproxy, no data leaves KZ.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">DELETE /media/:id</span><div class="fn-desc">Delete media record + MinIO objects. Only owner or admin can delete.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /media/chat-upload-url</span><div class="fn-desc">Presigned URL for chat file attachments. Different bucket, shorter TTL, size limit.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Frontend phase 2 -->
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend — Catalog, Search, Listing Creation</span>
+        <span class="svc-stack">Next.js · Zustand · Tailwind</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">catalog/page.tsx — Equipment grid</span><div class="fn-desc">SSR catalog page. Equipment cards with thumbnail, price, location, condition badge, sale/rental tag.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td>SSR for SEO</td></tr>
+            <tr><td><span class="fn">catalog/[id]/page.tsx — Equipment detail</span><div class="fn-desc">Media gallery, full spec table, seller info card, contact/deal CTA, availability calendar (rental), similar equipment carousel.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td>SSR for SEO</td></tr>
+            <tr><td><span class="fn">search/page.tsx — Search with filters</span><div class="fn-desc">Search bar + filter panel (category, price range, region, condition, specs). Result grid. URL-based state for shareability. Infinite scroll or pagination.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">compare/page.tsx — Comparison table</span><div class="fn-desc">Select up to 4 items. Side-by-side spec comparison. Highlight differences. Add from listing page.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">listings/new — Multi-step listing wizard</span><div class="fn-desc">Step 1: category selection. Step 2: dynamic attribute form (rendered from category schema). Step 3: media upload (drag-drop → presigned URL). Step 4: pricing + availability. Step 5: review + submit.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">account/listings/page.tsx — Seller inventory</span><div class="fn-desc">List of own listings with status badges, view stats, quick actions (edit, deactivate, boost).</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Company registration + document upload flow</span><div class="fn-desc">Multi-step company onboarding. БИН input with format validation. Document upload UI. Verification status banner.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 3 — TRANSACTIONS
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p3);border-color:var(--p3)">PHASE 3</span>
+    <span class="phase-title">Transactions — Deal, Payment, Document, Review</span>
+    <div class="phase-meta"><span>~65 tasks</span><span style="color:var(--p3)">Weeks 9–13</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Deal Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /deals</span><div class="fn-desc">Create deal (inquiry). Validate listing is active. Call Booking gRPC CreateHold() for rentals. Set status=inquiry. Emit deal.status.changed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /deals/:id</span><div class="fn-desc">Deal detail. Include listing snapshot, buyer/seller info (Identity gRPC), payment status, document links, timeline.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /deals</span><div class="fn-desc">List deals for current user (as buyer or seller). Filter by status, direction. Paginated.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /deals/:id/accept</span><div class="fn-desc">Seller accepts inquiry. Status → negotiation. Emit deal.status.changed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /deals/:id/confirm</span><div class="fn-desc">Both parties confirm terms. Status → confirmed. Call Payment gRPC InitiateEscrow(). Call Booking gRPC ConfirmBooking() for rentals. Call Document gRPC GenerateContract().</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /deals/:id/complete</span><div class="fn-desc">Mark deal complete. Call Payment gRPC ReleaseEscrow(). Emit deal.completed → unlocks Review for both parties.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /deals/:id/cancel</span><div class="fn-desc">Cancel deal. Validate cancellation is allowed per current status. Call Booking gRPC CancelBooking(). Call Payment gRPC RefundEscrow() if applicable. Emit deal.status.changed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">deal state machine</span><div class="fn-desc">inquiry → negotiation → confirmed → in_progress → completed / cancelled. Each transition validates actor role. Illegal transitions return CONFLICT error.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: payment.completed</span><div class="fn-desc">On payment confirmed by provider: auto-advance deal to in_progress.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">001_deals.sql</span><div class="fn-desc">deals, deal_events (immutable timeline), deal_terms tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Payment Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">grpc: InitiateEscrow(dealID, amount)</span><div class="fn-desc">Create escrow record. Generate payment link via provider SDK (Kaspi/Halyk). Return payment URL + escrowID.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: ReleaseEscrow(escrowID)</span><div class="fn-desc">Release held funds to seller. Call provider API. Record release. Emit payment.completed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: RefundEscrow(escrowID)</span><div class="fn-desc">Return funds to buyer. Call provider refund API. Emit payment.failed (or payment.refunded).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /payments/webhook/:provider</span><div class="fn-desc">Receive async payment confirmation from Kaspi/Halyk/Uzcard. Validate signature. Update escrow status. Emit payment.completed to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /payments/history</span><div class="fn-desc">Transaction history for current user: amount, status, deal reference, timestamp.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">providers/kaspi.go: InitPayment() / Refund()</span><div class="fn-desc">Kaspi Pay API integration. Signature generation, payment session creation, status polling.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">providers/halyk.go: InitPayment() / Refund()</span><div class="fn-desc">Halyk Bank Homebank API integration.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">providers/uzcard.go</span><div class="fn-desc">Uzcard/Humo integration for Uzbekistan coverage.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-nice">NICE</span></td><td>Post-launch</td></tr>
+            <tr><td><span class="fn">grpc: ChargeSubscription(companyID, planID)</span><div class="fn-desc">Charge company card for platform subscription. Called by Integrity service billing module.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">001_payments.sql</span><div class="fn-desc">payments, escrow, transactions, refunds tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Document Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · MinIO · Gotenberg</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">grpc: GenerateContract(dealID)</span><div class="fn-desc">Fetch deal + listing + parties from respective services. Render Go HTML template. Send to Gotenberg for PDF. Store in MinIO documents bucket. Return document URL.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">templates/contract_sale.html</span><div class="fn-desc">Sale contract template with all required KZ legal fields: parties, БИН, equipment description, price, payment terms, liability clauses.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td>Consult KZ lawyer for template</td></tr>
+            <tr><td><span class="fn">templates/contract_rental.html</span><div class="fn-desc">Rental contract: same as sale + rental period, return conditions, damage liability, deposit terms.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">templates/invoice.html</span><div class="fn-desc">Invoice template for payment. Required for ЭДО compliance.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pdf/gotenberg.go: RenderPDF()</span><div class="fn-desc">HTTP POST to Gotenberg /forms/chromium/convert/html. Self-hosted. Returns PDF bytes. Retry on failure.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /documents/:id</span><div class="fn-desc">Return presigned MinIO GET URL for document. Only accessible to deal parties or admin.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /documents (my documents)</span><div class="fn-desc">List all documents for current user across deals.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">edo/client.go: SubmitToEDO()</span><div class="fn-desc">ЭДО adapter. Submit signed contracts to KZ e-document system (e.g. Kazakhtelecom ЭДО). Stub initially.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-nice">NICE</span></td><td>Stub in phase 3, integrate later</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Review & Rating Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /reviews</span><div class="fn-desc">Submit review for completed deal. Validate deal.status=completed and reviewer is party. Validate only one review per party per deal. Calculate new aggregate score.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /reviews?companyID=x</span><div class="fn-desc">Paginated review list for a company. Include reviewer name, rating dimensions, comment, deal type, date.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">score recalculation</span><div class="fn-desc">On new review: recalculate weighted average across dimensions (reliability, condition, communication). Call Identity gRPC to update company/user score.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: deal.completed</span><div class="fn-desc">On deal completed: unlock review submission window for both parties. Store eligibility record.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">001_reviews.sql</span><div class="fn-desc">reviews, review_dimensions, review_eligibility tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend — Deals, Payments, Documents, Reviews</span>
+        <span class="svc-stack">Next.js</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">deals/page.tsx — Deals inbox</span><div class="fn-desc">Separate tabs for buyer and seller views. Deal cards with status, counterparty, amount, equipment thumb.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">deals/[id]/page.tsx — Deal detail</span><div class="fn-desc">Timeline of deal events. Action buttons contextual to status and user role. Payment status. Document download. Link to chat.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Payment redirect flow</span><div class="fn-desc">Redirect to Kaspi/Halyk payment page. Handle success/failure return URL. Show payment confirmation screen.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Review submission modal</span><div class="fn-desc">Rating sliders per dimension. Text comment. Submit button only shown when deal completed and review not yet submitted.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Company profile page — reviews section</span><div class="fn-desc">Review list with pagination. Aggregate score display with dimension breakdown.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 4 — COMMUNICATION
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p4);border-color:var(--p4)">PHASE 4</span>
+    <span class="phase-title">Communication — Chat, Notifications</span>
+    <div class="phase-meta"><span>~42 tasks</span><span style="color:var(--p4)">Weeks 14–17</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Chat Service</span>
+        <span class="svc-stack">Go · Fiber · MongoDB · Redis · MinIO</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /ws/chat/:dealID</span><div class="fn-desc">WebSocket upgrade endpoint. Authenticate via JWT query param. Register connection in hub. Subscribe to deal conversation channel.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">ws/hub.go: Register() / Unregister() / Broadcast()</span><div class="fn-desc">In-memory hub managing all active WebSocket connections. Track presence per user. Redis pub/sub for multi-instance fan-out.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">ws/client.go: ReadPump() / WritePump()</span><div class="fn-desc">Per-connection goroutines. Parse incoming messages (text, file-share, read-receipt, typing). Write outgoing messages with backpressure.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">message/service.go: Send()</span><div class="fn-desc">Persist message to MongoDB. Deliver to connected recipients via hub. Emit message.sent to Kafka (for offline push notification).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">message/service.go: MarkRead()</span><div class="fn-desc">Update read_at on message documents. Broadcast read receipt to sender's connection.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">message/service.go: SendTypingIndicator()</span><div class="fn-desc">Broadcast typing event to conversation participants. Redis TTL-based — no persistence needed.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /conversations/:dealID/messages</span><div class="fn-desc">REST endpoint for message history. Cursor-based pagination (before messageID). For initial load and history scroll.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /conversations</span><div class="fn-desc">List all conversations for current user with last message preview and unread count.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">file sharing: POST /chat/upload-url</span><div class="fn-desc">Request presigned MinIO PUT URL for chat file. Client uploads directly. POST /chat/confirm saves metadata to MongoDB message.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">presence: GetOnlineUsers(dealID)</span><div class="fn-desc">Check Redis for active connections in a conversation. Return online/offline status per participant.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Notification Service</span>
+        <span class="svc-stack">Go · Kafka consumer · MongoDB · FCM · SMPP · Postal</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">consumer/kafka.go: Subscribe()</span><div class="fn-desc">Subscribe to all notification-relevant topics: message.sent, deal.status.changed, payment.completed, company.verified, dispute.filed, delivery.status.changed, favorite.price_dropped, subscription.expired.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">dispatcher/router.go: Route()</span><div class="fn-desc">Map event type → notification template → channels (push/SMS/email/in-app). Check user preferences before sending each channel.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">channels/push.go: SendFCM() / SendAPNs()</span><div class="fn-desc">Firebase Cloud Messaging for Android and APNs for iOS. Send device token + title + body only. Token stored in identity_db. No profile data sent to Google/Apple.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">channels/sms.go: SendSMPP()</span><div class="fn-desc">SMPP client connecting to Beeline KZ or Kcell gateway. OTP delivery, deal alerts. Data stays in KZ.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">channels/email.go: SendPostal()</span><div class="fn-desc">Postal SMTP client (self-hosted). HTML email templates. Deal confirmations, document ready, payment received.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">channels/inapp.go: Store() / GetFeed()</span><div class="fn-desc">Persist in-app notifications to MongoDB. GET /notifications returns paginated feed with unread count. POST /notifications/:id/read marks read.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">templates/ RU + KK</span><div class="fn-desc">All notification templates in Russian and Kazakh. Parameterized with deal info, amounts, names.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /notifications</span><div class="fn-desc">In-app notification feed. Paginated, unread first. Mark-all-read endpoint.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /devices/register</span><div class="fn-desc">Register FCM/APNs device token for current user. Store in identity_db. Multiple devices per user supported.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend — Chat UI, Notification Center</span>
+        <span class="svc-stack">Next.js · WebSocket</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">lib/ws/ChatClient — WebSocket manager</span><div class="fn-desc">Connect, reconnect with exponential backoff, message queue for offline. Expose send(), onMessage(), onPresence() hooks.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">chat/[dealId]/page.tsx — Chat window</span><div class="fn-desc">Message list with virtual scroll. Message bubbles (own/other). Timestamps. Read receipts (✓✓). Typing indicator. File attachment preview. Scroll-to-bottom on new message.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Notification bell dropdown</span><div class="fn-desc">Real-time unread count badge. Dropdown with notification feed. Mark read on open. Link each notification to relevant page.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Push notification permission request</span><div class="fn-desc">Ask for browser push permission. Register service worker. Send FCM token to backend on grant.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 5 — INTELLIGENCE
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p5);border-color:var(--p5)">PHASE 5</span>
+    <span class="phase-title">Intelligence — Engagement, Analytics, Services Marketplace</span>
+    <div class="phase-meta"><span>~38 tasks</span><span style="color:var(--p5)">Weeks 18–21</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Engagement Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Redis · Kafka consumer</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /favorites</span><div class="fn-desc">Add listing to favorites. Store userID + listingID + price-at-time. Add to Redis hot set.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">DELETE /favorites/:listingID</span><div class="fn-desc">Remove from favorites. Remove from Redis hot set.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /favorites</span><div class="fn-desc">Return user's favorited listings with current price, price change indicator, availability status.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /favorites/collections</span><div class="fn-desc">Create named collection (e.g. "Cranes Q2"). Move favorites between collections.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-nice">NICE</span></td><td></td></tr>
+            <tr><td><span class="fn">Kafka consumer: equipment.updated → price watch</span><div class="fn-desc">On price change: compare new price with price-at-favorite-time for all users who favorited this item. Emit favorite.price_dropped if price decreased.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">pricehistory: GET /price-history/:listingID</span><div class="fn-desc">Return time-series of price snapshots for a listing. Used for price history chart on listing page.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">pricehistory: GET /market-price?category=x&region=y</span><div class="fn-desc">Return avg/median market price for a category+region combination. Used for seller price guidance.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Analytics Service</span>
+        <span class="svc-stack">Go · Kafka consumer · PostgreSQL · Redis</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">consumer/kafka.go: ConsumeAll()</span><div class="fn-desc">Subscribe to all Kafka topics as separate consumer group. Idempotent event processing. Upsert analytics fact tables.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /analytics/seller/me</span><div class="fn-desc">Seller dashboard: listing views by day, contact requests, deals created, deals completed, GMV, conversion funnel.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /analytics/admin/platform</span><div class="fn-desc">Admin: total GMV, active listings count, new users by day, deals by status, top categories, regional heatmap data.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">aggregator/seller.go: AggregateDailyMetrics()</span><div class="fn-desc">Cron job: pre-aggregate seller metrics daily into summary table. Keeps API fast.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Services Marketplace</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · 2GIS</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /services</span><div class="fn-desc">Provider registers service offering: type (logistics/install/maintenance/insurance), pricing model, service area, description.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /services?type=logistics&region=almaty</span><div class="fn-desc">Search service providers. Filter by type and region. Return with provider rating and pricing.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /deals/:id/services</span><div class="fn-desc">Attach a service order to a deal as optional line item. Triggers separate sub-deal flow.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">logistics/service.go: CreateDeliveryRequest()</span><div class="fn-desc">Create delivery request with pickup/drop addresses. Estimate cost via 2GIS routing. Assign carrier.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /deliveries/:id/status</span><div class="fn-desc">Update delivery status: pickup → in_transit → delivered. Emit delivery.status.changed → Notification.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 6 — INTEGRITY & MONETISATION
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p6);border-color:var(--p6)">PHASE 6</span>
+    <span class="phase-title">Integrity & Monetisation — Disputes, Subscriptions, Audit, Admin</span>
+    <div class="phase-meta"><span>~44 tasks</span><span style="color:var(--p6)">Weeks 22–26</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Platform Integrity Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Kafka consumer · MinIO</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <div class="section-label">Dispute Module</div>
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">POST /disputes</span><div class="fn-desc">File dispute against deal. Validate filer is deal party. Set status=filed. Emit dispute.filed to Kafka → Notification + Audit.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /disputes/:id/evidence</span><div class="fn-desc">Upload evidence files (photos, docs). Get presigned MinIO PUT URL for dispute-evidence bucket. Store metadata.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /disputes/:id/resolve (admin)</span><div class="fn-desc">Admin resolves dispute: decision=buyer_wins / seller_wins / split. If buyer_wins: call Payment gRPC RefundEscrow(). If seller_wins: call Payment gRPC ReleaseEscrow(). Emit dispute.resolved.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">dispute state machine</span><div class="fn-desc">filed → under_review → resolved / escalated. Escalated disputes flagged for senior admin.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /disputes/:id</span><div class="fn-desc">Dispute detail with evidence files, timeline, admin notes. Accessible to parties and admin.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Subscription & Tariff Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">GET /plans</span><div class="fn-desc">Return all tariff plans with features: listing limits, featured placements, analytics access, commission rate.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /subscriptions</span><div class="fn-desc">Subscribe company to plan. Call Payment gRPC ChargeSubscription(). Set active subscription. Emit subscription.activated.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /subscriptions/cancel</span><div class="fn-desc">Cancel subscription at period end. No immediate action, set cancel_at_period_end flag. Emit subscription.expired at cycle end.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: CheckPlanLimits(companyID, action)</span><div class="fn-desc">Called by Listing Service before allowing listing creation. Returns allowed/blocked + current usage + limit.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">subscription renewal cron</span><div class="fn-desc">Daily job: find subscriptions expiring tomorrow. Attempt auto-renewal via Payment. On failure: emit subscription.expired.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Audit Log Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">audit/consumer.go: ConsumeAll()</span><div class="fn-desc">Subscribe to: deal.*, payment.*, company.verified/rejected, moderation.action.taken, dispute.*, subscription.*. Write immutable records.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">audit/repository.go: Append()</span><div class="fn-desc">Write-only. No UPDATE/DELETE on audit table. Postgres row-level trigger to prevent modifications.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /audit?dealID=x (admin only)</span><div class="fn-desc">Query audit trail for a deal. Filter by entity type, date range, actor. Admin-scoped JWT required.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-be">BACKEND</span>
+        <span class="svc-name">Admin Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /admin/moderation/queue</span><div class="fn-desc">Listings awaiting review. Sorted by submission time. Include listing content, seller info, previous violations.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /admin/listings/:id/approve / reject</span><div class="fn-desc">Approve: call Listing gRPC Publish(). Reject: call Listing gRPC Reject() with reason. Emit moderation.action.taken to Kafka → Notification + Audit.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /admin/verifications/queue</span><div class="fn-desc">Company verification requests with submitted documents. Prioritized by submission date.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /admin/companies/:id/verify / reject</span><div class="fn-desc">Call Identity gRPC to update verification status. Emit company.verified / company.rejected.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /admin/users/:id/ban</span><div class="fn-desc">Ban user. Deactivate all listings. Revoke all sessions (invalidate Redis tokens). Emit moderation.action.taken.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /admin/categories (CRUD)</span><div class="fn-desc">Create/update/delete categories and attribute schemas. Call Catalog gRPC.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /admin/analytics</span><div class="fn-desc">Platform overview: from Analytics service. GMV, users, listings, disputes open, subscriptions active.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend — Admin Panel, Disputes, Subscriptions</span>
+        <span class="svc-stack">Next.js · (admin) route group</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">admin/moderation — Listing review queue UI</span><div class="fn-desc">Split view: listing preview + action panel. Approve/reject with required reason for rejection.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">admin/verifications — Company verification UI</span><div class="fn-desc">Document viewer (PDF/image inline). Company info. Approve/reject buttons with notes.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">admin/disputes — Dispute management UI</span><div class="fn-desc">Dispute queue, evidence gallery, decision panel with escrow action preview.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">admin/analytics — Platform dashboard</span><div class="fn-desc">Charts: GMV over time, new users, active listings, top categories, regional map.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">account/subscription — Plan selection + billing</span><div class="fn-desc">Plan comparison table. Current plan status. Upgrade/downgrade flow. Payment history.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Dispute filing UI in deal page</span><div class="fn-desc">File dispute button (visible on active/in-progress deals). Evidence upload. Status tracking.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PHASE 7 — HARDENING & LAUNCH
+═══════════════════════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-num" style="color:var(--p7);border-color:var(--p7)">PHASE 7</span>
+    <span class="phase-title">Hardening & Launch — Performance, Security, SEO, Mobile</span>
+    <div class="phase-meta"><span>~30 tasks</span><span style="color:var(--p7)">Weeks 27–30</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-inf">INFRA</span>
+        <span class="svc-name">Production Infrastructure & Security</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">K8s manifests (Deployment, Service, HPA per service)</span><div class="fn-desc">Convert Docker Compose to Kubernetes. HPA min/max replicas per service based on CPU/memory. ConfigMaps for config, Secrets for credentials.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GitHub Actions: cd-staging.yml + cd-prod.yml</span><div class="fn-desc">Build → push to registry → rolling deploy to k8s. Separate staging and prod. Manual approval gate for prod.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">TLS / Let's Encrypt auto-renewal</span><div class="fn-desc">cert-manager in k8s. Auto-renew certs. Force HTTPS redirect at NGINX.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PostgreSQL backups</span><div class="fn-desc">pg_dump cron to MinIO (separate backup bucket). Test restore procedure. Point-in-time recovery setup.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Security audit: SQL injection, auth bypass, IDOR</span><div class="fn-desc">Review all endpoints for IDOR (user A accessing user B's data). Parameterized queries everywhere. Auth middleware on all protected routes.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">KZ data residency audit</span><div class="fn-desc">Confirm all PII stored only on KZ infra. Verify no PII sent to FCM/2GIS beyond transient data. Document for compliance.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Grafana dashboards per service</span><div class="fn-desc">Request rate, error rate, p50/p95/p99 latency, Kafka consumer lag, DB connection pool usage, Redis hit rate.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Alerting rules (PagerDuty/email)</span><div class="fn-desc">Alert on: service down, error rate >1%, Kafka lag >10k, DB connections >80%, disk usage >80%.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="svc-section">
+      <div class="svc-header" onclick="toggleSvc(this)">
+        <span class="badge b-fe">FRONTEND</span>
+        <span class="svc-name">Frontend — SEO, Performance, i18n, Mobile PWA</span>
+        <span class="svc-toggle open">▼</span>
+      </div>
+      <div class="svc-body open">
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">Dynamic sitemap.xml generation</span><div class="fn-desc">Next.js sitemap route. Fetch all active listing IDs from Catalog API. Output sitemap.xml with lastmod. Regenerate on new listings via ISR.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td>Critical for SEO</td></tr>
+            <tr><td><span class="fn">Structured data (JSON-LD) on listing pages</span><div class="fn-desc">Product schema, offer schema for each listing. Enables rich results in Google/Yandex.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">i18n: next-intl setup (RU + KK)</span><div class="fn-desc">All UI strings externalized. Language switcher. URL-based locale (/kk/...). Separate translation files per route group.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">Image optimization: next/image with imgproxy URLs</span><div class="fn-desc">Use imgproxy transform URLs for all listing images. Lazy load. LQIP (low quality image placeholder) on catalog grid.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PWA manifest + service worker</span><div class="fn-desc">Add to home screen support. Offline fallback page. Background sync for notifications.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-should">SHOULD</span></td><td>Bridges gap until native mobile</td></tr>
+            <tr><td><span class="fn">Lighthouse score pass (>90 Performance, >90 SEO)</span><div class="fn-desc">Audit and fix Core Web Vitals: LCP, CLS, INP. Eliminate render-blocking resources. Optimize font loading.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">account/analytics/page.tsx — Seller dashboard</span><div class="fn-desc">Charts: views, contacts, conversion, price vs market. Date range selector. Export to CSV.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">favorites/page.tsx — Watchlist with price alerts</span><div class="fn-desc">Favorited listings grid. Price change indicators (↑↓). Collection grouping tabs. Remove from favorites.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">E2E test suite (Playwright)</span><div class="fn-desc">Critical paths: register → verify company → create listing → buyer inquiry → deal confirm → payment → complete. Run in CI.</div></td><td><span class="badge b-fe">FE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:24px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;font-size:11px;color:var(--dim)">
+  <strong style="color:var(--text)">Total scope:</strong> ~339 tracked tasks across 7 phases, 12 backend services, 1 frontend, shared packages, infra, and proto definitions. Phases 1–3 constitute the shippable MVP. Phases 4–7 add full-featured communication, intelligence, monetisation, and production hardening. Each phase produces a deployable, testable increment.
+</div>
+
+<div style="margin-top:16px;padding:10px 16px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim)">
+  IEM · Implementation Plan v1.0 · Generated 2026-02-25
+</div>
+
+<script>
+function togglePhase(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.phase-toggle');
+  const isOpen = body.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+}
+function toggleSvc(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.svc-toggle');
+  const isOpen = body.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+}
+// Close all service sections by default except phase 1
+document.querySelectorAll('.phase-body').forEach((body, i) => {
+  if (i > 0) {
+    body.classList.remove('open');
+    body.previousElementSibling.querySelector('.phase-toggle').classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

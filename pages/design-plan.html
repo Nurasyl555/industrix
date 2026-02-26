@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEM — Designer Task Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg:#090b0e;--bg2:#0f1318;--bg3:#151b22;--bg4:#1c242e;
+  --border:#1e2a38;--borderb:#263244;--text:#c5d4e8;--dim:#4d6680;--bright:#e8f2ff;
+  --p1:#f77f00;--p2:#06d6a0;--p3:#00b4d8;--p4:#8338ec;--p5:#ffd166;--p6:#ef476f;--p7:#a8dadc;
+  --screen:#06d6a0;--comp:#00b4d8;--ds:#f77f00;--layout:#8338ec;--qa:#ef476f;
+  --must:#ef476f;--should:#ffd166;--nice:#4d6680;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.55;padding:32px}
+nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.nav-home{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:color .3s ease}
+.nav-home:hover{color:var(--text)}
+.nav-arrows{display:flex;gap:12px;align-items:center}
+.nav-link{display:inline-flex;align-items:center;gap:6px;color:var(--dim);text-decoration:none;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:color .3s ease;padding:4px 8px;border-radius:3px}
+.nav-link:hover{color:var(--text);background:var(--bg2)}
+.nav-disabled{cursor:not-allowed;opacity:.5}
+.nav-divider{color:var(--border)}
+header{border-bottom:1px solid var(--borderb);padding-bottom:20px;margin-bottom:28px}
+header h1{font-size:20px;font-weight:700;color:var(--bright)}
+header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px}
+.tabs{display:flex;gap:2px;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.tab{padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--text)}.tab.active{color:var(--bright);border-bottom-color:var(--p2)}
+.tab-content{display:none}.tab-content.active{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.leg{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.leg-dot{width:8px;height:8px;border-radius:2px}
+.summary-bar{display:flex;gap:3px;margin-bottom:24px;flex-wrap:wrap}
+.sum-phase{flex:1;min-width:100px;padding:10px 12px;border-radius:4px;border:1px solid var(--border);background:var(--bg2)}
+.sum-num{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1px}
+.sum-name{font-size:11px;color:var(--bright);margin-top:2px;font-weight:600}
+.sum-tasks{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px}
+.sum-weeks{font-family:'IBM Plex Mono',monospace;font-size:9px;margin-top:2px}
+.phase{margin-bottom:4px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.phase-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none;background:var(--bg2)}
+.phase-header:hover{background:var(--bg3)}
+.phase-num{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:2px 7px;border-radius:2px;border:1px solid}
+.phase-title{font-size:13px;font-weight:600;color:var(--bright)}
+.phase-meta{margin-left:auto;display:flex;align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.phase-toggle{font-size:10px;transition:transform .2s}.phase-toggle.open{transform:rotate(180deg)}
+.phase-body{display:none;padding:0 0 8px}.phase-body.open{display:block}
+.deliv{margin:8px 12px 0;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.deliv-header{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;background:var(--bg3)}
+.deliv-header:hover{background:var(--bg4)}
+.deliv-id{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim);min-width:56px;padding-top:2px}
+.deliv-info{flex:1}
+.deliv-title{font-weight:600;font-size:12px;color:var(--bright)}
+.deliv-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.deliv-toggle{font-size:9px;color:var(--dim);transition:transform .15s;margin-top:2px}
+.deliv-toggle.open{transform:rotate(180deg)}
+.deliv-body{display:none;padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border)}
+.deliv-body.open{display:block}
+.badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid;white-space:nowrap}
+.b-screen{color:var(--screen);border-color:var(--screen)}.b-comp{color:var(--comp);border-color:var(--comp)}
+.b-ds{color:var(--ds);border-color:var(--ds)}.b-layout{color:var(--layout);border-color:var(--layout)}
+.b-qa{color:var(--qa);border-color:var(--qa)}.b-must{color:var(--must);border-color:var(--must)}
+.b-should{color:var(--should);border-color:var(--should)}.b-nice{color:var(--nice);border-color:var(--nice)}
+.b-days{color:var(--dim);border-color:var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.detail-grid{grid-template-columns:1fr}}
+.detail-section{background:var(--bg3);border-radius:4px;padding:10px 12px}
+.detail-section.full{grid-column:1/-1}
+.detail-label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.detail-text{font-size:11px;color:var(--text);line-height:1.5}
+.state-tag{display:inline-block;background:var(--bg4);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:1px 5px;margin:2px 2px 2px 0;color:var(--text)}
+.flow-section{margin-bottom:28px}
+.flow-section h3{font-size:14px;font-weight:600;color:var(--bright);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.flow-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:8px}
+.flow-card-title{font-weight:600;color:var(--bright);margin-bottom:2px;font-size:12px}
+.flow-card-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:14px}
+.flow-steps{display:flex;flex-direction:column}
+.flow-step{display:flex;gap:0;position:relative}
+.flow-step-connector{display:flex;flex-direction:column;align-items:center;width:26px;flex-shrink:0}
+.flow-dot{width:10px;height:10px;border-radius:50%;border:2px solid;flex-shrink:0;margin-top:3px;z-index:1;background:var(--bg2)}
+.flow-line{width:2px;flex:1;background:var(--border);min-height:14px}
+.flow-step:last-child .flow-line{display:none}
+.flow-step-content{padding:0 0 12px 8px;flex:1}
+.flow-step-screen{font-size:11px;font-weight:600;color:var(--bright)}
+.flow-step-desc{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.4}
+.flow-step-note{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--p5);border:1px solid rgba(255,209,102,.2);border-radius:2px;padding:1px 5px;margin-top:4px;margin-right:4px}
+.flow-step-warn{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--must);border:1px solid rgba(239,71,111,.2);border-radius:2px;padding:1px 5px;margin-top:4px;margin-right:4px}
+.flow-branch{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.flow-branch-item{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:4px 8px;font-size:10px}
+.flow-branch-label{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--dim);display:block;margin-bottom:1px}
+.notion-guide{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:10px}
+.notion-guide h3{font-size:13px;font-weight:600;color:var(--bright);margin-bottom:12px}
+.notion-step{display:flex;gap:10px;margin-bottom:12px}
+.notion-step-num{width:22px;height:22px;border-radius:50%;background:var(--bg3);border:1px solid var(--borderb);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--p2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notion-step-title{font-weight:600;font-size:12px;color:var(--bright);margin-bottom:3px}
+.notion-step-desc{font-size:11px;color:var(--dim);line-height:1.5}
+.notion-prop{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;margin:2px}
+code{font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--border);padding:1px 4px;border-radius:2px;color:var(--p2)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-home">← Back to Docs</a>
+  <div class="nav-arrows">
+    <a href="architecture(1).html" class="nav-link">← Prev</a>
+    <span class="nav-divider">│</span>
+    <a href="impl-plan.html" class="nav-link">Next →</a>
+  </div>
+</nav>
+
+<header>
+  <h1>IEM — Designer Task Plan</h1>
+  <p>// 76 tasks · 7 phases · Figma · 2–3 designers · KZ marketplace · with dev handoff specs</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('tasks',this)">Task List</div>
+  <div class="tab" onclick="showTab('flows',this)">UX Flows</div>
+  <div class="tab" onclick="showTab('notion',this)">Notion Setup Guide</div>
+</div>
+
+<!-- TAB: TASK LIST -->
+<div id="tab-tasks" class="tab-content active">
+<div class="legend">
+  <span class="leg"><span class="leg-dot" style="background:var(--screen)"></span>Screen</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--comp)"></span>Component</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--ds)"></span>Design System</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--layout)"></span>Layout</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--qa)"></span>QA</span>
+  <span style="width:12px"></span>
+  <span class="leg"><span class="leg-dot" style="background:var(--must)"></span>MUST</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--should)"></span>SHOULD</span>
+  <span class="leg"><span class="leg-dot" style="background:var(--nice)"></span>NICE</span>
+</div>
+<div class="summary-bar">
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p1)">PHASE 1</div><div class="sum-name">Foundation</div><div class="sum-tasks">15 tasks</div><div class="sum-weeks" style="color:var(--p1)">Sprint 1</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p2)">PHASE 2</div><div class="sum-name">Core Marketplace</div><div class="sum-tasks">20 tasks</div><div class="sum-weeks" style="color:var(--p2)">Sprint 2</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p3)">PHASE 3</div><div class="sum-name">Transactions</div><div class="sum-tasks">10 tasks</div><div class="sum-weeks" style="color:var(--p3)">Sprint 3</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p4)">PHASE 4</div><div class="sum-name">Communication</div><div class="sum-tasks">8 tasks</div><div class="sum-weeks" style="color:var(--p4)">Sprint 4</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p5)">PHASE 5</div><div class="sum-name">Intelligence</div><div class="sum-tasks">6 tasks</div><div class="sum-weeks" style="color:var(--p5)">Sprint 5</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p6)">PHASE 6</div><div class="sum-name">Integrity</div><div class="sum-tasks">9 tasks</div><div class="sum-weeks" style="color:var(--p6)">Sprint 6</div></div>
+  <div class="sum-phase"><div class="sum-num" style="color:var(--p7)">PHASE 7</div><div class="sum-name">Hardening</div><div class="sum-tasks">8 tasks</div><div class="sum-weeks" style="color:var(--p7)">Sprint 7</div></div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p1);border-color:var(--p1)">PHASE 1</span>
+    <span class="phase-title">Foundation — Design System + Auth Screens</span>
+    <div class="phase-meta"><span>15 tasks · ~18 days</span><span style="color:var(--p1)">Sprint 1</span><span class="phase-toggle open">▼</span></div>
+  </div>
+  <div class="phase-body open">
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-001–002</span><div class="deliv-info"><div class="deliv-title">Color tokens, Typography, Spacing + Grid</div><div class="deliv-meta"><span class="badge b-ds">DESIGN SYSTEM</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle open">▼</span></div>
+    <div class="deliv-body open"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Color system</div><div class="detail-text">Use Figma Variables (not just styles) for full token system: brand colors, semantic (success/error/warning/info), 5 background levels, 4 text levels, 3 border levels. Must support light + dark mode via variable modes.</div></div>
+      <div class="detail-section"><div class="detail-label">Typography scale</div><div class="detail-text">Display, H1–H3, Body-L, Body, Body-S, Caption, Mono. Define line-height and letter-spacing per style. Include Cyrillic-compatible font (RU+KK text must render correctly).</div></div>
+      <div class="detail-section full"><div class="detail-label">Handoff for devs</div><div class="detail-text">Export token names as CSS custom properties. Variable names must match the codebase convention already established: <code>--bg</code>, <code>--text</code>, <code>--border</code>, <code>--bright</code>, <code>--dim</code>. Spacing scale: 4px base unit (4, 8, 12, 16, 24, 32, 48, 64). Grid: 12 columns, 24px gutter, 16px margin on mobile.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-003–008</span><div class="deliv-info"><div class="deliv-title">Core Component Library (Button, Input, Badge, Modal, Table, Card, Skeleton)</div><div class="deliv-meta"><span class="badge b-ds">DESIGN SYSTEM</span><span class="badge b-must">MUST</span><span class="badge b-days">7 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B split</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Button — all variants + states</div><div class="detail-text">Variants: Primary, Secondary, Ghost, Destructive, Link. Sizes: SM/MD/LG. Icon-left, icon-right, icon-only.<br>States per variant: <span class="state-tag">Default</span><span class="state-tag">Hover</span><span class="state-tag">Active</span><span class="state-tag">Disabled</span><span class="state-tag">Loading (spinner inside)</span></div></div>
+      <div class="detail-section"><div class="detail-label">Input / Textarea / Select</div><div class="detail-text">States: <span class="state-tag">Default</span><span class="state-tag">Focused</span><span class="state-tag">Filled</span><span class="state-tag">Error</span><span class="state-tag">Disabled</span><span class="state-tag">Read-only</span><br>Variants: label above, helper text below, left icon, right icon (clear, eye-toggle), char counter. БИН mask input separate.</div></div>
+      <div class="detail-section"><div class="detail-label">Status badges (CRITICAL — full list)</div><div class="detail-text"><span class="state-tag">active</span><span class="state-tag">pending</span><span class="state-tag">under_review</span><span class="state-tag">verified</span><span class="state-tag">rejected</span><span class="state-tag">draft</span><span class="state-tag">archived</span><span class="state-tag">inquiry</span><span class="state-tag">confirmed</span><span class="state-tag">in_progress</span><span class="state-tag">completed</span><span class="state-tag">cancelled</span><span class="state-tag">filed</span><span class="state-tag">resolved</span></div></div>
+      <div class="detail-section"><div class="detail-label">Skeleton loader rule</div><div class="detail-text">Skeleton must exactly mirror the real layout — same heights, same image aspect ratios. Shimmer animation. Never use a generic gray block. Build skeletons in Figma alongside their real counterparts.</div></div>
+      <div class="detail-section full"><div class="detail-label">Handoff notes</div><div class="detail-text">Touch targets min 44×44px on all interactive elements. Disabled state must reduce opacity, not just change color. Error message always below the field, never overlapping. Modal must have mobile bottom-sheet variant. Toast: auto-dismiss 4s, stackable.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-009–010</span><div class="deliv-info"><div class="deliv-title">App Layout: Header (3 states) + Seller Sidebar</div><div class="deliv-meta"><span class="badge b-layout">LAYOUT</span><span class="badge b-must">MUST</span><span class="badge b-days">2 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Header states</div><div class="detail-text"><span class="state-tag">Logged out</span><span class="state-tag">Buyer (favorites + notif + avatar)</span><span class="state-tag">Seller (+ My Listings)</span><span class="state-tag">Admin (different nav)</span><span class="state-tag">Mobile hamburger</span><span class="state-tag">Scrolled (shadow)</span></div></div>
+      <div class="detail-section"><div class="detail-label">Sidebar</div><div class="detail-text">Nav: Dashboard, My Listings, Deals, Analytics, Subscription, Company, Settings. Active state, hover. Collapsed to icon-only on tablet. Hidden with overlay on mobile. Notification count on Deals item.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-011–015</span><div class="deliv-info"><div class="deliv-title">Auth Screens: Login, Register (3 steps), Password Reset</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">5 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Login states</div><div class="detail-text"><span class="state-tag">Empty</span><span class="state-tag">Filled</span><span class="state-tag">Loading</span><span class="state-tag">Wrong credentials</span><span class="state-tag">Account banned</span></div></div>
+      <div class="detail-section"><div class="detail-label">OTP screen (critical)</div><div class="detail-text">6 individual digit boxes, not one input. Paste support hint. 60s resend countdown. Wrong OTP: shake animation. Expired: distinct message. Max 3 attempts → 30min lock message.</div></div>
+      <div class="detail-section"><div class="detail-label">Role selection</div><div class="detail-text">3 large cards: Buyer / Seller / Service Provider. Each with icon and short benefit line. Selected card gets highlight border. Must feel like a product choice, not a form.</div></div>
+      <div class="detail-section"><div class="detail-label">Handoff note</div><div class="detail-text">All auth screens: center-aligned, max-width 420px, vertically centered desktop, full-screen mobile. Logo top. Loading state locks submit button + shows spinner inside it. Link to switch login↔register.</div></div>
+    </div></div></div>
+
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p2);border-color:var(--p2)">PHASE 2</span>
+    <span class="phase-title">Core Marketplace — Catalog, Search, Listing Creation, Company Onboarding</span>
+    <div class="phase-meta"><span>20 tasks · ~25 days</span><span style="color:var(--p2)">Sprint 2</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-016–018</span><div class="deliv-info"><div class="deliv-title">Equipment Catalog Page + Equipment Card Component</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Catalog page states</div><div class="detail-text"><span class="state-tag">Skeleton loading</span><span class="state-tag">Loaded grid</span><span class="state-tag">List view toggle</span><span class="state-tag">Empty (no results)</span><span class="state-tag">Active filters shown as chips</span></div></div>
+      <div class="detail-section"><div class="detail-label">Equipment card variants</div><div class="detail-text"><span class="state-tag">Default</span><span class="state-tag">Favorited (heart filled)</span><span class="state-tag">Price dropped badge</span><span class="state-tag">Reserved overlay</span><span class="state-tag">Featured badge</span><span class="state-tag">Sold overlay</span></div></div>
+      <div class="detail-section full"><div class="detail-label">Handoff notes</div><div class="detail-text">Card image: 16:9 ratio, object-fit cover always. Price must be most prominent element. Mobile: 2-column grid minimum. Empty state: "Be the first to list" for sellers, "Try wider filters" for buyers. Both with clear CTA button.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-019–021</span><div class="deliv-info"><div class="deliv-title">Search Bar + Filter Panel (desktop sidebar + mobile bottom sheet)</div><div class="deliv-meta"><span class="badge b-comp">COMPONENT</span><span class="badge b-must">MUST</span><span class="badge b-days">4 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Search autocomplete states</div><div class="detail-text"><span class="state-tag">Empty (placeholder)</span><span class="state-tag">Typing</span><span class="state-tag">Suggestions loading</span><span class="state-tag">Results shown (6 max)</span><span class="state-tag">No suggestions</span><span class="state-tag">Recent searches (pre-type)</span><span class="state-tag">Focused (× appears)</span></div></div>
+      <div class="detail-section"><div class="detail-label">Filter panel — desktop</div><div class="detail-text">Sticky left sidebar. Category tree (collapsible). Price range dual slider. Region multi-select. Condition toggle (new/used). Dynamic spec accordion. Active filter count badge. "Clear all" link at top.</div></div>
+      <div class="detail-section"><div class="detail-label">Filter panel — mobile</div><div class="detail-text">Bottom sheet, triggered by "Filters (3)" button. Same content, vertical scroll. Sticky "Apply" + "Reset" at bottom. Handle bar at top for drag-to-close.</div></div>
+      <div class="detail-section"><div class="detail-label">Active filter chips (above results)</div><div class="detail-text">"Almaty ×" "Price: 500K–2M ×" "Crane ×". Each individually removable. "Show more" if >4. Chips clear when filter removed from panel (bidirectional).</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-022–025</span><div class="deliv-info"><div class="deliv-title">Equipment Detail Page (gallery, specs, seller card, availability calendar)</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">5 days</span><span style="font-size:10px;color:var(--dim)">Designer A (lead) + B (calendar)</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Gallery</div><div class="detail-text">Large main image + thumbnail strip. Click thumbnail → swap main. Fullscreen lightbox with arrow nav. Video thumbnail with play icon. Image counter "3/12". Touch-swipe on mobile.</div></div>
+      <div class="detail-section"><div class="detail-label">Spec table</div><div class="detail-text">Two-column label/value. Group by spec category. Truncate to 8 rows → "Show all specs". Units inline ("12,000 kg", "55 kW"). Highlight key specs (load capacity, engine power).</div></div>
+      <div class="detail-section"><div class="detail-label">Seller card + CTAs</div><div class="detail-text">Logo/avatar, company name, verified badge, rating stars, response time, "Member since". CTAs: Primary "Make a Deal", Secondary "Ask a Question" (→ chat), Ghost "Add to Favorites". Sticky right column on desktop. Full-width below content on mobile.</div></div>
+      <div class="detail-section"><div class="detail-label">Availability calendar (rental only)</div><div class="detail-text">Month view. Green=available, red=booked, blue=selected range, gray=past. Click start → click end → range highlights. "Request this period" button. Shows price × days = total below calendar. Mobile swipe months.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-026</span><div class="deliv-info"><div class="deliv-title">Comparison Page (up to 4 items side by side)</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-should">SHOULD</span><span class="badge b-days">2 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Layout</div><div class="detail-text">Sticky header row with equipment names + photos. Spec rows scroll below. Highlighted differences (row background change). "Add item" column (up to 4). Remove item × per column.</div></div>
+      <div class="detail-section"><div class="detail-label">Handoff note</div><div class="detail-text">Mobile: horizontal scroll (not stacked). At least 2 columns always visible. "Best value" badge on lowest price. CTA button per column: "Make a Deal".</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-027–031</span><div class="deliv-info"><div class="deliv-title">Listing Creation Wizard (5 steps)</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">5 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section full"><div class="detail-label">Step indicator (persistent)</div><div class="detail-text">1–5 at top. Completed steps: checkmark. Current: highlighted. Clicking completed steps = navigate back. "Draft saved" autosave indicator. Step names: Category → Details → Photos → Pricing → Preview.</div></div>
+      <div class="detail-section"><div class="detail-label">Step 2: Dynamic attribute form (critical)</div><div class="detail-text">All field types must be designed: text, number+unit (input + unit dropdown side-by-side), enum select, boolean toggle, range (min+max inputs). Group under collapsible section headers. Required asterisk. Inline validation.</div></div>
+      <div class="detail-section"><div class="detail-label">Step 3: Media upload</div><div class="detail-text">Drag-drop zone (dashed border, icon, hint text). Per-file upload progress ring. Thumbnail grid when done. Drag handles to reorder. Main photo crown badge (first by default). ×  to remove. "16/16 photos" counter. Error state for wrong type / oversized.</div></div>
+      <div class="detail-section"><div class="detail-label">Step 4: Pricing + market widget</div><div class="detail-text">Toggle: Sale / Rental / Both. Sale: price + negotiable checkbox. Rental: daily/weekly/monthly rates, deposit, min period. Market price comparison widget here (your price vs category avg — see DS-057).</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-033–035</span><div class="deliv-info"><div class="deliv-title">Company Onboarding Flow (company info, document upload, verification status)</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">БИН input (critical)</div><div class="detail-text">12-digit mask with live validation. Valid БИН → green tick. Invalid format → inline error before focus leaves. Tooltip explaining БИН for non-KZ users. Auto-format with hyphens for readability.</div></div>
+      <div class="detail-section"><div class="detail-label">Document upload</div><div class="detail-text">Separate zone per doc type (БИН cert, charter, director ID). Each: label, accepted formats hint, progress bar, success (filename + ×), error state. Required docs asterisk. Save draft and come back later.</div></div>
+      <div class="detail-section full"><div class="detail-label">Verification status page (DS-035) — important</div><div class="detail-text">Users wait here 1–3 days. Must be useful: timeline (submitted / under review / verified), estimated wait time, list of submitted docs with status ticks, contact support. Rejection state: reviewer notes shown clearly, re-upload CTA prominent. Verified state: celebration moment, unlock banner, CTA to create first listing.</div></div>
+    </div></div></div>
+
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p3);border-color:var(--p3)">PHASE 3</span>
+    <span class="phase-title">Transactions — Deals, Payments, Documents, Reviews</span>
+    <div class="phase-meta"><span>10 tasks · ~14 days</span><span style="color:var(--p3)">Sprint 3</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-036–039</span><div class="deliv-info"><div class="deliv-title">Deal Inbox + Deal Detail + All 6 Status States</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">6 days</span><span style="font-size:10px;color:var(--dim)">Designer A (lead) + B (status states)</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Deal inbox</div><div class="detail-text">Tabs: Active / Completed / Cancelled. Card: equipment thumb, counterparty + verified badge, status badge, last action date, amount, "Action required" red dot. Empty state per tab.</div></div>
+      <div class="detail-section"><div class="detail-label">Deal detail layout</div><div class="detail-text">Equipment summary (thumb, title, price, link to listing). Event timeline (all status changes with timestamps). Current action panel (contextual CTAs). Deal terms section. Document link. Chat link. Sticky action panel on desktop.</div></div>
+      <div class="detail-section full"><div class="detail-label">All 6 status states — each is a separate screen variant (critical)</div><div class="detail-text">
+        <strong style="color:var(--text)">inquiry:</strong> "Waiting for seller." Buyer: cancel only. Seller: Accept / Decline + reason.<br>
+        <strong style="color:var(--text)">negotiation:</strong> Terms editable, counter-offer input. Both must confirm. Chat encouraged.<br>
+        <strong style="color:var(--text)">confirmed:</strong> Payment required. Method selector (Kaspi prominent). Amount + deadline. Contract ready to sign.<br>
+        <strong style="color:var(--text)">in_progress:</strong> Active deal. Rental period shown. Contact seller. Dispute link (subtle — not prominent).<br>
+        <strong style="color:var(--text)">completed:</strong> Done. Review prompt. Download contract. Archive deal.<br>
+        <strong style="color:var(--text)">cancelled:</strong> Reason shown. Refund status if payment was made.
+      </div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-040–041</span><div class="deliv-info"><div class="deliv-title">Payment Flow + Transaction History</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">2 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Payment initiation</div><div class="detail-text">Order summary card: what for, amount in KZT. Method selector: Kaspi Pay (default + most prominent — #1 in KZ), Halyk Bank. "Redirect to Kaspi" disclaimer. Loading overlay. Show both 1,250,000 ₸ and "1.25M ₸" formats.</div></div>
+      <div class="detail-section"><div class="detail-label">Return screens</div><div class="detail-text"><span class="state-tag">Success: green check, amount, next steps</span><span class="state-tag">Failure: red X, reason, retry + cancel</span><span class="state-tag">Pending: clock, "Processing…"</span></div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-042–045</span><div class="deliv-info"><div class="deliv-title">Contract Viewer + Review Modal + Company Public Profile</div><div class="deliv-meta"><span class="badge b-comp">COMPONENT</span><span class="badge b-must">MUST</span><span class="badge b-days">4 days</span><span style="font-size:10px;color:var(--dim)">Designer B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Review modal</div><div class="detail-text">3 dimensions: Reliability, Equipment condition, Communication. Star selector (1–5) per dimension. Optional text (max 500, counter). Preview of who you're rating. "Skip for now" visually less prominent than "Submit".</div></div>
+      <div class="detail-section"><div class="detail-label">Company public profile</div><div class="detail-text">Hero: logo, name, verified badge, member since. Stats: overall rating, total reviews, deals count, response rate. Rating dimension bars (3). Listings grid. Review list with pagination. "Contact" CTA.</div></div>
+    </div></div></div>
+
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p4);border-color:var(--p4)">PHASE 4</span>
+    <span class="phase-title">Communication — Chat Interface + Notification System</span>
+    <div class="phase-meta"><span>8 tasks · ~8 days</span><span style="color:var(--p4)">Sprint 4</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-046–050</span><div class="deliv-info"><div class="deliv-title">Chat Window (desktop + mobile), Conversation List, Input Bar, File Bubbles</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">5 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Desktop layout</div><div class="detail-text">Two-panel: conversation list 280px left, message thread flex right. Deal context bar at top of thread. Input pinned to bottom.</div></div>
+      <div class="detail-section"><div class="detail-label">Message bubble states</div><div class="detail-text"><span class="state-tag">Sent (right, own color)</span><span class="state-tag">Received (left, neutral)</span><span class="state-tag">Sending (spinner)</span><span class="state-tag">Delivered ✓</span><span class="state-tag">Read ✓✓ (colored)</span><span class="state-tag">Failed (red × + retry)</span></div></div>
+      <div class="detail-section"><div class="detail-label">System messages (in-thread)</div><div class="detail-text">Deal status changes appear as centered system messages — not chat bubbles. E.g. "Deal confirmed by both parties · 14:32". Timestamp inline. Subtle background.</div></div>
+      <div class="detail-section"><div class="detail-label">File/image messages</div><div class="detail-text">Image: inline 240px thumbnail, click → lightbox. File: doc icon + filename + size + download. Upload progress bar inside bubble. Failure: red border + retry button.</div></div>
+      <div class="detail-section full"><div class="detail-label">Critical interaction specs for devs</div><div class="detail-text">Typing indicator: animated 3-dot bubble, appears in &lt;100ms. New messages while scrolled up: "↓ 3 new messages" floating button. Auto-scroll only when user sends (never on received if scrolled up). Mobile: keyboard pushes input up (not the whole page).</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-051–053</span><div class="deliv-info"><div class="deliv-title">Notification Bell, Feed Page, All Notification Type Variants</div><div class="deliv-meta"><span class="badge b-comp">COMPONENT</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designer B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">7 notification type variants</div><div class="detail-text">Each needs distinct icon + color: <span class="state-tag" style="border-color:var(--p2)">💬 New message</span><span class="state-tag" style="border-color:var(--p3)">🤝 Deal accepted</span><span class="state-tag" style="border-color:var(--p2)">💳 Payment received</span><span class="state-tag" style="border-color:var(--p2)">✅ Company verified</span><span class="state-tag" style="border-color:var(--p5)">📉 Price dropped</span><span class="state-tag" style="border-color:var(--p6)">⚠️ Dispute filed</span><span class="state-tag" style="border-color:var(--p6)">📋 Listing rejected</span></div></div>
+      <div class="detail-section"><div class="detail-label">Bell dropdown</div><div class="detail-text">Max 5 items shown. "View all" at bottom. Unread: left accent bar + slightly different background. Timestamp: relative ("2 min ago", "Yesterday"). Badge disappears when dropdown opened.</div></div>
+    </div></div></div>
+
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p5);border-color:var(--p5)">PHASE 5</span>
+    <span class="phase-title">Intelligence — Favorites, Analytics, Services Marketplace</span>
+    <div class="phase-meta"><span>6 tasks · ~8 days</span><span style="color:var(--p5)">Sprint 5</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-054–059</span><div class="deliv-info"><div class="deliv-title">Favorites Page, Seller Analytics Dashboard, Price Chart, Market Widget, Services, Delivery Tracking</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">8 days</span><span style="font-size:10px;color:var(--dim)">Split by feature</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Favorites (DS-054)</div><div class="detail-text">Same equipment card grid. Price-dropped badge (↓15%, red arrow). Original price struck through. Collection tabs top. Empty: illustration + "Save items you're interested in" + CTA to browse.</div></div>
+      <div class="detail-section"><div class="detail-label">Seller analytics (DS-056)</div><div class="detail-text">KPI cards: Views/Contacts/Deals/GMV each with trend arrow. Line chart: daily views + contacts. Funnel: Views→Contacts→Deals→Completed. Date range selector. Per-listing table. Export CSV button.</div></div>
+      <div class="detail-section"><div class="detail-label">Price history chart (DS-055)</div><div class="detail-text">Compact chart on listing detail page. Your price line + market average dashed line. Default 3M range. Hover tooltip: date + price. "↓8% vs market" stat badge below chart.</div></div>
+      <div class="detail-section"><div class="detail-label">Delivery tracking (DS-059)</div><div class="detail-text">4-step status timeline (Order/Pickup/In Transit/Delivered). Active step animated. 2GIS map embed showing route. ETA countdown. Contact driver CTA. Status history list below map.</div></div>
+    </div></div></div>
+  </div>
+</div>
+
+<!-- PHASE 6 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p6);border-color:var(--p6)">PHASE 6</span>
+    <span class="phase-title">Integrity & Monetisation — Subscriptions, Disputes, Admin Panel</span>
+    <div class="phase-meta"><span>9 tasks · ~14 days</span><span style="color:var(--p6)">Sprint 6</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-060–061</span><div class="deliv-info"><div class="deliv-title">Subscription Plans Page + Checkout</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Plans comparison</div><div class="detail-text">4-column table: Free/Basic/Pro/Enterprise. Feature rows with ✓ / – / limit. Recommended plan badge. Monthly/annual toggle (annual shows savings %). Current plan: "Your plan" label not a button. Upgrade: show price diff not full price.</div></div>
+      <div class="detail-section"><div class="detail-label">Checkout</div><div class="detail-text">Order summary. Payment method selector. Billing cycle confirmation. Success screen with invoice download. Billing history table accessible from account.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-062–063</span><div class="deliv-info"><div class="deliv-title">Dispute Filing Flow + Status Tracker</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">3 days</span><span style="font-size:10px;color:var(--dim)">Designer A</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Filing wizard (3 steps)</div><div class="detail-text">Step 1: Reason selector (radio cards with icons). Step 2: Description + evidence upload. Step 3: Summary before submit. "File a dispute" link on deal page must be visible but not prominent — to discourage frivolous filings.</div></div>
+      <div class="detail-section"><div class="detail-label">Status tracker widget</div><div class="detail-text">Embedded in deal page after filing. Timeline: Filed → Under Review → Resolved. Resolver notes. Outcome: Refund/Released/Split. Escrow status. Link to payment result.</div></div>
+    </div></div></div>
+
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-064–068</span><div class="deliv-info"><div class="deliv-title">Admin Panel: Moderation Queue, Verification Queue, Dispute Management, Analytics, User Management</div><div class="deliv-meta"><span class="badge b-screen">SCREEN</span><span class="badge b-must">MUST</span><span class="badge b-days">8 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Admin visual identity</div><div class="detail-text">Use a distinct visual treatment to clearly differentiate admin from user-facing. Darker sidebar, different accent color, "Admin Panel" label visible at all times. Prevent accidental mis-navigation.</div></div>
+      <div class="detail-section"><div class="detail-label">Moderation queue (DS-064)</div><div class="detail-text">Split pane: queue list left (type, submitter, date, priority flag), content preview right. Keyboard shortcut hints (A=approve, R=reject). Bulk select + bulk actions. Reason input for rejections (required).</div></div>
+      <div class="detail-section"><div class="detail-label">Verification queue (DS-065)</div><div class="detail-text">Document viewer inline (PDF + images, no download required). Company details panel. Verification checklist. Approve/reject + notes. "Flag for manager" escalation.</div></div>
+      <div class="detail-section"><div class="detail-label">Platform analytics (DS-067)</div><div class="detail-text">GMV trend, DAU, listing counts, deal conversion rate, disputes open, subscription revenue. Regional breakdown table (oblast → listings → GMV). Top 10 categories. All charts with date range selector.</div></div>
+    </div></div></div>
+  </div>
+</div>
+
+<!-- PHASE 7 -->
+<div class="phase">
+  <div class="phase-header" onclick="tp(this)">
+    <span class="phase-num" style="color:var(--p7);border-color:var(--p7)">PHASE 7</span>
+    <span class="phase-title">Hardening — Error States, Empty States, Accessibility, i18n, Library Cleanup</span>
+    <div class="phase-meta"><span>8 tasks · ~12 days</span><span style="color:var(--p7)">Sprint 7</span><span class="phase-toggle">▼</span></div>
+  </div>
+  <div class="phase-body">
+    <div class="deliv"><div class="deliv-header" onclick="td(this)"><span class="deliv-id">DS-069–076</span><div class="deliv-info"><div class="deliv-title">Error Pages, Empty States (all screens), Skeletons, Mobile Audit, a11y Audit, i18n Check, Figma Cleanup</div><div class="deliv-meta"><span class="badge b-qa">QA / AUDIT</span><span class="badge b-must">MUST</span><span class="badge b-days">12 days</span><span style="font-size:10px;color:var(--dim)">Designers A+B</span></div></div><span class="deliv-toggle">▼</span></div>
+    <div class="deliv-body"><div class="detail-grid">
+      <div class="detail-section"><div class="detail-label">Empty states checklist (DS-070)</div><div class="detail-text">Design all: catalog no-results, search no-results, favorites empty, deals inbox empty, notifications empty, reviews empty, documents empty. Each: illustration + 6-word max headline + supporting text + 1 CTA.</div></div>
+      <div class="detail-section"><div class="detail-label">i18n check (DS-076)</div><div class="detail-text">Russian text is 30% longer on average. Test every button, label, toast, nav item with RU copy — fix overflow. Kazakh (KK) uses Cyrillic — verify same font renders it. Check number formatting: KZ uses space as thousands separator (1 250 000).</div></div>
+      <div class="detail-section"><div class="detail-label">Accessibility (DS-075)</div><div class="detail-text">Contrast: text min 4.5:1, UI elements min 3:1. Focus states: visible ring on every interactive element. Errors: never conveyed by color alone — always include text. Icon buttons: document aria-label for every one. Form required fields: not just asterisk — aria-required.</div></div>
+      <div class="detail-section"><div class="detail-label">Figma library cleanup (DS-074)</div><div class="detail-text">All components in "IEM Components" library with proper naming: Component/Variant/State. Auto-layout everywhere. Publish library. Write 1-page usage guide per component group (dos/don'ts). Archive unused exploratory frames.</div></div>
+    </div></div></div>
+  </div>
+</div>
+</div><!-- /tab-tasks -->
+
+<!-- TAB: UX FLOWS -->
+<div id="tab-flows" class="tab-content">
+<p style="color:var(--dim);font-size:11px;margin-bottom:20px">Complete user journeys including error paths and decision points. Designers must account for all states shown.</p>
+
+<div class="flow-section">
+  <h3>Flow 1 — Registration + Company Onboarding → First Listing</h3>
+  <div class="flow-card">
+    <div class="flow-card-title">New seller: Register → Verify phone → Select role → Register company → Upload docs → Wait → Verified → Create listing</div>
+    <div class="flow-card-sub">Screens: DS-011, DS-013, DS-014, DS-033, DS-034, DS-035, DS-027–031</div>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Register page — Personal info</div><div class="flow-step-desc">Fill name, phone (+7 KZ prefix), email, password. Phone is primary identifier.</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">OTP Verification</div><div class="flow-step-desc">6-digit SMS code. 60s resend timer. <span class="flow-step-warn">Wrong OTP: 3 attempts max → 30min lock</span><span class="flow-step-warn">Expired OTP: resend triggers new SMS, resets timer</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Role selection</div><div class="flow-step-desc">3 cards: Buyer / Seller / Service Provider.</div><div class="flow-branch"><div class="flow-branch-item"><span class="flow-branch-label">Buyer</span>Go to catalog (skip company)</div><div class="flow-branch-item"><span class="flow-branch-label">Seller / Provider</span>Prompt: register company</div></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p5)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Company info form</div><div class="flow-step-desc">БИН (live validation), name, legal form, address. <span class="flow-step-warn">БИН already registered to another account → error</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p5)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Document upload</div><div class="flow-step-desc">3 separate upload zones. <span class="flow-step-note">Can save draft and return later</span><span class="flow-step-warn">Wrong file type or &gt;10MB → per-zone error</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p5)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Verification status — waiting state</div><div class="flow-step-desc">User waits 1–3 business days. Page shows: submitted docs, estimated time, support link. <span class="flow-step-note">Push + email notification when status changes</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Verification outcome</div><div class="flow-step-desc">Admin reviews and decides.</div><div class="flow-branch"><div class="flow-branch-item"><span class="flow-branch-label">Verified ✓</span>Celebration screen, unlock banner, CTA to create first listing</div><div class="flow-branch-item"><span class="flow-branch-label">Rejected</span>Reviewer notes shown, re-upload docs CTA</div></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Listing creation wizard (5 steps)</div><div class="flow-step-desc">Category → Attributes → Photos → Pricing → Preview. First-time sellers see inline tips.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-section">
+  <h3>Flow 2 — Buyer: Search → View Listing → Initiate Deal → Pay → Complete</h3>
+  <div class="flow-card">
+    <div class="flow-card-title">Browse → Filter → Detail → Deal → Payment → Review</div>
+    <div class="flow-card-sub">Screens: DS-016, DS-019–025, DS-036–041, DS-043</div>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Search / Catalog page</div><div class="flow-step-desc">Search "tower crane Almaty", apply filters. <span class="flow-step-warn">No results → "Try wider search" with suggestions</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Equipment detail page</div><div class="flow-step-desc">Views gallery, specs, seller info. Selects rental dates on calendar → total auto-calculates. Adds to favorites.</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p3)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Deal initiation (CTA on listing)</div><div class="flow-step-desc">Clicks "Make a Deal". Small form: message, dates, proposed price optional. <span class="flow-step-warn">Not logged in → redirect to login, return here after</span><span class="flow-step-warn">Company not verified → prompt to complete verification</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p3)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Deal detail — inquiry state</div><div class="flow-step-desc">"Waiting for seller." Buyer can cancel or chat. <span class="flow-step-note">Push notification when seller responds</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p3)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Deal detail — confirmed state</div><div class="flow-step-desc">Seller accepted. Payment required. Amount, deadline, payment method shown.</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p3)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Payment → Kaspi redirect → return</div><div class="flow-step-desc">Select Kaspi Pay → redirect → pay → return.</div><div class="flow-branch"><div class="flow-branch-item"><span class="flow-branch-label">Success</span>Deal → in_progress. Contract generated.</div><div class="flow-branch-item"><span class="flow-branch-label">Failure</span>Return to deal, retry + cancel options.</div></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p3)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Deal detail — completed state</div><div class="flow-step-desc">Click "Mark as completed". <span class="flow-step-warn">Issue? File dispute before completing</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p2)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Review modal</div><div class="flow-step-desc">Rate across 3 dimensions. Submit. Seller profile score updates.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-section">
+  <h3>Flow 3 — Real-time Chat within a Deal</h3>
+  <div class="flow-card">
+    <div class="flow-card-title">Open chat → Send messages → Share file → Recipient goes offline → Returns to unread</div>
+    <div class="flow-card-sub">Screens: DS-046–050</div>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p4)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Open chat from deal page</div><div class="flow-step-desc">"Chat with seller" button on deal detail. Opens scoped to that deal.</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p4)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Chat — recipient online</div><div class="flow-step-desc">Green presence dot. Message sent → ✓ → ✓✓ (delivered) → ✓✓ colored (read). <span class="flow-step-note">Typing indicator shows when they type</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p4)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">File attachment flow</div><div class="flow-step-desc">Attach icon → file picker → preview in input bar → send → progress bar in bubble. <span class="flow-step-warn">File &gt;25MB → error before send</span><span class="flow-step-warn">Upload fail → retry button in bubble</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p4)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Recipient goes offline</div><div class="flow-step-desc">Presence dot disappears. Message stays at ✓ (not read). <span class="flow-step-note">Notification service sends push/SMS to them</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p4)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Recipient returns — new messages badge</div><div class="flow-step-desc">Unread count in conversation list. Chat scrolls to first unread. <span class="flow-step-note">Deal status change during offline → system message injected</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-section">
+  <h3>Flow 4 — Dispute Filing + Admin Resolution</h3>
+  <div class="flow-card">
+    <div class="flow-card-title">Problem with deal → File dispute → Evidence upload → Admin reviews → Decision → Escrow resolved</div>
+    <div class="flow-card-sub">Screens: DS-062, DS-063, DS-066</div>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Deal detail — dispute CTA</div><div class="flow-step-desc">"File a dispute" link visible on in-progress deals. Must be visible but not prominent (to discourage frivolous use).</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Step 1: Reason selection</div><div class="flow-step-desc">Radio cards: Equipment not as described / Non-delivery / Payment issue / Other.</div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Step 2: Evidence + description</div><div class="flow-step-desc">Text (required, 50 char min). Evidence upload (optional but recommended). <span class="flow-step-warn">If payment already released: warn user escrow may not be reversible</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Dispute status widget in deal page</div><div class="flow-step-desc">After filing: tracker shown in deal. Escrow frozen. Both parties notified. <span class="flow-step-note">Admin sees this in dispute queue</span></div></div></div>
+      <div class="flow-step"><div class="flow-step-connector"><div class="flow-dot" style="border-color:var(--p6)"></div><div class="flow-line"></div></div><div class="flow-step-content"><div class="flow-step-screen">Resolution</div><div class="flow-step-desc">Admin decides. User sees decision + reason + escrow action.</div><div class="flow-branch"><div class="flow-branch-item"><span class="flow-branch-label">Buyer wins</span>Refund initiated → payment page shows refund status</div><div class="flow-branch-item"><span class="flow-branch-label">Seller wins</span>Funds released → deal marked complete</div><div class="flow-branch-item"><span class="flow-branch-label">Split</span>Partial amounts shown</div></div></div></div>
+    </div>
+  </div>
+</div>
+</div><!-- /tab-flows -->
+
+<!-- TAB: NOTION GUIDE -->
+<div id="tab-notion" class="tab-content">
+<p style="color:var(--dim);font-size:11px;margin-bottom:20px">Setup takes ~20 minutes. Import the CSV, configure property types, create views.</p>
+
+<div class="notion-guide">
+  <h3>Step 1 — Create the Design Team Page structure</h3>
+  <div class="notion-step"><div class="notion-step-num">1</div><div><div class="notion-step-title">Top-level page: "IEM — Design" 🎨</div><div class="notion-step-desc">Create 3 sub-pages: <code>📋 Task Board</code> · <code>🗺 UX Flows & Screen Map</code> · <code>📐 Design System</code></div></div></div>
+  <div class="notion-step"><div class="notion-step-num">2</div><div><div class="notion-step-title">Import the CSV</div><div class="notion-step-desc">Inside "Task Board": click <code>+ New database</code> → <code>Import CSV</code> → select <code>notion-design-tasks.csv</code>. All 76 rows + 13 columns auto-created. Takes ~30 seconds.</div></div></div>
+</div>
+
+<div class="notion-guide">
+  <h3>Step 2 — Fix Property Types (Notion imports everything as Text)</h3>
+  <div class="notion-step"><div class="notion-step-num">A</div><div><div class="notion-step-title">Change each property type</div><div class="notion-step-desc">
+    <span class="notion-prop">Task ID → Text</span><span class="notion-prop">Phase → Select</span><span class="notion-prop">Sprint → Select</span>
+    <span class="notion-prop">Screen / Deliverable → Title (rename from first column)</span><span class="notion-prop">Task Type → Select</span>
+    <span class="notion-prop">Priority → Select</span><span class="notion-prop">Assignee → Person</span><span class="notion-prop">Status → Status</span>
+    <span class="notion-prop">Figma Link → URL</span><span class="notion-prop">Dev Handoff Notes → Text</span>
+    <span class="notion-prop">UX Flow → Text</span><span class="notion-prop">Linked Dev Task → Text</span><span class="notion-prop">Est. Days → Number</span>
+  </div></div></div>
+  <div class="notion-step"><div class="notion-step-num">B</div><div><div class="notion-step-title">Status colors</div><div class="notion-step-desc">
+    <span class="notion-prop" style="color:#ef476f">Not Started</span><span class="notion-prop" style="color:#ffd166">In Progress</span>
+    <span class="notion-prop" style="color:#00b4d8">In Review</span><span class="notion-prop" style="color:#06d6a0">Done</span>
+    <span class="notion-prop" style="color:#8338ec">Handed Off</span><span class="notion-prop">Blocked</span>
+  </div></div></div>
+  <div class="notion-step"><div class="notion-step-num">C</div><div><div class="notion-step-title">Priority + Task Type colors</div><div class="notion-step-desc">Priority: <span class="notion-prop" style="color:#ef476f">MUST red</span><span class="notion-prop" style="color:#ffd166">SHOULD yellow</span><span class="notion-prop">NICE gray</span><br>Task Type: <span class="notion-prop" style="color:#06d6a0">Screen</span><span class="notion-prop" style="color:#00b4d8">Component</span><span class="notion-prop" style="color:#f77f00">Design System</span><span class="notion-prop" style="color:#8338ec">Layout</span><span class="notion-prop" style="color:#ef476f">QA</span></div></div></div>
+</div>
+
+<div class="notion-guide">
+  <h3>Step 3 — Create Views</h3>
+  <div class="notion-step"><div class="notion-step-num">1</div><div><div class="notion-step-title">Board (main working view) — group by Status</div><div class="notion-step-desc">Show properties on cards: Task ID, Phase, Priority, Assignee, Est. Days. Day-to-day Kanban. Designers drag cards as they work.</div></div></div>
+  <div class="notion-step"><div class="notion-step-num">2</div><div><div class="notion-step-title">Timeline — group by Phase</div><div class="notion-step-desc">Add Start Date + Due Date properties. Set dates from sprint schedule. PM roadmap view.</div></div></div>
+  <div class="notion-step"><div class="notion-step-num">3</div><div><div class="notion-step-title">Table by Assignee — for 1:1s</div><div class="notion-step-desc">Filter: Assignee = [person]. Sort: Priority desc, Phase asc. Review in weekly 1:1.</div></div></div>
+  <div class="notion-step"><div class="notion-step-num">4</div><div><div class="notion-step-title">Gallery (Figma previews) — add later</div><div class="notion-step-desc">Card preview: Figma Link as embed. Once designers add links, becomes visual screen library for design reviews.</div></div></div>
+</div>
+
+<div class="notion-guide">
+  <h3>Step 4 — Figma File Structure to Mirror Notion</h3>
+  <div class="notion-step"><div class="notion-step-num">→</div><div><div class="notion-step-title">Pages in Figma</div><div class="notion-step-desc"><code>🔑 Design System</code> · <code>01 Auth</code> · <code>02 Catalog</code> · <code>03 Deals</code> · <code>04 Chat</code> · <code>05 Analytics</code> · <code>06 Admin</code> · <code>🗃 Archive</code></div></div></div>
+  <div class="notion-step"><div class="notion-step-num">→</div><div><div class="notion-step-title">Task lifecycle</div><div class="notion-step-desc"><strong style="color:var(--text)">Not Started</strong> → pick up → <strong style="color:var(--text)">In Progress</strong> (add Figma link) → <strong style="color:var(--text)">In Review</strong> (post in team channel) → PM approves → <strong style="color:var(--text)">Done</strong> → dev picks up → <strong style="color:var(--text)">Handed Off</strong>. Add Figma comment tagging dev: <code>@devname ready for handoff</code>.</div></div></div>
+  <div class="notion-step"><div class="notion-step-num">→</div><div><div class="notion-step-title">Link to Dev tasks</div><div class="notion-step-desc">The "Linked Dev Task" column references task IDs from the dev implementation plan (e.g. "AUTH-001"). When you set up the Dev team Notion database, create a Relation property between the two databases for bidirectional linking.</div></div></div>
+</div>
+</div><!-- /tab-notion -->
+
+<div style="margin-top:24px;padding:10px 16px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--dim)">
+  IEM · Designer Task Plan v1.0 · 76 tasks · 7 phases · Figma + Notion
+</div>
+
+<script>
+function showTab(name,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+function tp(h){const b=h.nextElementSibling,t=h.querySelector('.phase-toggle'),o=b.classList.toggle('open');t.classList.toggle('open',o);}
+function td(h){const b=h.nextElementSibling,t=h.querySelector('.deliv-toggle'),o=b.classList.toggle('open');t.classList.toggle('open',o);}
+document.querySelectorAll('.phase-body').forEach((b,i)=>{if(i>0){b.classList.remove('open');b.previousElementSibling.querySelector('.phase-toggle').classList.remove('open');}});
+document.querySelectorAll('.deliv-body').forEach((b,i)=>{if(i>2){b.classList.remove('open');b.previousElementSibling.querySelector('.deliv-toggle').classList.remove('open');}});
+</script>
+</body>
+</html>
