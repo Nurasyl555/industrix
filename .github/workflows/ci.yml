@@ -3,9 +3,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
   push:
-    branches: [main, develop]
+    branches: [main, dev]
 
 env:
   GO_VERSION: '1.21'
@@ -78,8 +78,7 @@ jobs:
       - name: Generate proto
         run: ./scripts/proto-gen.sh
 
-      - name: Check for proto changes
-        name: Check for changes
+      - name: Check for changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "Proto files have been modified. Please regenerate proto files."
