@@ -1,0 +1,8 @@
+go 1.24.0
+
+use (
+	./backend/gen/go
+	./backend/pkg
+	./backend/services/gateway
+	./backend/services/identity
+)

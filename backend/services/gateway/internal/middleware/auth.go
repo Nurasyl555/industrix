@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 
-	"gateway/internal/config"
+	"github.com/industrix/services/gateway/internal/config"
 )
 
 const (

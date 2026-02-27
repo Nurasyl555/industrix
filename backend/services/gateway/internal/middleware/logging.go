@@ -17,25 +17,16 @@ func init() {
 // RequestLogger logs method, path, status, latency, trace-id for every request
 func RequestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Start timer
 		start := time.Now()
-
-		// Process request
 		err := c.Next()
-
-		// Calculate latency
 		latency := time.Since(start)
-
-		// Get status code
 		status := c.Response().StatusCode()
 
-		// Get trace ID
 		traceID := GetTraceID(c)
 		if traceID == "" {
 			traceID = "none"
 		}
 
-		// Log request details
 		logger.Info().
 			Str("method", c.Method()).
 			Str("path", c.Path()).
@@ -44,7 +35,6 @@ func RequestLogger() fiber.Handler {
 			Str("trace_id", traceID).
 			Str("ip", c.IP()).
 			Str("user_agent", c.Get("User-Agent")).
-			Int64("request_id", c.Response().Header.ID()).
 			Msg("request completed")
 
 		return err
@@ -59,7 +49,6 @@ func RequestLoggerWithFields() fiber.Handler {
 		latency := time.Since(start)
 		status := c.Response().StatusCode()
 
-		// Build log fields
 		fields := map[string]interface{}{
 			"method":    c.Method(),
 			"path":      c.Path(),
@@ -69,12 +58,10 @@ func RequestLoggerWithFields() fiber.Handler {
 			"client_ip": c.IP(),
 		}
 
-		// Add user ID if authenticated
 		if userID := GetUserID(c); userID != "" {
 			fields["user_id"] = userID
 		}
 
-		// Log based on status
 		if status >= 500 {
 			logger.Error().Fields(fields).Msg("server error")
 		} else if status >= 400 {
