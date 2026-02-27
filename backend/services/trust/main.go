@@ -22,7 +22,6 @@ import (
 
 	trustpb "github.com/industrix/gen/go/backend/proto/trust/v1"
 	"github.com/industrix/pkg/jwt"
-	"github.com/industrix/pkg/kafka"
 	"github.com/industrix/pkg/logger"
 	"github.com/industrix/pkg/postgres"
 	"github.com/industrix/pkg/redis"
@@ -32,8 +31,18 @@ import (
 	"github.com/industrix/services/trust/internal/profile"
 	"github.com/industrix/services/trust/internal/repository"
 	"github.com/industrix/services/trust/internal/review"
+
+	_ "github.com/industrix/services/trust/docs" // Import swagger docs
 )
 
+// @title Industrix Trust Service API
+// @version 1.0
+// @description API for Identity, Integrity, and Review management
+// @host localhost:8081
+// @BasePath /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	serviceName := "trust-service"
 	l := logger.New(serviceName)
@@ -58,22 +67,13 @@ func main() {
 
 	redisCfg := redis.DefaultConfig()
 	if addr := os.Getenv("REDIS_ADDR"); addr != "" {
-		redisCfg.Host = addr // Assumes host or host:port, simple implementation
+		redisCfg.Host = addr
 	}
 	redisClient, err := redis.NewClient(ctx, redisCfg)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to connect to Redis")
 	}
 	defer redisClient.Close()
-
-	// Kafka Producer
-	kafkaProducer, err := kafka.NewProducer(kafka.DefaultConfig())
-	if err != nil {
-		l.Error().Err(err).Msg("Failed to connect to Kafka, events will be disabled")
-		// Not fatal for now, but in prod should probably block
-	} else {
-		defer kafkaProducer.Close()
-	}
 
 	// Load or generate RSA keys for JWT
 	privateKey, publicKey := loadRSAKeys(l)
@@ -85,7 +85,7 @@ func main() {
 	// Initialize services
 	authSvc := auth.NewService(repo, jwtClient)
 	profileSvc := profile.NewService(repo)
-	companySvc := company.NewService(repo, kafkaProducer) // Inject producer
+	companySvc := company.NewService(repo)
 	reviewSvc := review.NewService(repo)
 
 	// gRPC Server

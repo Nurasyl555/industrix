@@ -15,14 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/companies": {
+        "/auth/login": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create a company profile for the authenticated user",
+                "description": "Authenticate user with email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,12 +25,204 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "company"
+                    "auth"
                 ],
-                "summary": "Create a new company",
+                "summary": "Login user",
                 "parameters": [
                     {
-                        "description": "Create Company Request",
+                        "description": "Login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Issue new access token using refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Creates a new user account with pending verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify-otp": {
+            "post": {
+                "description": "Validates OTP sent to phone and issues initial tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify phone OTP",
+                "parameters": [
+                    {
+                        "description": "OTP details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.VerifyOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/companies": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Register a new company (requires verification flow to follow)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "Create a company",
+                "parameters": [
+                    {
+                        "description": "Company details",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -54,35 +241,21 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             }
         },
-        "/companies/me": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update the company profile of the authenticated user",
+        "/companies/{id}": {
+            "get": {
+                "description": "Retrieve company information by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -90,12 +263,60 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "company"
+                    "companies"
                 ],
-                "summary": "Update company profile",
+                "summary": "Get company details",
                 "parameters": [
                     {
-                        "description": "Update Company Request",
+                        "type": "string",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/company.Company"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update mutable fields of a company",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "Update company details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated details",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -114,35 +335,26 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             }
         },
-        "/companies/me/documents": {
+        "/reviews": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a verification document for the authenticated user's company",
+                "description": "Post a review and rating for a company or equipment",
                 "consumes": [
                     "application/json"
                 ],
@@ -150,59 +362,45 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "company"
+                    "reviews"
                 ],
-                "summary": "Upload verification document",
+                "summary": "Create a review",
                 "parameters": [
                     {
-                        "description": "Upload Document Request",
+                        "description": "Review details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/company.UploadDocumentRequest"
+                            "$ref": "#/definitions/review.CreateReviewRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/company.VerificationDocument"
+                            "$ref": "#/definitions/review.Review"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
             }
         },
-        "/companies/me/verification-status": {
+        "/reviews/{entityID}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get the verification status of the authenticated user's company",
+                "description": "Get paginated reviews for an entity",
                 "consumes": [
                     "application/json"
                 ],
@@ -210,18 +408,21 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "company"
+                    "reviews"
                 ],
-                "summary": "Get verification status",
+                "summary": "List reviews",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entity ID",
+                        "name": "entityID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/company.VerificationStatus"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -230,8 +431,45 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/{entityID}/reputation": {
+            "get": {
+                "description": "Get aggregated reputation metrics for an entity",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "Get reputation score",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entity ID",
+                        "name": "entityID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/review.ReputationScore"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -244,7 +482,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get profile of the authenticated user",
+                "description": "Retrieve profile information for the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -252,21 +490,20 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "users"
                 ],
                 "summary": "Get current user profile",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/profile.Profile"
+                            "$ref": "#/definitions/profile.User"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -277,7 +514,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update profile of the authenticated user",
+                "description": "Update name and avatar of the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -285,12 +522,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "users"
                 ],
-                "summary": "Update current user profile",
+                "summary": "Update user profile",
                 "parameters": [
                     {
-                        "description": "Update Profile Request",
+                        "description": "Updated profile",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -303,227 +540,16 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/profile.Profile"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/users/me/avatar": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update avatar URL of the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Update user avatar",
-                "parameters": [
-                    {
-                        "description": "Update Avatar Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/profile.UpdateAvatarRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/profile.Profile"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/users/me/avatar/upload-url": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get a presigned URL for uploading an avatar to MinIO",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Get avatar upload URL",
-                "parameters": [
-                    {
-                        "description": "Get Upload URL Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/profile.GetUploadURLRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/profile.UploadURLResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/users/me/notification-preferences": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update notification preferences of the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Update notification preferences",
-                "parameters": [
-                    {
-                        "description": "Update Notification Preferences Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/profile.UpdateNotificationPreferencesRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{id}/public": {
-            "get": {
-                "description": "Get public profile of any user by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Get public profile",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/profile.PublicProfile"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -531,6 +557,50 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.RefreshRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.VerifyOTPRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
         "company.Company": {
             "type": "object",
             "properties": {
@@ -552,22 +622,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "owner_id": {
+                    "type": "string"
+                },
                 "phone": {
-                    "type": "string"
-                },
-                "reputation_score": {
-                    "type": "number"
-                },
-                "reviewer_note": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/company.CompanyStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
                     "type": "string"
                 },
                 "verified": {
@@ -577,21 +635,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "company.CompanyStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "under_review",
-                "verified",
-                "rejected"
-            ],
-            "x-enum-varnames": [
-                "StatusPending",
-                "StatusUnderReview",
-                "StatusVerified",
-                "StatusRejected"
-            ]
         },
         "company.CreateCompanyRequest": {
             "type": "object",
@@ -622,9 +665,6 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
-                "bin": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string"
                 },
@@ -639,97 +679,74 @@ const docTemplate = `{
                 }
             }
         },
-        "company.UploadDocumentRequest": {
+        "errors.Error": {
             "type": "object",
             "properties": {
-                "content_type": {
-                    "type": "string"
+                "code": {
+                    "$ref": "#/definitions/github_com_industrix_pkg_errors.Code"
                 },
-                "document_type": {
-                    "description": "bin_cert, charter, director_id",
-                    "type": "string"
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
-                "file_name": {
+                "err": {},
+                "message": {
                     "type": "string"
                 }
             }
         },
-        "company.VerificationDocument": {
+        "github_com_industrix_pkg_errors.Code": {
+            "type": "string",
+            "enum": [
+                "NOT_FOUND",
+                "UNAUTHORIZED",
+                "VALIDATION",
+                "CONFLICT",
+                "INTERNAL"
+            ],
+            "x-enum-varnames": [
+                "CodeNotFound",
+                "CodeUnauthorized",
+                "CodeValidation",
+                "CodeConflict",
+                "CodeInternal"
+            ]
+        },
+        "jwt.TokenPair": {
             "type": "object",
             "properties": {
-                "company_id": {
+                "accessToken": {
                     "type": "string"
                 },
-                "created_at": {
+                "expiresAt": {
                     "type": "string"
                 },
-                "document_type": {
-                    "type": "string"
-                },
-                "file_name": {
-                    "type": "string"
-                },
-                "file_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "upload_url": {
-                    "type": "string"
-                },
-                "uploaded_at": {
+                "refreshToken": {
                     "type": "string"
                 }
             }
         },
-        "company.VerificationStatus": {
+        "profile.UpdateProfileRequest": {
             "type": "object",
             "properties": {
-                "documents": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/company.VerificationDocument"
-                    }
-                },
-                "reviewer_notes": {
+                "avatar_url": {
                     "type": "string"
                 },
-                "status": {
+                "first_name": {
                     "type": "string"
                 },
-                "updated_at": {
+                "last_name": {
                     "type": "string"
                 }
             }
         },
-        "profile.GetUploadURLRequest": {
-            "type": "object",
-            "properties": {
-                "content_type": {
-                    "type": "string"
-                },
-                "file_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.Profile": {
+        "profile.User": {
             "type": "object",
             "properties": {
                 "avatar_url": {
                     "type": "string"
                 },
                 "company_id": {
-                    "type": "string"
-                },
-                "company_name": {
-                    "type": "string"
-                },
-                "company_verified": {
-                    "type": "boolean"
-                },
-                "created_at": {
                     "type": "string"
                 },
                 "email": {
@@ -738,122 +755,96 @@ const docTemplate = `{
                 "first_name": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "last_name": {
                     "type": "string"
-                },
-                "notification_preferences": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "boolean"
-                    }
-                },
-                "phone": {
+                }
+            }
+        },
+        "review.CreateReviewRequest": {
+            "type": "object",
+            "properties": {
+                "comment": {
                     "type": "string"
                 },
-                "role": {
+                "rating": {
+                    "type": "integer"
+                },
+                "target_entity_id": {
+                    "type": "string"
+                },
+                "transaction_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "review.ReputationScore": {
+            "type": "object",
+            "properties": {
+                "average_rating": {
+                    "type": "number"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "review_count": {
+                    "type": "integer"
+                },
+                "tier": {
+                    "description": "gold, silver, bronze, none",
+                    "type": "string"
+                }
+            }
+        },
+        "review.Review": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "target_entity_id": {
+                    "type": "string"
+                },
+                "transaction_id": {
                     "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "verified": {
-                    "type": "boolean"
                 }
             }
-        },
-        "profile.PublicProfile": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "company_name": {
-                    "type": "string"
-                },
-                "company_verified": {
-                    "type": "boolean"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "rating": {
-                    "type": "number"
-                },
-                "reviews_count": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.UpdateAvatarRequest": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.UpdateNotificationPreferencesRequest": {
-            "type": "object",
-            "properties": {
-                "preferences": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "boolean"
-                    }
-                }
-            }
-        },
-        "profile.UpdateProfileRequest": {
-            "type": "object",
-            "properties": {
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.UploadURLResponse": {
-            "type": "object",
-            "properties": {
-                "expires_at": {
-                    "type": "integer"
-                },
-                "fields": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "upload_url": {
-                    "type": "string"
-                }
-            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8081",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Industrix Trust Service API",
+	Description:      "API for Identity, Integrity, and Review management",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -21,8 +21,17 @@ type UpdateProfileRequest struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
+// GetProfile godoc
+// @Summary Get current user profile
+// @Description Retrieve profile information for the authenticated user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} User
+// @Failure 401 {object} errors.Error
+// @Router /users/me [get]
 func (h *Handler) GetProfile(c *fiber.Ctx) error {
-	// In a real scenario, extract userID from context (set by middleware)
 	userID := c.Locals("user_id").(string)
 
 	profile, err := h.service.GetProfile(c.Context(), userID)
@@ -33,6 +42,17 @@ func (h *Handler) GetProfile(c *fiber.Ctx) error {
 	return c.JSON(profile)
 }
 
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Update name and avatar of the authenticated user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body UpdateProfileRequest true "Updated profile"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} errors.Error
+// @Router /users/me [put]
 func (h *Handler) UpdateProfile(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 

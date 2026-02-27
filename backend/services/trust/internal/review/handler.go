@@ -22,6 +22,18 @@ type CreateReviewRequest struct {
 	TransactionID  string `json:"transaction_id"`
 }
 
+// CreateReview godoc
+// @Summary Create a review
+// @Description Post a review and rating for a company or equipment
+// @Tags reviews
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body CreateReviewRequest true "Review details"
+// @Success 201 {object} Review
+// @Failure 400 {object} errors.Error
+// @Failure 401 {object} errors.Error
+// @Router /reviews [post]
 func (h *Handler) CreateReview(c *fiber.Ctx) error {
 	var req CreateReviewRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -45,6 +57,16 @@ func (h *Handler) CreateReview(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(review)
 }
 
+// GetReviews godoc
+// @Summary List reviews
+// @Description Get paginated reviews for an entity
+// @Tags reviews
+// @Accept json
+// @Produce json
+// @Param entityID path string true "Entity ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} errors.Error
+// @Router /reviews/{entityID} [get]
 func (h *Handler) GetReviews(c *fiber.Ctx) error {
 	entityID := c.Params("entityID")
 	// Pagination logic (simplified)
@@ -64,6 +86,16 @@ func (h *Handler) GetReviews(c *fiber.Ctx) error {
 	})
 }
 
+// GetReputation godoc
+// @Summary Get reputation score
+// @Description Get aggregated reputation metrics for an entity
+// @Tags reviews
+// @Accept json
+// @Produce json
+// @Param entityID path string true "Entity ID"
+// @Success 200 {object} ReputationScore
+// @Failure 404 {object} errors.Error
+// @Router /reviews/{entityID}/reputation [get]
 func (h *Handler) GetReputation(c *fiber.Ctx) error {
 	entityID := c.Params("entityID")
 	score, err := h.service.GetReputation(c.Context(), entityID)

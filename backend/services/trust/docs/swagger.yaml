@@ -1,4 +1,33 @@
+basePath: /api/v1
 definitions:
+  auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  auth.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+    type: object
+  auth.VerifyOTPRequest:
+    properties:
+      code:
+        type: string
+      phone:
+        type: string
+    type: object
   company.Company:
     properties:
       address:
@@ -13,35 +42,15 @@ definitions:
         type: string
       name:
         type: string
+      owner_id:
+        type: string
       phone:
-        type: string
-      reputation_score:
-        type: number
-      reviewer_note:
-        type: string
-      status:
-        $ref: '#/definitions/company.CompanyStatus'
-      updated_at:
-        type: string
-      user_id:
         type: string
       verified:
         type: boolean
       website:
         type: string
     type: object
-  company.CompanyStatus:
-    enum:
-    - pending
-    - under_review
-    - verified
-    - rejected
-    type: string
-    x-enum-varnames:
-    - StatusPending
-    - StatusUnderReview
-    - StatusVerified
-    - StatusRejected
   company.CreateCompanyRequest:
     properties:
       address:
@@ -61,8 +70,6 @@ definitions:
     properties:
       address:
         type: string
-      bin:
-        type: string
       email:
         type: string
       name:
@@ -72,149 +79,242 @@ definitions:
       website:
         type: string
     type: object
-  company.UploadDocumentRequest:
+  errors.Error:
     properties:
-      content_type:
-        type: string
-      document_type:
-        description: bin_cert, charter, director_id
-        type: string
-      file_name:
+      code:
+        $ref: '#/definitions/github_com_industrix_pkg_errors.Code'
+      details:
+        additionalProperties: true
+        type: object
+      err: {}
+      message:
         type: string
     type: object
-  company.VerificationDocument:
+  github_com_industrix_pkg_errors.Code:
+    enum:
+    - NOT_FOUND
+    - UNAUTHORIZED
+    - VALIDATION
+    - CONFLICT
+    - INTERNAL
+    type: string
+    x-enum-varnames:
+    - CodeNotFound
+    - CodeUnauthorized
+    - CodeValidation
+    - CodeConflict
+    - CodeInternal
+  jwt.TokenPair:
     properties:
-      company_id:
+      accessToken:
         type: string
-      created_at:
+      expiresAt:
         type: string
-      document_type:
-        type: string
-      file_name:
-        type: string
-      file_url:
-        type: string
-      id:
-        type: string
-      upload_url:
-        type: string
-      uploaded_at:
+      refreshToken:
         type: string
     type: object
-  company.VerificationStatus:
+  profile.UpdateProfileRequest:
     properties:
-      documents:
-        items:
-          $ref: '#/definitions/company.VerificationDocument'
-        type: array
-      reviewer_notes:
+      avatar_url:
         type: string
-      status:
+      first_name:
         type: string
-      updated_at:
+      last_name:
         type: string
     type: object
-  profile.GetUploadURLRequest:
-    properties:
-      content_type:
-        type: string
-      file_name:
-        type: string
-    type: object
-  profile.Profile:
+  profile.User:
     properties:
       avatar_url:
         type: string
       company_id:
-        type: string
-      company_name:
-        type: string
-      company_verified:
-        type: boolean
-      created_at:
         type: string
       email:
         type: string
       first_name:
         type: string
+      id:
+        type: string
       last_name:
         type: string
-      notification_preferences:
-        additionalProperties:
-          type: boolean
-        type: object
-      phone:
+    type: object
+  review.CreateReviewRequest:
+    properties:
+      comment:
         type: string
-      role:
+      rating:
+        type: integer
+      target_entity_id:
+        type: string
+      transaction_id:
+        type: string
+    type: object
+  review.ReputationScore:
+    properties:
+      average_rating:
+        type: number
+      entity_id:
+        type: string
+      review_count:
+        type: integer
+      tier:
+        description: gold, silver, bronze, none
+        type: string
+    type: object
+  review.Review:
+    properties:
+      author_id:
+        type: string
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      rating:
+        type: integer
+      target_entity_id:
+        type: string
+      transaction_id:
         type: string
       updated_at:
         type: string
-      user_id:
-        type: string
-      verified:
-        type: boolean
     type: object
-  profile.PublicProfile:
-    properties:
-      avatar_url:
-        type: string
-      company_name:
-        type: string
-      company_verified:
-        type: boolean
-      first_name:
-        type: string
-      last_name:
-        type: string
-      rating:
-        type: number
-      reviews_count:
-        type: integer
-      user_id:
-        type: string
-    type: object
-  profile.UpdateAvatarRequest:
-    properties:
-      avatar_url:
-        type: string
-    type: object
-  profile.UpdateNotificationPreferencesRequest:
-    properties:
-      preferences:
-        additionalProperties:
-          type: boolean
-        type: object
-    type: object
-  profile.UpdateProfileRequest:
-    properties:
-      first_name:
-        type: string
-      last_name:
-        type: string
-      phone:
-        type: string
-    type: object
-  profile.UploadURLResponse:
-    properties:
-      expires_at:
-        type: integer
-      fields:
-        additionalProperties:
-          type: string
-        type: object
-      upload_url:
-        type: string
-    type: object
+host: localhost:8081
 info:
   contact: {}
+  description: API for Identity, Integrity, and Review management
+  title: Industrix Trust Service API
+  version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Login user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Issue new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Refresh token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with pending verification
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Register a new user
+      tags:
+      - auth
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Validates OTP sent to phone and issues initial tokens
+      parameters:
+      - description: OTP details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Verify phone OTP
+      tags:
+      - auth
   /companies:
     post:
       consumes:
       - application/json
-      description: Create a company profile for the authenticated user
+      description: Register a new company (requires verification flow to follow)
       parameters:
-      - description: Create Company Request
+      - description: Company details
         in: body
         name: request
         required: true
@@ -230,30 +330,52 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
         "409":
           description: Conflict
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
-      summary: Create a new company
+      summary: Create a company
       tags:
-      - company
-  /companies/me:
+      - companies
+  /companies/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve company information by ID
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/company.Company'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Get company details
+      tags:
+      - companies
     put:
       consumes:
       - application/json
-      description: Update the company profile of the authenticated user
+      description: Update mutable fields of a company
       parameters:
-      - description: Update Company Request
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated details
         in: body
         name: request
         required: true
@@ -269,98 +391,57 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
-      summary: Update company profile
+      summary: Update company details
       tags:
-      - company
-  /companies/me/documents:
+      - companies
+  /reviews:
     post:
       consumes:
       - application/json
-      description: Upload a verification document for the authenticated user's company
+      description: Post a review and rating for a company or equipment
       parameters:
-      - description: Upload Document Request
+      - description: Review details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/company.UploadDocumentRequest'
+          $ref: '#/definitions/review.CreateReviewRequest'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
-            $ref: '#/definitions/company.VerificationDocument'
+            $ref: '#/definitions/review.Review'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
-      summary: Upload verification document
+      summary: Create a review
       tags:
-      - company
-  /companies/me/verification-status:
+      - reviews
+  /reviews/{entityID}:
     get:
       consumes:
       - application/json
-      description: Get the verification status of the authenticated user's company
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/company.VerificationStatus'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get verification status
-      tags:
-      - company
-  /users/{id}/public:
-    get:
-      consumes:
-      - application/json
-      description: Get public profile of any user by ID
+      description: Get paginated reviews for an entity
       parameters:
-      - description: User ID
+      - description: Entity ID
         in: path
-        name: id
+        name: entityID
         required: true
         type: string
       produces:
@@ -369,48 +450,67 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/profile.PublicProfile'
-        "400":
-          description: Bad Request
-          schema:
             additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
-      summary: Get public profile
+            $ref: '#/definitions/errors.Error'
+      summary: List reviews
       tags:
-      - profile
-  /users/me:
+      - reviews
+  /reviews/{entityID}/reputation:
     get:
       consumes:
       - application/json
-      description: Get profile of the authenticated user
+      description: Get aggregated reputation metrics for an entity
+      parameters:
+      - description: Entity ID
+        in: path
+        name: entityID
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/profile.Profile'
+            $ref: '#/definitions/review.ReputationScore'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: Get reputation score
+      tags:
+      - reviews
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve profile information for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.User'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
       summary: Get current user profile
       tags:
-      - profile
+      - users
     put:
       consumes:
       - application/json
-      description: Update profile of the authenticated user
+      description: Update name and avatar of the authenticated user
       parameters:
-      - description: Update Profile Request
+      - description: Updated profile
         in: body
         name: request
         required: true
@@ -422,123 +522,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/profile.Profile'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Update current user profile
-      tags:
-      - profile
-  /users/me/avatar:
-    put:
-      consumes:
-      - application/json
-      description: Update avatar URL of the authenticated user
-      parameters:
-      - description: Update Avatar Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/profile.UpdateAvatarRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/profile.Profile'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Update user avatar
-      tags:
-      - profile
-  /users/me/avatar/upload-url:
-    post:
-      consumes:
-      - application/json
-      description: Get a presigned URL for uploading an avatar to MinIO
-      parameters:
-      - description: Get Upload URL Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/profile.GetUploadURLRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/profile.UploadURLResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get avatar upload URL
-      tags:
-      - profile
-  /users/me/notification-preferences:
-    put:
-      consumes:
-      - application/json
-      description: Update notification preferences of the authenticated user
-      parameters:
-      - description: Update Notification Preferences Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/profile.UpdateNotificationPreferencesRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
+            additionalProperties:
+              type: string
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
-      summary: Update notification preferences
+      summary: Update user profile
       tags:
-      - profile
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

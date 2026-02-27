@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -29,6 +30,10 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
 }
 
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
 func New(code Code, message string) *Error {
 	return &Error{
 		Code:    code,
@@ -42,6 +47,10 @@ func Wrap(err error, code Code, message string) *Error {
 		Message: message,
 		Err:     err,
 	}
+}
+
+func Is(err, target error) bool {
+	return errors.Is(err, target)
 }
 
 func HTTPStatus(code Code) int {

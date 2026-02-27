@@ -32,6 +32,18 @@ type UpdateCompanyRequest struct {
 	Website string `json:"website"`
 }
 
+// CreateCompany godoc
+// @Summary Create a company
+// @Description Register a new company (requires verification flow to follow)
+// @Tags companies
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body CreateCompanyRequest true "Company details"
+// @Success 201 {object} Company
+// @Failure 400 {object} errors.Error
+// @Failure 409 {object} errors.Error
+// @Router /companies [post]
 func (h *Handler) CreateCompany(c *fiber.Ctx) error {
 	var req CreateCompanyRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -57,6 +69,16 @@ func (h *Handler) CreateCompany(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(company)
 }
 
+// GetCompany godoc
+// @Summary Get company details
+// @Description Retrieve company information by ID
+// @Tags companies
+// @Accept json
+// @Produce json
+// @Param id path string true "Company ID"
+// @Success 200 {object} Company
+// @Failure 404 {object} errors.Error
+// @Router /companies/{id} [get]
 func (h *Handler) GetCompany(c *fiber.Ctx) error {
 	id := c.Params("id")
 	company, err := h.service.GetCompany(c.Context(), id)
@@ -66,6 +88,19 @@ func (h *Handler) GetCompany(c *fiber.Ctx) error {
 	return c.JSON(company)
 }
 
+// UpdateCompany godoc
+// @Summary Update company details
+// @Description Update mutable fields of a company
+// @Tags companies
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Company ID"
+// @Param request body UpdateCompanyRequest true "Updated details"
+// @Success 200 {object} Company
+// @Failure 400 {object} errors.Error
+// @Failure 404 {object} errors.Error
+// @Router /companies/{id} [put]
 func (h *Handler) UpdateCompany(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req UpdateCompanyRequest

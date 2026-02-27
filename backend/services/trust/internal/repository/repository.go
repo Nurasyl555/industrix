@@ -11,7 +11,6 @@ import (
 	"github.com/industrix/services/trust/internal/company"
 	"github.com/industrix/services/trust/internal/profile"
 	"github.com/industrix/services/trust/internal/review"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Repository struct {
@@ -31,13 +30,8 @@ func (r *Repository) UserExists(ctx context.Context, email, phone string) (bool,
 	return count > 0, err
 }
 
-func (r *Repository) CreateUser(ctx context.Context, email, phone, password string) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return errors.New(errors.CodeInternal, "Failed to hash password")
-	}
-
-	_, err = r.pg.Exec(ctx, "INSERT INTO users (email, phone, password_hash) VALUES ($1, $2, $3)", email, phone, string(hashedPassword))
+func (r *Repository) CreateUser(ctx context.Context, email, phone, passwordHash string) error {
+	_, err := r.pg.Exec(ctx, "INSERT INTO users (email, phone, password_hash) VALUES ($1, $2, $3)", email, phone, passwordHash)
 	return err
 }
 
@@ -82,11 +76,6 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*auth.Us
 func (r *Repository) UpdateUserVerification(ctx context.Context, userID string, verified bool) error {
 	_, err := r.pg.Exec(ctx, "UPDATE users SET verified = $1 WHERE id = $2", verified, userID)
 	return err
-}
-
-func (r *Repository) CheckPassword(hash, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
 
 // === Profile Repository Implementation ===

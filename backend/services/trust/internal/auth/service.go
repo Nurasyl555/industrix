@@ -2,22 +2,24 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/industrix/pkg/errors"
 	"github.com/industrix/pkg/jwt"
+	"github.com/industrix/pkg/logger"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Repository interface
 type Repository interface {
 	UserExists(ctx context.Context, email, phone string) (bool, error)
-	CreateUser(ctx context.Context, email, phone, password string) error
+	CreateUser(ctx context.Context, email, phone, passwordHash string) error
 	SaveOTP(ctx context.Context, phone, code string, ttl time.Duration) error
 	ValidateOTP(ctx context.Context, phone, code string) (bool, error)
 	GetUserByPhone(ctx context.Context, phone string) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	UpdateUserVerification(ctx context.Context, userID string, verified bool) error
-	CheckPassword(hash, password string) bool
 }
 
 type User struct {
@@ -55,20 +57,34 @@ func (s *service) Register(ctx context.Context, email, phone, password string) e
 		return errors.New(errors.CodeConflict, "User already exists")
 	}
 
-	// Create user (unverified)
-	// In real app, hash password here
-	hashedPassword := password // Placeholder
-	if err := s.repo.CreateUser(ctx, email, phone, hashedPassword); err != nil {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New(errors.CodeInternal, "Failed to hash password")
+	}
+
+	if err := s.repo.CreateUser(ctx, email, phone, string(hashedPassword)); err != nil {
 		return err
 	}
 
 	// Generate and save OTP
-	otp := "123456" // Placeholder
+	otp := "123456" // In production, generate random code
 	if err := s.repo.SaveOTP(ctx, phone, otp, 5*time.Minute); err != nil {
 		return err
 	}
 
-	// Send OTP logic (omitted)
+	// Send OTP via SMS
+	if err := s.sendSMS(ctx, phone, fmt.Sprintf("Your verification code is: %s", otp)); err != nil {
+		logger.New("auth-service").Error().Err(err).Msg("Failed to send OTP SMS")
+	}
+
+	return nil
+}
+
+func (s *service) sendSMS(ctx context.Context, phone, message string) error {
+	logger.New("auth-service").Info().
+		Str("phone", phone).
+		Str("message", message).
+		Msg("Sending SMS (Mock)")
 	return nil
 }
 
@@ -101,7 +117,7 @@ func (s *service) Login(ctx context.Context, email, password string) (*jwt.Token
 		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
 	}
 
-	if !s.repo.CheckPassword(user.PasswordHash, password) {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
 	}
 

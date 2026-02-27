@@ -35,6 +35,17 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// Register godoc
+// @Summary Register a new user
+// @Description Creates a new user account with pending verification
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration details"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} errors.Error
+// @Failure 409 {object} errors.Error
+// @Router /auth/register [post]
 func (h *Handler) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -48,6 +59,17 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 	return c.SendStatus(http.StatusCreated)
 }
 
+// VerifyOTP godoc
+// @Summary Verify phone OTP
+// @Description Validates OTP sent to phone and issues initial tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body VerifyOTPRequest true "OTP details"
+// @Success 200 {object} jwt.TokenPair
+// @Failure 400 {object} errors.Error
+// @Failure 401 {object} errors.Error
+// @Router /auth/verify-otp [post]
 func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	var req VerifyOTPRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -62,6 +84,17 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	return c.JSON(tokens)
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} jwt.TokenPair
+// @Failure 400 {object} errors.Error
+// @Failure 401 {object} errors.Error
+// @Router /auth/login [post]
 func (h *Handler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -76,6 +109,17 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	return c.JSON(tokens)
 }
 
+// Refresh godoc
+// @Summary Refresh token
+// @Description Issue new access token using refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body RefreshRequest true "Refresh token"
+// @Success 200 {object} jwt.TokenPair
+// @Failure 400 {object} errors.Error
+// @Failure 401 {object} errors.Error
+// @Router /auth/refresh [post]
 func (h *Handler) Refresh(c *fiber.Ctx) error {
 	var req RefreshRequest
 	if err := c.BodyParser(&req); err != nil {
