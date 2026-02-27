@@ -151,3 +151,41 @@ func IsInternal(err error) bool {
 	}
 	return false
 }
+
+// Shorthand helper functions
+// Validation is a shorthand for NewValidation
+func Validation(message string) *Error {
+	return NewValidation(message)
+}
+
+// Internal is a shorthand for NewInternal
+func Internal(message string) *Error {
+	return NewInternal(message)
+}
+
+// Conflict is a shorthand for NewConflict
+func Conflict(message string) *Error {
+	return NewConflict(message)
+}
+
+// HTTPStatus returns the HTTP status code for the given error code
+func HTTPStatus(code ErrorCode) int {
+	switch code {
+	case CodeNotFound:
+		return http.StatusNotFound
+	case CodeUnauthorized:
+		return http.StatusUnauthorized
+	case CodeValidation:
+		return http.StatusBadRequest
+	case CodeConflict:
+		return http.StatusConflict
+	case CodeInternal:
+		return http.StatusInternalServerError
+	case CodeBadRequest:
+		return http.StatusBadRequest
+	case CodeForbidden:
+		return http.StatusForbidden
+	default:
+		return http.StatusInternalServerError
+	}
+}

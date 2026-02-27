@@ -57,7 +57,7 @@ func NewConsumer(ctx context.Context, cfg *ConsumerConfig, handlers map[string]M
 	config.Consumer.Fetch.Min = int32(cfg.MinBytes)
 	config.Consumer.Fetch.Max = int32(cfg.MaxBytes)
 	config.Consumer.MaxWaitTime = cfg.MaxWaitTime
-	config.Consumer.Enable.AutoCommit = true
+	config.Consumer.Offsets.AutoCommit.Enable = true
 	config.Consumer.Offsets.AutoCommit.Interval = cfg.CommitInterval
 
 	consumer, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.GroupID, config)

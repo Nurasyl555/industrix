@@ -134,7 +134,9 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
 
 <header>
   <h1>Industrial Equipment Marketplace — Implementation Plan</h1>
-  <p>// 7 phases · 12 services + frontend + infra · KZ-compliant · monorepo</p>
+  <p>// 7 phases · 9 services + frontend + infra · KZ-compliant · monorepo</p>
+  <p style="font-size:10px;color:var(--dim);margin-top:4px">Service Integration: identity+integrity+review → trust-service, catalog+listing+search → inventory-service, booking+deal+payment → transaction-service, document+media+engagement → content-service, chat+notification → communication-service</p>
+
 </header>
 
 <!-- legend -->
@@ -184,11 +186,13 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
           <tbody>
             <tr><td><span class="fn">init monorepo</span><div class="fn-desc">Initialize git repo, root go.work, .gitignore, .env.example with all vars documented</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>go.work for multi-module workspace</td></tr>
             <tr><td><span class="fn">docker-compose.infra.yml</span><div class="fn-desc">PostgreSQL 15, MongoDB 7, Redis 7 (×2 instances), Kafka+Zookeeper (3-node), OpenSearch, MinIO, imgproxy, Gotenberg, Postal SMTP</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>All self-hosted, KZ-compliant</td></tr>
-            <tr><td><span class="fn">docker-compose.yml</span><div class="fn-desc">All 12 services + frontend + all infra in one compose for CI and full local testing</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">docker-compose.yml</span><div class="fn-desc">All 9 services + frontend + all infra in one compose for CI and full local testing</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>Service count reduced from 12 to 9 via domain integration</td></tr>
+
             <tr><td><span class="fn">docker-compose.override.yml</span><div class="fn-desc">Dev overrides: port mappings, volume mounts, air hot-reload commands for Go services</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">Makefile</span><div class="fn-desc">up, down, up-infra, dev-svc, dev-frontend, proto, migrate, migrate-svc, seed, test, test-svc, lint, logs, health targets</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">nginx.conf + conf.d/</span><div class="fn-desc">gateway.conf (proxy to API gateway), frontend.conf (Next.js SSR), minio.conf (public bucket), ws.conf (WebSocket upgrade for chat)</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>TLS via Let's Encrypt</td></tr>
-            <tr><td><span class="fn">infra/postgres/init/00_create_databases.sql</span><div class="fn-desc">CREATE DATABASE for each service: identity_db, catalog_db, listing_db, booking_db, deal_db, payment_db, doc_db, review_db, services_db, engagement_db, integrity_db, analytics_db, media_db</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">infra/postgres/init/00_create_databases.sql</span><div class="fn-desc">CREATE DATABASE for each service: trust_db, inventory_db, transaction_db, content_db, communication_db, services_db, analytics_db</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td>Consolidated from 12 to 7 databases via domain grouping</td></tr>
+
             <tr><td><span class="fn">infra/kafka/topics.sh</span><div class="fn-desc">Create all 14 Kafka topics with correct partition counts and retention. Run once on first start.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">infra/minio/buckets.sh</span><div class="fn-desc">Create buckets: equipment-media, documents, chat-files, dispute-evidence. Set public/private policies.</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">infra/opensearch/mappings/equipment.json</span><div class="fn-desc">Index mapping with dynamic templates for technical attributes, geo_point for location, keyword fields for filters</div></td><td><span class="badge b-inf">INFRA</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
@@ -239,27 +243,29 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
         <table class="task-table">
           <thead><tr><th>File / RPC</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
           <tbody>
-            <tr><td><span class="fn">identity/v1/identity.proto</span><div class="fn-desc">GetUser(id) → User, GetCompany(id) → Company, VerifyToken(token) → Claims, GetUserBatch(ids) → []User</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">catalog/v1/catalog.proto</span><div class="fn-desc">GetEquipment(id) → Equipment, ValidateAttributes(categoryID, attrs) → ValidationResult, GetCategorySchema(id) → Schema</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">payment/v1/payment.proto</span><div class="fn-desc">InitiateEscrow(dealID, amount) → EscrowID, ReleaseEscrow(escrowID) → Result, RefundEscrow(escrowID) → Result, ChargeSubscription(companyID, planID) → Receipt</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">booking/v1/booking.proto</span><div class="fn-desc">CreateHold(listingID, dates) → HoldID, ConfirmBooking(holdID) → Booking, CancelBooking(bookingID) → Result, CheckAvailability(listingID, dates) → Available</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">integrity/v1/integrity.proto</span><div class="fn-desc">CheckPlanLimits(companyID, action) → Allowed/Blocked, GetSubscription(companyID) → Plan, GetPlanFeatures(planID) → Features</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">trust/v1/trust.proto</span><div class="fn-desc">GetUser(id) → User, GetCompany(id) → Company, VerifyToken(token) → Claims, GetUserBatch(ids) → []User, GetVerificationStatus(companyID) → Status, SubmitDocument(companyID, doc) → Result, GetReputation(companyID) → Score</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td>Merged: identity + integrity + review</td></tr>
+            <tr><td><span class="fn">inventory/v1/inventory.proto</span><div class="fn-desc">GetEquipment(id) → Equipment, ValidateAttributes(categoryID, attrs) → ValidationResult, GetCategorySchema(id) → Schema, SearchEquipment(query) → Results, IndexEquipment(equipment) → Result</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td>Merged: catalog + listing + search</td></tr>
+            <tr><td><span class="fn">transaction/v1/transaction.proto</span><div class="fn-desc">CreateHold(listingID, dates) → HoldID, ConfirmBooking(holdID) → Booking, CancelBooking(bookingID) → Result, CheckAvailability(listingID, dates) → Available, CreateDeal(equipmentID, buyerID, terms) → Deal, ConfirmDeal(dealID) → Result, InitiateEscrow(dealID, amount) → EscrowID, ReleaseEscrow(escrowID) → Result, RefundEscrow(escrowID) → Result</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td>Merged: booking + deal + payment</td></tr>
+            <tr><td><span class="fn">content/v1/content.proto</span><div class="fn-desc">UploadDocument(metadata) → PresignedURL, GetDocument(id) → Document, UploadMedia(metadata) → PresignedURL, ProcessMedia(id) → Result, GetEngagementStats(entityID) → Stats</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td>Merged: document + media + engagement</td></tr>
+            <tr><td><span class="fn">communication/v1/communication.proto</span><div class="fn-desc">SendMessage(roomID, content) → Message, GetMessages(roomID) → Messages, SendNotification(userID, template, channel) → Result, GetPreferences(userID) → Preferences</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td>Merged: chat + notification</td></tr>
             <tr><td><span class="fn">scripts/proto-gen.sh</span><div class="fn-desc">buf generate all protos → pkg/gen/go/ and pkg/gen/ts/. Committed to repo.</div></td><td><span class="badge b-proto">PROTO</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
           </tbody>
+
         </table>
       </div>
     </div>
 
-    <!-- Identity service -->
+    <!-- Trust Service (Merged: identity + integrity + review) -->
     <div class="svc-section">
       <div class="svc-header" onclick="toggleSvc(this)">
         <span class="badge b-be">BACKEND</span>
-        <span class="svc-name">Identity Service</span>
+        <span class="svc-name">Trust Service</span>
         <span class="svc-stack">Go · Gin · PostgreSQL · Redis</span>
         <span class="svc-toggle open">▼</span>
       </div>
       <div class="svc-body open">
         <div class="section-label">Auth Module</div>
+
         <table class="task-table">
           <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
           <tbody>
@@ -276,11 +282,13 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
         <table class="task-table">
           <tbody>
             <tr><td><span class="fn">GET /users/me</span><div class="fn-desc">Return authenticated user's profile with company info if attached.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">PUT /users/me</span><div class="fn-desc">Update name, avatar (trigger media upload), contact details. Emit user.profile.updated to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">PUT /users/me/avatar</span><div class="fn-desc">Request presigned upload URL from Media service. Store resulting MinIO URL on profile.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me</span><div class="fn-desc">Update name, avatar (trigger content service upload), contact details. Emit user.profile.updated to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me/avatar</span><div class="fn-desc">Request presigned upload URL from Content service. Store resulting MinIO URL on profile.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+
             <tr><td><span class="fn">GET /users/:id/public</span><div class="fn-desc">Public profile: name, avatar, company name, verified badge, rating, reviews count.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">PUT /users/me/notification-preferences</span><div class="fn-desc">Toggle push/SMS/email per event type. Stored in PG, read by Notification service.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
-            <tr><td><span class="fn">grpc: GetUser() / GetUserBatch() / GetCompany()</span><div class="fn-desc">Internal gRPC endpoints consumed by Deal, Chat, Review, Admin services.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /users/me/notification-preferences</span><div class="fn-desc">Toggle push/SMS/email per event type. Stored in PG, read by Communication service.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: GetUser() / GetUserBatch() / GetCompany()</span><div class="fn-desc">Internal gRPC endpoints consumed by Transaction, Communication, Admin services.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+
           </tbody>
         </table>
         <div class="section-label">Company & Verification Module</div>
@@ -288,10 +296,19 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
           <tbody>
             <tr><td><span class="fn">POST /companies</span><div class="fn-desc">Create company profile. БИН/ИНН format validation (12-digit KZ BIN). Set status = pending.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">PUT /companies/me</span><div class="fn-desc">Update company info. If already verified, changes require re-verification for legal fields.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
-            <tr><td><span class="fn">POST /companies/me/documents</span><div class="fn-desc">Upload verification docs (БИН cert, charter, director ID). Get presigned URL, store metadata. Move status to under_review.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /companies/me/documents</span><div class="fn-desc">Upload verification docs (БИН cert, charter, director ID). Get presigned URL from Content service, store metadata. Move status to under_review.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+
             <tr><td><span class="fn">GET /companies/me/verification-status</span><div class="fn-desc">Return current verification state, reviewer notes, list of submitted docs.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">verification state machine</span><div class="fn-desc">pending → under_review → verified / rejected. On verified: emit company.verified to Kafka. On rejected: emit company.rejected with reason.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">Kafka consumer: review.created</span><div class="fn-desc">On new review for a company member, recalculate and update company reputation score.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Review & Reputation Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">POST /reviews</span><div class="fn-desc">Create review for company/equipment. Validates transaction history. Updates reputation score in-process.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /reviews/:entityID</span><div class="fn-desc">List reviews with pagination, filtering by rating.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">reputation calculation</span><div class="fn-desc">Real-time score update on new review. Weighted by reviewer verification status, transaction history.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td>Previously async via Kafka, now in-process for consistency</td></tr>
           </tbody>
         </table>
         <div class="section-label">DB Migrations</div>
@@ -299,8 +316,10 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
           <tbody>
             <tr><td><span class="fn">001_users.sql</span><div class="fn-desc">users, sessions, otp_codes tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
             <tr><td><span class="fn">002_companies.sql</span><div class="fn-desc">companies, company_documents, verification_history tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">003_reviews.sql</span><div class="fn-desc">reviews, reputation_scores tables</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td>New: merged from separate review service</td></tr>
           </tbody>
         </table>
+
       </div>
     </div>
 
@@ -364,15 +383,46 @@ header p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);m
   </div>
   <div class="phase-body open">
 
+    <!-- Inventory Service (Merged: catalog + listing + search) -->
     <div class="svc-section">
       <div class="svc-header" onclick="toggleSvc(this)">
         <span class="badge b-be">BACKEND</span>
-        <span class="svc-name">Catalog Service</span>
-        <span class="svc-stack">Go · Gin · PostgreSQL · Redis</span>
+        <span class="svc-name">Inventory Service</span>
+        <span class="svc-stack">Go · Gin · PostgreSQL · Redis · OpenSearch</span>
         <span class="svc-toggle open">▼</span>
       </div>
       <div class="svc-body open">
         <div class="section-label">Category & Schema Management</div>
+
+        <table class="task-table">
+          <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fn">GET /categories</span><div class="fn-desc">Return full category tree with parent-child hierarchy. Cached in Redis (TTL 1h). Bust cache on admin update.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /categories/:id/schema</span><div class="fn-desc">Return dynamic attribute schema for category: field name, type (number/string/enum), unit, required flag, filterable flag.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /categories (admin)</span><div class="fn-desc">Create category. Define attribute schema. Validate parent category exists.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /categories/:id (admin)</span><div class="fn-desc">Update category name/schema. Breaking schema changes require migration plan for existing equipment.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td></td></tr>
+            <tr><td><span class="fn">grpc: ValidateAttributes() / GetCategorySchema()</span><div class="fn-desc">Called by Listing Service before saving a listing to ensure attributes match category schema.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Equipment CRUD</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">POST /equipment</span><div class="fn-desc">Create equipment record. Validate attributes against category schema. Verify company.verified status via Trust gRPC. Emit equipment.created to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /equipment/:id</span><div class="fn-desc">Equipment detail with media URLs, technical specs, owner company info (from Trust gRPC). Cache hot items in Redis.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /equipment/:id</span><div class="fn-desc">Update equipment. Re-validate attributes. Emit equipment.updated to Kafka (triggers OpenSearch sync + Price History snapshot).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">DELETE /equipment/:id</span><div class="fn-desc">Soft delete. Check no active deals reference equipment. Emit equipment.deleted to Kafka.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /equipment (paginated list)</span><div class="fn-desc">My equipment list for seller dashboard. Filter by status, category.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">GET /catalog/compare?ids=1,2,3</span><div class="fn-desc">Fetch N equipment items, normalize specs into unified comparison matrix respecting each category's schema. Return as structured table data.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-should">SHOULD</span></td><td>No separate service needed</td></tr>
+            <tr><td><span class="fn">Kafka consumer: company.verified</span><div class="fn-desc">On company verified event, unlock equipment publishing for that company's users.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Listing Module</div>
+        <table class="task-table">
+          <tbody>
+            <tr><td><span class="fn">POST /listings</span><div class="fn-desc">Create listing. Validate attributes against category schema. Check plan limits via Trust gRPC. Sets status=draft.</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">PUT /listings/:id</span><div class="fn-desc">Update listing content, price, availability. If price changes, emit listing.updated (price change picked up by Content service).</div></td><td><span class="badge b-be">BE</span></td><td><span class="p-must">MUST</span></td><td></td></tr>
+            <tr><td><span class="fn">POST /listings/:id/submit</span><div class="fn-desc">Submit draft for moderation. Status → under_review. Emit listing.submitted to Kafka → Admin moderation queue.</div></td><td><span class="badge b-be">BE</span></
+
         <table class="task-table">
           <thead><tr><th>Function / Task</th><th>Type</th><th>Priority</th><th>Notes</th></tr></thead>
           <tbody>

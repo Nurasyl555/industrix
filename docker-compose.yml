@@ -26,8 +26,19 @@ services:
     environment:
       - ENV=development
 
+  # Identity Service
+  identity:
+    build:
+      context: .
+      dockerfile: backend/services/identity/Dockerfile
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    environment:
+      - ENV=development
+
   # ... (all other services defined here with pattern: build: ./backend/services/<service-name>)
-  # identity, catalog, listing, search, booking, deal, payment, document, review,
+  # catalog, listing, search, booking, deal, payment, document, review,
   # services-marketplace, chat, notification, engagement, integrity, media, analytics, admin
 
 

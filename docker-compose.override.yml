@@ -1,6 +1,5 @@
 # Local dev overrides - hot reload, ports
 # Used with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
-version: '3.8'
 
 services:
   gateway:
