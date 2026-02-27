@@ -12,11 +12,10 @@ import (
 )
 
 type Config struct {
-	Endpoint        string
-	AccessKeyID     string
-	SecretAccessKey string
-	UseSSL          bool
-	Region          string
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	UseSSL    bool
 }
 
 func getEnv(key, defaultValue string) string {
@@ -28,106 +27,55 @@ func getEnv(key, defaultValue string) string {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Endpoint:        getEnv("MINIO_ENDPOINT", "localhost:9000"),
-		AccessKeyID:     getEnv("MINIO_ACCESS_KEY", "minio"),
-		SecretAccessKey: getEnv("MINIO_SECRET_KEY", "minio123"),
-		UseSSL:          false,
-		Region:          getEnv("MINIO_REGION", "us-east-1"),
+		Endpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
+		AccessKey: getEnv("MINIO_ROOT_USER", "minio"),
+		SecretKey: getEnv("MINIO_ROOT_PASSWORD", "minio123"),
+		UseSSL:    false,
 	}
 }
 
 type Client struct {
 	client *minio.Client
-	config *Config
 	log    *logger.Logger
 }
 
-func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
+func NewClient(cfg *Config) (*Client, error) {
 	if cfg == nil {
 		cfg = DefaultConfig()
 	}
-
 	log := logger.New("minio-client")
 
 	minioClient, err := minio.New(cfg.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
+		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Secure: cfg.UseSSL,
-		Region: cfg.Region,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MinIO client: %w", err)
 	}
 
-	// Test connection
-	_, err = minioClient.ListBuckets(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to MinIO: %w", err)
-	}
-
-	log.Info().
-		Str("endpoint", cfg.Endpoint).
-		Msg("MinIO client connected")
-
-	return &Client{
-		client: minioClient,
-		config: cfg,
-		log:    log,
-	}, nil
+	log.Info().Str("endpoint", cfg.Endpoint).Msg("MinIO client created")
+	return &Client{client: minioClient, log: log}, nil
 }
 
-func (c *Client) Client() *minio.Client {
-	return c.client
-}
-
-func (c *Client) PresignPutURL(ctx context.Context, bucketName, objectName string, expires time.Duration) (string, error) {
-	url, err := c.client.PresignedPutObject(ctx, bucketName, objectName, expires)
+func (c *Client) PresignPutURL(ctx context.Context, bucketName, objectName string, expiry time.Duration) (string, error) {
+	url, err := c.client.PresignedPutObject(ctx, bucketName, objectName, expiry)
 	if err != nil {
-		c.log.Error().
-			Err(err).
-			Str("bucket", bucketName).
-			Str("object", objectName).
-			Msg("Failed to generate presigned PUT URL")
-		return "", err
+		return "", fmt.Errorf("failed to generate presigned PUT URL: %w", err)
 	}
 	return url.String(), nil
 }
 
-func (c *Client) PresignGetURL(ctx context.Context, bucketName, objectName string, expires time.Duration) (string, error) {
-	url, err := c.client.PresignedGetObject(ctx, bucketName, objectName, expires, nil)
+func (c *Client) PresignGetURL(ctx context.Context, bucketName, objectName string, expiry time.Duration) (string, error) {
+	reqParams := make(map[string][]string)
+	url, err := c.client.PresignedGetObject(ctx, bucketName, objectName, expiry, reqParams)
 	if err != nil {
-		c.log.Error().
-			Err(err).
-			Str("bucket", bucketName).
-			Str("object", objectName).
-			Msg("Failed to generate presigned GET URL")
-		return "", err
+		return "", fmt.Errorf("failed to generate presigned GET URL: %w", err)
 	}
 	return url.String(), nil
 }
 
-func (c *Client) CreateBucket(ctx context.Context, bucketName string) error {
-	err := c.client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: c.config.Region})
-	if err != nil {
-		c.log.Error().
-			Err(err).
-			Str("bucket", bucketName).
-			Msg("Failed to create bucket")
-		return err
-	}
-	c.log.Info().
-		Str("bucket", bucketName).
-		Msg("Bucket created")
-	return nil
-}
-
-func (c *Client) BucketExists(ctx context.Context, bucketName string) (bool, error) {
-	exists, err := c.client.BucketExists(ctx, bucketName)
-	if err != nil {
-		c.log.Error().
-			Err(err).
-			Str("bucket", bucketName).
-			Msg("Failed to check bucket existence")
-		return false, err
-	}
-	return exists, nil
+func (c *Client) HealthCheck(ctx context.Context) error {
+	// MinIO Go SDK doesn't have a direct ping, so we list buckets as a liveness check
+	_, err := c.client.ListBuckets(ctx)
+	return err
 }

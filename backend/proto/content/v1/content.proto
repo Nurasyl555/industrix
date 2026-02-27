@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package content.v1;
+
+option go_package = "github.com/industrix/gen/go/content/v1;contentv1";
+
+service ContentService {
+  rpc UploadDocument(UploadDocumentRequest) returns (PresignedURL);
+  rpc GetDocument(GetDocumentRequest) returns (Document);
+  rpc UploadMedia(UploadMediaRequest) returns (PresignedURL);
+  rpc ProcessMedia(ProcessMediaRequest) returns (ProcessResult);
+  rpc GetEngagementStats(GetEngagementStatsRequest) returns (EngagementStats);
+}
+
+message UploadDocumentRequest {
+  string owner_id = 1;
+  string document_type = 2; // contract, certificate, invoice
+  string mime_type = 3;
+  int64 size = 4;
+}
+
+message PresignedURL {
+  string url = 1;
+  string key = 2;
+  int64 expires_at = 3;
+}
+
+message GetDocumentRequest {
+  string id = 1;
+}
+
+message Document {
+  string id = 1;
+  string url = 2;
+  string type = 3;
+  string owner_id = 4;
+}
+
+message UploadMediaRequest {
+  string listing_id = 1;
+  string mime_type = 2;
+  int64 size = 3;
+}
+
+message ProcessMediaRequest {
+  string key = 1;
+  string listing_id = 2;
+}
+
+message ProcessResult {
+  string media_id = 1;
+  repeated string variant_urls = 2; // thumbnail, medium, large
+  bool success = 3;
+}
+
+message GetEngagementStatsRequest {
+  string entity_id = 1; // listing_id or user_id
+}
+
+message EngagementStats {
+  int64 views = 1;
+  int64 favorites = 2;
+  int64 shares = 3;
+  int64 contacts = 4; // clicks on phone/email
+}

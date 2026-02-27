@@ -1,279 +1,88 @@
 package proxy
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"strings"
 
-	"github.com/industrix/services/gateway/internal/config"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"github.com/industrix/services/gateway/internal/middleware"
 )
 
-type Router struct {
-	app         *fiber.App
-	cfg         *config.Config
-	auth        *middleware.AuthMiddleware
-	rateLimiter *middleware.RateLimiter
+type Config struct {
+	TrustServiceURL         string
+	InventoryServiceURL     string
+	TransactionServiceURL   string
+	ContentServiceURL       string
+	CommunicationServiceURL string
+	ServicesMarketplaceURL  string
+	AnalyticsServiceURL     string
+	AdminServiceURL         string
 }
 
-func NewRouter(app *fiber.App, cfg *config.Config, auth *middleware.AuthMiddleware, rateLimiter *middleware.RateLimiter) *Router {
-	return &Router{
-		app:         app,
-		cfg:         cfg,
-		auth:        auth,
-		rateLimiter: rateLimiter,
-	}
-}
+func RegisterRoutes(app *fiber.App, cfg Config, auth *middleware.AuthMiddleware, limiter *middleware.RateLimitMiddleware, logger *middleware.LoggingMiddleware) {
+	// Apply global middleware
+	app.Use(logger.RequestLogger())
+	app.Use(limiter.SlidingWindow())
 
-// RegisterRoutes maps all API routes to downstream services
-func (r *Router) RegisterRoutes() {
-	// Health check - no auth required
-	r.app.Get("/health", r.handleHealth)
+	api := app.Group("/api/v1")
 
-	// API v1 routes
-	v1 := r.app.Group("/api/v1")
+	// Public Routes (No Auth)
+	// Auth endpoints
+	api.Post("/auth/register", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.TrustServiceURL+"/api/v1/auth/register") })
+	api.Post("/auth/login", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.TrustServiceURL+"/api/v1/auth/login") })
+	api.Post("/auth/verify-otp", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.TrustServiceURL+"/api/v1/auth/verify-otp") })
+	api.Post("/auth/refresh", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.TrustServiceURL+"/api/v1/auth/refresh") })
 
-	// Public routes - rate limited but no auth
-	public := v1.Group("", r.rateLimiter.SlidingWindow())
+	// Public Inventory Routes (Search, Get)
+	api.Get("/equipment/*", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.InventoryServiceURL+c.Path()) })
+	api.Get("/categories/*", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.InventoryServiceURL+c.Path()) })
+	api.Get("/reviews/:entityID", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.TrustServiceURL+c.Path()) })
 
-	// Auth routes - no auth required for register/login
-	auth := public.Group("/auth")
-	auth.Post("/register", r.proxyToIdentity("/auth/register"))
-	auth.Post("/login", r.proxyToIdentity("/auth/login"))
-	auth.Post("/otp/send", r.proxyToIdentity("/auth/otp/send"))
-	auth.Post("/otp/verify", r.proxyToIdentity("/auth/otp/verify"))
-	auth.Post("/refresh", r.proxyToIdentity("/auth/refresh"))
-	auth.Post("/logout", r.proxyToIdentity("/auth/logout"))
-	auth.Post("/password/forgot", r.proxyToIdentity("/auth/password/forgot"))
-	auth.Post("/password/reset", r.proxyToIdentity("/auth/password/reset"))
+	// Protected Routes (Apply Auth Middleware)
+	protected := api.Group("/")
+	protected.Use(auth.ValidateJWT())
 
-	// Public catalog routes
-	public.Get("/catalog/categories", r.proxyToCatalog("/categories"))
-	public.Get("/catalog/equipment", r.proxyToCatalog("/equipment"))
-	public.Get("/catalog/equipment/:id", r.proxyToCatalog("/equipment/:id"))
+	// Trust Service Protected
+	setupProxy(protected, "/users", cfg.TrustServiceURL)
+	setupProxy(protected, "/companies", cfg.TrustServiceURL)
+	setupProxy(protected, "/reviews", cfg.TrustServiceURL) // POST reviews is protected
 
-	// Public search
-	public.Get("/search", r.proxyToSearch("/"))
+	// Inventory Service Protected (Create/Update/Delete)
+	protected.Post("/equipment", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.InventoryServiceURL+c.Path()) })
+	protected.Put("/equipment/*", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.InventoryServiceURL+c.Path()) })
+	protected.Delete("/equipment/*", func(c *fiber.Ctx) error { return proxy.Do(c, cfg.InventoryServiceURL+c.Path()) })
 
-	// Protected routes - require auth
-	protected := v1.Group("", r.auth.ValidateJWT())
+	// Transaction Service Protected
+	setupProxy(protected, "/deals", cfg.TransactionServiceURL)
+	setupProxy(protected, "/bookings", cfg.TransactionServiceURL)
+	setupProxy(protected, "/payments", cfg.TransactionServiceURL)
 
-	// Profile routes
-	profile := protected.Group("/profile")
-	profile.Get("/", r.proxyToIdentity("/profile"))
-	profile.Put("/", r.proxyToIdentity("/profile"))
-	profile.Put("/avatar", r.proxyToIdentity("/profile/avatar"))
-	profile.Get("/:userID", r.proxyToIdentity("/profile/:userID"))
-	profile.Put("/notifications", r.proxyToIdentity("/profile/notifications"))
+	// Content Service Protected
+	setupProxy(protected, "/documents", cfg.ContentServiceURL)
+	setupProxy(protected, "/media", cfg.ContentServiceURL)
 
-	// Company routes
-	company := protected.Group("/companies")
-	company.Post("/", r.proxyToIdentity("/companies"))
-	company.Put("/me", r.proxyToIdentity("/companies/me"))
-	company.Get("/me", r.proxyToIdentity("/companies/me"))
-	company.Post("/me/documents", r.proxyToIdentity("/companies/me/documents"))
-	company.Get("/me/verification-status", r.proxyToIdentity("/companies/me/verification-status"))
+	// Communication Service Protected
+	setupProxy(protected, "/messages", cfg.CommunicationServiceURL)
+	setupProxy(protected, "/notifications", cfg.CommunicationServiceURL)
 
-	// Listing routes
-	listing := protected.Group("/listings")
-	listing.Post("/", r.proxyToListing("/"))
-	listing.Get("/", r.proxyToListing("/"))
-	listing.Get("/:id", r.proxyToListing("/:id"))
-	listing.Put("/:id", r.proxyToListing("/:id"))
-	listing.Delete("/:id", r.proxyToListing("/:id"))
-	listing.Get("/:id/stats", r.proxyToListing("/:id/stats"))
+	// Services Marketplace Protected
+	setupProxy(protected, "/services", cfg.ServicesMarketplaceURL)
 
-	// Booking routes
-	booking := protected.Group("/bookings")
-	booking.Post("/", r.proxyToBooking("/"))
-	booking.Get("/", r.proxyToBooking("/"))
-	booking.Get("/:id", r.proxyToBooking("/:id"))
-	booking.Put("/:id", r.proxyToBooking("/:id"))
-	booking.Delete("/:id", r.proxyToBooking("/:id"))
+	// Analytics Protected
+	setupProxy(protected, "/analytics", cfg.AnalyticsServiceURL)
 
-	// Deal routes
-	deals := protected.Group("/deals")
-	deals.Post("/", r.proxyToDeal("/"))
-	deals.Get("/", r.proxyToDeal("/"))
-	deals.Get("/:id", r.proxyToDeal("/:id"))
-	deals.Put("/:id", r.proxyToDeal("/:id"))
-	deals.Put("/:id/status", r.proxyToDeal("/:id/status"))
-
-	// Payment routes
-	payments := protected.Group("/payments")
-	payments.Post("/initiate", r.proxyToPayment("/initiate"))
-	payments.Get("/:id", r.proxyToPayment("/:id"))
-	payments.Post("/:id/complete", r.proxyToPayment("/:id/complete"))
-	payments.Post("/:id/refund", r.proxyToPayment("/:id/refund"))
-
-	// Document routes
-	documents := protected.Group("/documents")
-	documents.Post("/", r.proxyToDocument("/"))
-	documents.Get("/:id", r.proxyToDocument("/:id"))
-	documents.Get("/:id/download", r.proxyToDocument("/:id/download"))
-
-	// Review routes
-	reviews := protected.Group("/reviews")
-	reviews.Post("/", r.proxyToReview("/"))
-	reviews.Get("/", r.proxyToReview("/"))
-	reviews.Get("/:id", r.proxyToReview("/:id"))
-	reviews.Put("/:id", r.proxyToReview("/:id"))
-
-	// Chat routes
-	chat := protected.Group("/chat")
-	chat.Get("/conversations", r.proxyToChat("/conversations"))
-	chat.Get("/conversations/:id", r.proxyToChat("/conversations/:id"))
-	chat.Post("/conversations/:id/messages", r.proxyToChat("/conversations/:id/messages"))
-	chat.Get("/conversations/:id/messages", r.proxyToChat("/conversations/:id/messages"))
-
-	// Notification routes
-	notifications := protected.Group("/notifications")
-	notifications.Get("/", r.proxyToNotification("/"))
-	notifications.Get("/:id", r.proxyToNotification("/:id"))
-	notifications.Put("/:id/read", r.proxyToNotification("/:id/read"))
-	notifications.Put("/read-all", r.proxyToNotification("/read-all"))
-
-	// Services marketplace
-	services := protected.Group("/services")
-	services.Post("/", r.proxyToServicesMarketplace("/"))
-	services.Get("/", r.proxyToServicesMarketplace("/"))
-	services.Get("/:id", r.proxyToServicesMarketplace("/:id"))
-
-	// Engagement routes
-	engagement := protected.Group("/engagement")
-	engagement.Get("/favorites", r.proxyToEngagement("/favorites"))
-	engagement.Post("/favorites", r.proxyToEngagement("/favorites"))
-	engagement.Delete("/favorites/:id", r.proxyToEngagement("/favorites/:id"))
-	engagement.Get("/history", r.proxyToEngagement("/history"))
-
-	// Media upload
-	media := protected.Group("/media")
-	media.Post("/upload-url", r.proxyToMedia("/upload-url"))
-	media.Delete("/:id", r.proxyToMedia("/:id"))
-
-	// Admin routes - stricter auth scope check
-	admin := protected.Group("/admin", r.auth.RequireRole("ADMIN", "MODERATOR"))
-	admin.Get("/users", r.proxyToAdmin("/users"))
-	admin.Get("/users/:id", r.proxyToAdmin("/users/:id"))
-	admin.Put("/users/:id/status", r.proxyToAdmin("/users/:id/status"))
-	admin.Get("/companies", r.proxyToAdmin("/companies"))
-	admin.Get("/companies/:id", r.proxyToAdmin("/companies/:id"))
-	admin.Put("/companies/:id/verify", r.proxyToAdmin("/companies/:id/verify"))
-	admin.Put("/companies/:id/reject", r.proxyToAdmin("/companies/:id/reject"))
-	admin.Get("/listings", r.proxyToAdmin("/listings"))
-	admin.Put("/listings/:id/moderate", r.proxyToAdmin("/listings/:id/moderate"))
-	admin.Get("/stats", r.proxyToAdmin("/stats"))
-}
-
-// handleHealth handles gateway liveness check
-func (r *Router) handleHealth(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"status":  "ok",
-		"service": "gateway",
+	// Admin Routes
+	admin := app.Group("/admin")
+	admin.Use(auth.ValidateJWT())
+	// Add admin role check middleware here if needed
+	admin.All("/*", func(c *fiber.Ctx) error {
+		path := strings.TrimPrefix(c.Path(), "/admin")
+		return proxy.Do(c, cfg.AdminServiceURL+"/api/v1/admin"+path)
 	})
 }
 
-// Proxy helper methods - these create fiber handlers that reverse proxy to downstream services
-func (r *Router) proxyToIdentity(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.CatalogURL, path)
-	}
-}
-
-func (r *Router) proxyToCatalog(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.CatalogURL, path)
-	}
-}
-
-func (r *Router) proxyToListing(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.ListingURL, path)
-	}
-}
-
-func (r *Router) proxyToSearch(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.SearchURL, path)
-	}
-}
-
-func (r *Router) proxyToBooking(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.BookingURL, path)
-	}
-}
-
-func (r *Router) proxyToDeal(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.DealURL, path)
-	}
-}
-
-func (r *Router) proxyToPayment(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.PaymentURL, path)
-	}
-}
-
-func (r *Router) proxyToDocument(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.DocumentURL, path)
-	}
-}
-
-func (r *Router) proxyToReview(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.ReviewURL, path)
-	}
-}
-
-func (r *Router) proxyToChat(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.ChatURL, path)
-	}
-}
-
-func (r *Router) proxyToNotification(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.NotificationURL, path)
-	}
-}
-
-func (r *Router) proxyToServicesMarketplace(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.ServicesMarketplaceURL, path)
-	}
-}
-
-func (r *Router) proxyToEngagement(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.EngagementURL, path)
-	}
-}
-
-func (r *Router) proxyToMedia(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.MediaURL, path)
-	}
-}
-
-func (r *Router) proxyToAdmin(path string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		return r.proxy(c, r.cfg.Services.AdminURL, path)
-	}
-}
-
-// proxy performs the actual reverse proxy operation
-func (r *Router) proxy(c *fiber.Ctx, backendURL string, path string) error {
-	// Forward the request to the backend service
-	// This is a simplified version - in production you'd use a proper HTTP client
-	// like httputil.ReverseProxy or a library like reverseproxy
-
-	// TODO: Implement actual reverse proxy with:
-	// - Header forwarding (X-User-ID, X-Trace-ID, etc.)
-	// - Response forwarding
-	// - Error handling
-
-	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{
-		"error": "proxy not implemented",
+func setupProxy(router fiber.Router, prefix string, target string) {
+	router.All(prefix+"/*", func(c *fiber.Ctx) error {
+		return proxy.Do(c, target+c.Path())
 	})
 }

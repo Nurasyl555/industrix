@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package communication.v1;
+
+option go_package = "github.com/industrix/gen/go/communication/v1;communicationv1";
+
+service CommunicationService {
+  rpc SendMessage(SendMessageRequest) returns (Message);
+  rpc GetMessages(GetMessagesRequest) returns (MessageList);
+  rpc SendNotification(SendNotificationRequest) returns (NotificationResult);
+  rpc GetPreferences(GetPreferencesRequest) returns (NotificationPreferences);
+}
+
+message SendMessageRequest {
+  string room_id = 1; // Can be deal_id or user-to-user pair
+  string sender_id = 2;
+  string content = 3;
+  string type = 4; // text, image, file
+}
+
+message Message {
+  string id = 1;
+  string room_id = 2;
+  string sender_id = 3;
+  string content = 4;
+  int64 created_at = 5;
+  bool read = 6;
+}
+
+message GetMessagesRequest {
+  string room_id = 1;
+  int32 limit = 2;
+  int64 before_timestamp = 3;
+}
+
+message MessageList {
+  repeated Message messages = 1;
+  bool has_more = 2;
+}
+
+message SendNotificationRequest {
+  string user_id = 1;
+  string template_id = 2;
+  map<string, string> data = 3;
+  repeated string channels = 4; // email, sms, push
+}
+
+message NotificationResult {
+  bool success = 1;
+  string error = 2;
+  string notification_id = 3;
+}
+
+message GetPreferencesRequest {
+  string user_id = 1;
+}
+
+message NotificationPreferences {
+  bool email_enabled = 1;
+  bool sms_enabled = 2;
+  bool push_enabled = 3;
+  map<string, bool> event_preferences = 4; // e.g. "deal.update": true
+}

@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package trust.v1;
+
+option go_package = "github.com/industrix/gen/go/trust/v1;trustv1";
+
+service TrustService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetUserBatch(GetUserBatchRequest) returns (GetUserBatchResponse);
+  rpc GetCompany(GetCompanyRequest) returns (Company);
+  rpc VerifyToken(VerifyTokenRequest) returns (Claims);
+  rpc GetVerificationStatus(GetVerificationStatusRequest) returns (VerificationStatus);
+  rpc SubmitDocument(SubmitDocumentRequest) returns (SubmitDocumentResponse);
+  rpc GetReputation(GetReputationRequest) returns (ReputationScore);
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string phone = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string company_id = 6;
+  string role = 7;
+  bool verified = 8;
+  string avatar_url = 9;
+}
+
+message Company {
+  string id = 1;
+  string name = 2;
+  string bin = 3; // Business Identification Number (12 digits)
+  bool verified = 4;
+  string address = 5;
+  string phone = 6;
+  string email = 7;
+  string website = 8;
+}
+
+message Claims {
+  string user_id = 1;
+  string company_id = 2;
+  string role = 3;
+  bool verified = 4;
+  int64 exp = 5;
+}
+
+message VerificationStatus {
+  string status = 1; // pending, under_review, verified, rejected
+  string reviewer_notes = 2;
+  repeated Document submitted_docs = 3;
+}
+
+message Document {
+  string id = 1;
+  string type = 2; // charter, bin_certificate, director_id
+  string url = 3;
+  string status = 4;
+}
+
+message ReputationScore {
+  string entity_id = 1; // user_id or company_id
+  float score = 2; // 0.0 to 5.0
+  int32 review_count = 3;
+  string tier = 4; // gold, silver, bronze, none
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserBatchRequest {
+  repeated string ids = 1;
+}
+
+message GetUserBatchResponse {
+  repeated User users = 1;
+}
+
+message GetCompanyRequest {
+  string id = 1;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message GetVerificationStatusRequest {
+  string company_id = 1;
+}
+
+message SubmitDocumentRequest {
+  string company_id = 1;
+  string document_type = 2;
+  string s3_key = 3;
+}
+
+message SubmitDocumentResponse {
+  string document_id = 1;
+  string status = 2;
+}
+
+message GetReputationRequest {
+  string entity_id = 1;
+}

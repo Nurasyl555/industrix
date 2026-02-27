@@ -1,11 +1,12 @@
 # Top-level development commands
 
-.PHONY: help build up down logs test lint proto clean
+.PHONY: help build up down up-infra logs test lint proto migrate seed health
 
 help:
 	@echo "Available commands:"
-	@echo "  make up          - Start all services"
+	@echo "  make up          - Start all services (services + infra)"
 	@echo "  make down        - Stop all services"
+	@echo "  make up-infra    - Start only infrastructure"
 	@echo "  make logs        - View logs"
 	@echo "  make test        - Run tests"
 	@echo "  make lint        - Run linters"
@@ -20,16 +21,19 @@ up:
 down:
 	docker-compose down
 
+up-infra:
+	docker-compose -f docker-compose.infra.yml up -d
+
 logs:
 	docker-compose logs -f
 
 test:
 	@echo "Running tests..."
-	# Add test commands for all services
+	go test ./backend/...
 
 lint:
 	@echo "Running linters..."
-	# Add lint commands for all services
+	golangci-lint run
 
 proto:
 	./scripts/proto-gen.sh

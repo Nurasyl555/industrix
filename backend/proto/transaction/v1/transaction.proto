@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package transaction.v1;
+
+option go_package = "github.com/industrix/gen/go/transaction/v1;transactionv1";
+
+service TransactionService {
+  rpc CreateHold(CreateHoldRequest) returns (Hold);
+  rpc ConfirmBooking(ConfirmBookingRequest) returns (Booking);
+  rpc CancelBooking(CancelBookingRequest) returns (CancelResult);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (Availability);
+  rpc CreateDeal(CreateDealRequest) returns (Deal);
+  rpc ConfirmDeal(ConfirmDealRequest) returns (DealResult);
+  rpc InitiateEscrow(InitiateEscrowRequest) returns (Escrow);
+  rpc ReleaseEscrow(ReleaseEscrowRequest) returns (EscrowResult);
+  rpc RefundEscrow(RefundEscrowRequest) returns (EscrowResult);
+}
+
+message Hold {
+  string id = 1;
+  string listing_id = 2;
+  int64 expires_at = 3;
+}
+
+message CreateHoldRequest {
+  string listing_id = 1;
+  int64 start_date = 2;
+  int64 end_date = 3;
+}
+
+message ConfirmBookingRequest {
+  string hold_id = 1;
+  string user_id = 2;
+}
+
+message Booking {
+  string id = 1;
+  string status = 2; // pending, confirmed, cancelled
+  string listing_id = 3;
+  string user_id = 4;
+}
+
+message CancelBookingRequest {
+  string booking_id = 1;
+  string reason = 2;
+}
+
+message CancelResult {
+  bool success = 1;
+}
+
+message CheckAvailabilityRequest {
+  string listing_id = 1;
+  int64 start_date = 2;
+  int64 end_date = 3;
+}
+
+message Availability {
+  bool available = 1;
+  repeated string conflicts = 2; // booking_ids
+}
+
+message CreateDealRequest {
+  string equipment_id = 1;
+  string buyer_id = 2;
+  string seller_id = 3;
+  double amount = 4;
+  string currency = 5;
+}
+
+message Deal {
+  string id = 1;
+  string status = 2; // created, negotiation, signed, paid, completed, disputed
+}
+
+message ConfirmDealRequest {
+  string deal_id = 1;
+}
+
+message DealResult {
+  bool success = 1;
+  string error = 2;
+}
+
+message InitiateEscrowRequest {
+  string deal_id = 1;
+  double amount = 2;
+  string currency = 3;
+  string payer_id = 4;
+}
+
+message Escrow {
+  string id = 1;
+  string status = 2; // held, released, refunded
+  string transaction_ref = 3;
+}
+
+message ReleaseEscrowRequest {
+  string escrow_id = 1;
+  string recipient_id = 2;
+}
+
+message EscrowResult {
+  bool success = 1;
+  string transaction_id = 2;
+}
+
+message RefundEscrowRequest {
+  string escrow_id = 1;
+  string reason = 2;
+}

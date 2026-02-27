@@ -1,83 +1,44 @@
 package middleware
 
 import (
-	"strconv"
+	"context"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rs/zerolog"
+	"github.com/google/uuid"
+	"github.com/industrix/pkg/logger"
 )
 
-var logger zerolog.Logger
-
-func init() {
-	logger = zerolog.New(nil)
+type LoggingMiddleware struct {
+	logger *logger.Logger
 }
 
-// RequestLogger logs method, path, status, latency, trace-id for every request
-func RequestLogger() fiber.Handler {
+func NewLogging(logger *logger.Logger) *LoggingMiddleware {
+	return &LoggingMiddleware{logger: logger}
+}
+
+func (m *LoggingMiddleware) RequestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
-		err := c.Next()
-		latency := time.Since(start)
-		status := c.Response().StatusCode()
-
-		traceID := GetTraceID(c)
+		traceID := c.Get("X-Trace-ID")
 		if traceID == "" {
-			traceID = "none"
+			traceID = uuid.New().String()
 		}
 
-		logger.Info().
+		c.Set("X-Trace-ID", traceID)
+		ctx := context.WithValue(c.Context(), "trace_id", traceID)
+		c.SetUserContext(ctx)
+
+		err := c.Next()
+
+		m.logger.Info().
 			Str("method", c.Method()).
 			Str("path", c.Path()).
-			Int("status", status).
-			Dur("latency", latency).
+			Int("status", c.Response().StatusCode()).
+			Dur("latency", time.Since(start)).
 			Str("trace_id", traceID).
-			Str("ip", c.IP()).
-			Str("user_agent", c.Get("User-Agent")).
-			Msg("request completed")
+			Msg("Request processed")
 
 		return err
 	}
-}
-
-// RequestLoggerWithFields creates a logger with custom fields
-func RequestLoggerWithFields() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		start := time.Now()
-		err := c.Next()
-		latency := time.Since(start)
-		status := c.Response().StatusCode()
-
-		fields := map[string]interface{}{
-			"method":    c.Method(),
-			"path":      c.Path(),
-			"status":    status,
-			"latency":   latency.Milliseconds(),
-			"trace_id":  GetTraceID(c),
-			"client_ip": c.IP(),
-		}
-
-		if userID := GetUserID(c); userID != "" {
-			fields["user_id"] = userID
-		}
-
-		if status >= 500 {
-			logger.Error().Fields(fields).Msg("server error")
-		} else if status >= 400 {
-			logger.Warn().Fields(fields).Msg("client error")
-		} else {
-			logger.Info().Fields(fields).Msg("request success")
-		}
-
-		return err
-	}
-}
-
-// GetLatency returns the latency in milliseconds as a string
-func GetLatency(c *fiber.Ctx) string {
-	if latency, ok := c.Locals("latency").(time.Duration); ok {
-		return strconv.FormatInt(latency.Milliseconds(), 10)
-	}
-	return "0"
 }
