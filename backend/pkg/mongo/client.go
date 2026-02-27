@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/industrix/pkg/logger"
+	"github.com/industrix/backend/pkg/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

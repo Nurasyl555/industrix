@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/industrix/pkg/logger"
+	"github.com/industrix/backend/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
 

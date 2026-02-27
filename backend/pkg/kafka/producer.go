@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/industrix/pkg/logger"
+	"github.com/industrix/backend/pkg/logger"
 )
 
 type ProducerConfig struct {

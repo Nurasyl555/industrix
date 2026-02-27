@@ -2,7 +2,7 @@
 # Used with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
 
 services:
-  gateway:
+  backend:
     environment:
       - ENV=development
       - DEBUG=true

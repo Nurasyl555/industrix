@@ -1,6 +1,6 @@
 # Full local stack - all services + infrastructure
 # Run with: docker-compose up -d
-version: '3.8'
+version: "3.8"
 
 services:
   # Frontend
@@ -14,141 +14,22 @@ services:
     environment:
       - NODE_ENV=development
     depends_on:
-      - gateway
+      - backend
 
-  # API Gateway
-  gateway:
-    build:
-      context: .
-      dockerfile: backend/services/gateway/Dockerfile
+  # Backend (Modular Monolith)
+  backend:
+    build: ./backend
     ports:
       - "8080:8080"
     environment:
       - ENV=development
-    depends_on:
-      - trust
-      - inventory
-      - transaction
-      - content
-      - communication
-
-  # Trust Service (Identity + Integrity + Review)
-  trust:
-    build:
-      context: .
-      dockerfile: backend/services/trust/Dockerfile
-    ports:
-      - "8081:8081"
-      - "50051:50051"
-    environment:
-      - ENV=development
       - DB_DSN=postgres://postgres:devpassword@postgres:5432/trust_db?sslmode=disable
-      - REDIS_ADDR=redis:6379
+      - REDIS_HOST=redis
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       - postgres
       - redis
       - kafka
-
-  # Inventory Service (Catalog + Listing + Search)
-  inventory:
-    build:
-      context: .
-      dockerfile: backend/services/inventory/Dockerfile
-    ports:
-      - "8082:8081"
-      - "50052:50051"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/inventory_db?sslmode=disable
-      - OPENSEARCH_URL=http://opensearch:9200
-    depends_on:
-      - postgres
-      - opensearch
-
-  # Transaction Service (Booking + Deal + Payment)
-  transaction:
-    build:
-      context: .
-      dockerfile: backend/services/transaction/Dockerfile
-    ports:
-      - "8083:8081"
-      - "50053:50051"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/transaction_db?sslmode=disable
-    depends_on:
-      - postgres
-
-  # Content Service (Document + Media + Engagement)
-  content:
-    build:
-      context: .
-      dockerfile: backend/services/content/Dockerfile
-    ports:
-      - "8084:8081"
-      - "50054:50051"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/content_db?sslmode=disable
-      - MINIO_ENDPOINT=minio:9000
-    depends_on:
-      - postgres
-      - minio
-
-  # Communication Service (Chat + Notification)
-  communication:
-    build:
-      context: .
-      dockerfile: backend/services/communication/Dockerfile
-    ports:
-      - "8085:8081"
-      - "50055:50051"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/communication_db?sslmode=disable
-      - MONGO_URI=mongodb://mongodb:27017
-    depends_on:
-      - postgres
-      - mongodb
-
-  # Services Marketplace
-  services-marketplace:
-    build:
-      context: .
-      dockerfile: backend/services/services-marketplace/Dockerfile
-    ports:
-      - "8086:8081"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/services_db?sslmode=disable
-    depends_on:
-      - postgres
-
-  # Analytics Service
-  analytics:
-    build:
-      context: .
-      dockerfile: backend/services/analytics/Dockerfile
-    ports:
-      - "8087:8081"
-    environment:
-      - ENV=development
-      - DB_DSN=postgres://postgres:devpassword@postgres:5432/analytics_db?sslmode=disable
-    depends_on:
-      - postgres
-
-  # Admin Service
-  admin:
-    build:
-      context: .
-      dockerfile: backend/services/admin/Dockerfile
-    ports:
-      - "8088:8081"
-    environment:
-      - ENV=development
-    depends_on:
-      - gateway
 
   # Include infrastructure services
   postgres:

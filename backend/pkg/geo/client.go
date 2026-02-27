@@ -9,7 +9,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/industrix/pkg/logger"
+	"github.com/industrix/backend/pkg/logger"
 )
 
 // Config holds geo service configuration
