@@ -1,0 +1,544 @@
+definitions:
+  company.Company:
+    properties:
+      address:
+        type: string
+      bin:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      reputation_score:
+        type: number
+      reviewer_note:
+        type: string
+      status:
+        $ref: '#/definitions/company.CompanyStatus'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      verified:
+        type: boolean
+      website:
+        type: string
+    type: object
+  company.CompanyStatus:
+    enum:
+    - pending
+    - under_review
+    - verified
+    - rejected
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusUnderReview
+    - StatusVerified
+    - StatusRejected
+  company.CreateCompanyRequest:
+    properties:
+      address:
+        type: string
+      bin:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      website:
+        type: string
+    type: object
+  company.UpdateCompanyRequest:
+    properties:
+      address:
+        type: string
+      bin:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      website:
+        type: string
+    type: object
+  company.UploadDocumentRequest:
+    properties:
+      content_type:
+        type: string
+      document_type:
+        description: bin_cert, charter, director_id
+        type: string
+      file_name:
+        type: string
+    type: object
+  company.VerificationDocument:
+    properties:
+      company_id:
+        type: string
+      created_at:
+        type: string
+      document_type:
+        type: string
+      file_name:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: string
+      upload_url:
+        type: string
+      uploaded_at:
+        type: string
+    type: object
+  company.VerificationStatus:
+    properties:
+      documents:
+        items:
+          $ref: '#/definitions/company.VerificationDocument'
+        type: array
+      reviewer_notes:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  profile.GetUploadURLRequest:
+    properties:
+      content_type:
+        type: string
+      file_name:
+        type: string
+    type: object
+  profile.Profile:
+    properties:
+      avatar_url:
+        type: string
+      company_id:
+        type: string
+      company_name:
+        type: string
+      company_verified:
+        type: boolean
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      notification_preferences:
+        additionalProperties:
+          type: boolean
+        type: object
+      phone:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  profile.PublicProfile:
+    properties:
+      avatar_url:
+        type: string
+      company_name:
+        type: string
+      company_verified:
+        type: boolean
+      first_name:
+        type: string
+      last_name:
+        type: string
+      rating:
+        type: number
+      reviews_count:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  profile.UpdateAvatarRequest:
+    properties:
+      avatar_url:
+        type: string
+    type: object
+  profile.UpdateNotificationPreferencesRequest:
+    properties:
+      preferences:
+        additionalProperties:
+          type: boolean
+        type: object
+    type: object
+  profile.UpdateProfileRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+    type: object
+  profile.UploadURLResponse:
+    properties:
+      expires_at:
+        type: integer
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      upload_url:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /companies:
+    post:
+      consumes:
+      - application/json
+      description: Create a company profile for the authenticated user
+      parameters:
+      - description: Create Company Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/company.CreateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/company.Company'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new company
+      tags:
+      - company
+  /companies/me:
+    put:
+      consumes:
+      - application/json
+      description: Update the company profile of the authenticated user
+      parameters:
+      - description: Update Company Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/company.UpdateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/company.Company'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update company profile
+      tags:
+      - company
+  /companies/me/documents:
+    post:
+      consumes:
+      - application/json
+      description: Upload a verification document for the authenticated user's company
+      parameters:
+      - description: Upload Document Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/company.UploadDocumentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/company.VerificationDocument'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload verification document
+      tags:
+      - company
+  /companies/me/verification-status:
+    get:
+      consumes:
+      - application/json
+      description: Get the verification status of the authenticated user's company
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/company.VerificationStatus'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get verification status
+      tags:
+      - company
+  /users/{id}/public:
+    get:
+      consumes:
+      - application/json
+      description: Get public profile of any user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.PublicProfile'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get public profile
+      tags:
+      - profile
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get profile of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.Profile'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: Update profile of the authenticated user
+      parameters:
+      - description: Update Profile Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.Profile'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - profile
+  /users/me/avatar:
+    put:
+      consumes:
+      - application/json
+      description: Update avatar URL of the authenticated user
+      parameters:
+      - description: Update Avatar Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateAvatarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.Profile'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user avatar
+      tags:
+      - profile
+  /users/me/avatar/upload-url:
+    post:
+      consumes:
+      - application/json
+      description: Get a presigned URL for uploading an avatar to MinIO
+      parameters:
+      - description: Get Upload URL Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/profile.GetUploadURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/profile.UploadURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get avatar upload URL
+      tags:
+      - profile
+  /users/me/notification-preferences:
+    put:
+      consumes:
+      - application/json
+      description: Update notification preferences of the authenticated user
+      parameters:
+      - description: Update Notification Preferences Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/profile.UpdateNotificationPreferencesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update notification preferences
+      tags:
+      - profile
+swagger: "2.0"

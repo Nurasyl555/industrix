@@ -7,18 +7,27 @@ import (
 	"github.com/industrix/pkg/errors"
 )
 
-// Handler handles HTTP requests for company
 type Handler struct {
 	service *Service
 }
 
-// NewHandler creates a new company handler
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
 // CreateCompany creates a new company
-// POST /companies
+// @Summary Create a new company
+// @Description Create a company profile for the authenticated user
+// @Tags company
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body CreateCompanyRequest true "Create Company Request"
+// @Success 201 {object} Company
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Router /companies [post]
 func (h *Handler) CreateCompany(c *fiber.Ctx) error {
 	userID := c.Locals("user_id")
 	if userID == nil {
@@ -39,7 +48,18 @@ func (h *Handler) CreateCompany(c *fiber.Ctx) error {
 }
 
 // UpdateCompany updates the authenticated user's company
-// PUT /companies/me
+// @Summary Update company profile
+// @Description Update the company profile of the authenticated user
+// @Tags company
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body UpdateCompanyRequest true "Update Company Request"
+// @Success 200 {object} Company
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /companies/me [put]
 func (h *Handler) UpdateCompany(c *fiber.Ctx) error {
 	userID := c.Locals("user_id")
 	if userID == nil {
@@ -60,7 +80,18 @@ func (h *Handler) UpdateCompany(c *fiber.Ctx) error {
 }
 
 // UploadDocument uploads verification documents
-// POST /companies/me/documents
+// @Summary Upload verification document
+// @Description Upload a verification document for the authenticated user's company
+// @Tags company
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body UploadDocumentRequest true "Upload Document Request"
+// @Success 200 {object} VerificationDocument
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /companies/me/documents [post]
 func (h *Handler) UploadDocument(c *fiber.Ctx) error {
 	userID := c.Locals("user_id")
 	if userID == nil {
@@ -81,7 +112,16 @@ func (h *Handler) UploadDocument(c *fiber.Ctx) error {
 }
 
 // GetVerificationStatus returns verification status
-// GET /companies/me/verification-status
+// @Summary Get verification status
+// @Description Get the verification status of the authenticated user's company
+// @Tags company
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} VerificationStatus
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /companies/me/verification-status [get]
 func (h *Handler) GetVerificationStatus(c *fiber.Ctx) error {
 	userID := c.Locals("user_id")
 	if userID == nil {
@@ -96,7 +136,6 @@ func (h *Handler) GetVerificationStatus(c *fiber.Ctx) error {
 	return c.JSON(status)
 }
 
-// RegisterRoutes registers company routes
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	companies := router.Group("/companies")
 	companies.Post("", h.CreateCompany)

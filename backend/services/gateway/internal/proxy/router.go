@@ -3,8 +3,8 @@ package proxy
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"gateway/internal/config"
-	"gateway/internal/middleware"
+	"github.com/industrix/services/gateway/internal/config"
+	"github.com/industrix/services/gateway/internal/middleware"
 )
 
 type Router struct {
