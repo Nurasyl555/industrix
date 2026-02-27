@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Industrial Equipment Marketplace — System Architecture</title>
+<title>Industrix — System Architecture</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
 
@@ -16,22 +16,17 @@
     --text: #c8d6e5;
     --text-dim: #5a7090;
     --text-bright: #e8f0fa;
-
     --client: #00b4d8;
-    --client-dim: #003d4d;
-    --gateway: #f77f00;
-    --gateway-dim: #3d2000;
-    --core: #06d6a0;
-    --core-dim: #003d2a;
+    --platform: #f77f00;
+    --module: #06d6a0;
+    --module-dim: #0a2d20;
     --data: #8338ec;
-    --data-dim: #1e0a3d;
     --infra: #ef476f;
-    --infra-dim: #3d0015;
     --async: #ffd166;
-    --async-dim: #3d3000;
+    --contract: #ff6b6b;
     --search: #118ab2;
-    --search-dim: #002033;
-    --file: #06d6a0;
+    --done: #06d6a0;
+    --planned: #5a7090;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,873 +42,527 @@
   }
 
   nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    padding-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px; padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
   }
-
   .nav-home {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 12px;
-    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim); text-decoration: none;
+    font-size: 12px; font-family: 'IBM Plex Mono', monospace;
     transition: color 0.3s ease;
   }
-
-  .nav-home:hover {
-    color: var(--text);
-  }
-
-  .nav-arrows {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
+  .nav-home:hover { color: var(--text); }
   .nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 12px;
-    font-family: 'IBM Plex Mono', monospace;
-    transition: color 0.3s ease;
-    padding: 4px 8px;
-    border-radius: 3px;
+    color: var(--text-dim); text-decoration: none;
+    font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+    transition: color 0.3s ease; padding: 4px 8px; border-radius: 3px;
   }
+  .nav-link:hover { color: var(--text); background: var(--bg2); }
 
-  .nav-link:hover {
-    color: var(--text);
-    background: var(--bg2);
-  }
-
-  .nav-divider {
-    color: var(--border);
-  }
-
-  header {
-    margin-bottom: 40px;
-    border-bottom: 1px solid var(--border-bright);
-    padding-bottom: 24px;
-  }
-  header h1 {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-bright);
-    letter-spacing: -0.5px;
-  }
-  header p {
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    margin-top: 4px;
-  }
-  .stack-pills {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
-  }
+  header { margin-bottom: 40px; border-bottom: 1px solid var(--border-bright); padding-bottom: 24px; }
+  header h1 { font-size: 22px; font-weight: 700; color: var(--text-bright); letter-spacing: -0.5px; }
+  header p { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-top: 4px; }
+  .stack-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .pill {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 2px;
-    border: 1px solid;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 2px 8px; border-radius: 2px; border: 1px solid;
   }
 
-  .arch-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .layer {
-    display: grid;
-    gap: 2px;
-    margin-bottom: 2px;
-  }
-
-  .layer-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    padding: 8px 0 4px;
-  }
-
-  .box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px 16px;
-    position: relative;
-    transition: border-color 0.15s, background 0.15s;
-    cursor: default;
-  }
-  .box:hover { background: var(--bg3); border-color: var(--border-bright); }
-
-  .box-title {
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--text-bright);
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .box-title .dot {
-    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-  }
-  .box-tech {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-  }
-  .box-desc {
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.4;
-  }
-  .box-tag {
-    position: absolute;
-    top: 8px; right: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 8px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  /* Color accents */
-  .c-client  { border-left: 3px solid var(--client);  }
-  .c-gateway { border-left: 3px solid var(--gateway); }
-  .c-core    { border-left: 3px solid var(--core);    }
-  .c-data    { border-left: 3px solid var(--data);    }
-  .c-infra   { border-left: 3px solid var(--infra);   }
-  .c-async   { border-left: 3px solid var(--async);   }
-  .c-search  { border-left: 3px solid var(--search);  }
-  .c-file    { border-left: 3px solid #06d6a0;        }
-
-  .dot-client  { background: var(--client);  }
-  .dot-gateway { background: var(--gateway); }
-  .dot-core    { background: var(--core);    }
-  .dot-data    { background: var(--data);    }
-  .dot-infra   { background: var(--infra);   }
-  .dot-async   { background: var(--async);   }
-  .dot-search  { background: var(--search);  }
-
-  /* Arrow connectors */
-  .arrow-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-    padding: 4px 0;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-  }
-  .arrow-line {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-  }
-  .arrow-line span { color: var(--text-dim); font-size: 9px; }
-
-  /* Section headers */
   .section-header {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    border-top: 1px solid var(--border);
-    padding: 16px 0 8px;
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim);
+    border-top: 1px solid var(--border); padding: 16px 0 8px; margin-top: 12px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .section-header::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  /* Responsive grids */
+  .layer { display: grid; gap: 2px; margin-bottom: 2px; }
   .g2 { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr 1fr 1fr; }
   .g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .g5 { grid-template-columns: repeat(5, 1fr); }
-  .g6 { grid-template-columns: repeat(6, 1fr); }
-  .g-auto { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 
-  /* Communication protocols legend */
-  .legend {
-    display: flex; flex-wrap: wrap; gap: 16px;
-    padding: 16px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    margin: 24px 0;
+  .box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 16px; position: relative;
+    transition: border-color 0.15s, background 0.15s; cursor: default;
   }
-  .legend-item {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
+  .box:hover { background: var(--bg3); border-color: var(--border-bright); }
+  .box-title {
+    font-weight: 600; font-size: 12px; color: var(--text-bright);
+    margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
   }
-  .legend-line {
-    width: 24px; height: 2px;
+  .box-title .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .box-tech { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-dim); margin-bottom: 6px; }
+  .box-desc { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+  .box-tag {
+    position: absolute; top: 8px; right: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 8px;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+  }
+  .status-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600;
+    padding: 1px 6px; border-radius: 2px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .badge-live { background: var(--module-dim); color: var(--done); border: 1px solid var(--done); }
+  .badge-planned { background: var(--bg3); color: var(--planned); border: 1px solid var(--border-bright); }
+
+  .c-client   { border-left: 3px solid var(--client); }
+  .c-platform { border-left: 3px solid var(--platform); }
+  .c-module   { border-left: 3px solid var(--module); }
+  .c-data     { border-left: 3px solid var(--data); }
+  .c-infra    { border-left: 3px solid var(--infra); }
+  .c-async    { border-left: 3px solid var(--async); }
+  .c-contract { border-left: 3px solid var(--contract); }
+  .c-search   { border-left: 3px solid var(--search); }
+
+  .arrow-row {
+    display: flex; justify-content: center; align-items: center; gap: 16px; padding: 6px 0;
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 9px;
   }
 
-  /* Decision notes */
   .note {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--async);
-    border-radius: 4px;
-    padding: 12px 16px;
-    margin-top: 4px;
-    font-size: 11px;
-    color: var(--text-dim);
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--async); border-radius: 4px;
+    padding: 12px 16px; margin-top: 4px; font-size: 11px; color: var(--text-dim);
   }
   .note strong { color: var(--text); }
 
-  /* Data flow section */
-  .flow-box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 16px;
+  .group-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--platform); padding: 12px 0 4px;
   }
-  .flow-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-  }
+  .group-label span { color: var(--text-dim); font-weight: 400; }
+
+  .flow-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+  .flow-step { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .flow-step:last-child { border-bottom: none; }
-  .flow-num {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--gateway);
-    min-width: 20px;
-  }
+  .flow-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--platform); min-width: 20px; }
   .flow-text { font-size: 11px; }
   .flow-text strong { color: var(--text-bright); }
-  .flow-proto {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    color: var(--text-dim);
-    background: var(--bg3);
-    padding: 1px 5px;
-    border-radius: 2px;
+  .flow-proto { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-dim); background: var(--bg3); padding: 1px 5px; border-radius: 2px; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; margin: 8px 0;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim);
   }
 
-  @media (max-width: 900px) {
-    .g3, .g4, .g5, .g6 { grid-template-columns: 1fr 1fr; }
-    body { padding: 16px; }
+  .compliance-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px;
+    font-size: 11px;
   }
-  @media (max-width: 600px) {
-    .g2, .g3, .g4, .g5, .g6 { grid-template-columns: 1fr; }
+
+  footer {
+    text-align: center; padding-top: 32px; margin-top: 32px;
+    border-top: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
   }
+
+  @media (max-width: 900px) { .g3, .g4 { grid-template-columns: 1fr 1fr; } body { padding: 16px; } }
+  @media (max-width: 600px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <nav>
   <a href="index.html" class="nav-home">← Back to Docs</a>
-  <div class="nav-arrows">
+  <div style="display:flex;gap:12px;align-items:center">
     <span class="nav-link" style="cursor:not-allowed;opacity:.5">← Prev</span>
-    <span class="nav-divider">│</span>
-    <a href="design-plan.html" class="nav-link">Next →</a>
+    <span style="color:var(--border)">│</span>
+    <a href="impl-plan.html" class="nav-link">Next →</a>
   </div>
 </nav>
 
 <header>
-  <h1>Industrial Equipment Marketplace — System Architecture</h1>
-  <p>// medium scale · CIS region · 1k–50k users · microservices · v1.0</p>
+  <h1>Industrix — System Architecture</h1>
+  <p>// modular monolith · CIS region · 1k–50k users · 12 modules · v2.0</p>
   <div class="stack-pills">
-    <span class="pill" style="color:var(--core);border-color:var(--core)">Go · Gin/Fiber</span>
-    <span class="pill" style="color:var(--data);border-color:var(--data)">PostgreSQL</span>
-    <span class="pill" style="color:var(--data);border-color:var(--data)">MongoDB</span>
-    <span class="pill" style="color:var(--infra);border-color:var(--infra)">Redis</span>
+    <span class="pill" style="color:var(--module);border-color:var(--module)">Go 1.24 · Fiber</span>
+    <span class="pill" style="color:var(--data);border-color:var(--data)">PostgreSQL 15</span>
+    <span class="pill" style="color:var(--data);border-color:var(--data)">MongoDB 7</span>
+    <span class="pill" style="color:var(--infra);border-color:var(--infra)">Redis 7</span>
     <span class="pill" style="color:var(--async);border-color:var(--async)">Kafka</span>
     <span class="pill" style="color:var(--client);border-color:var(--client)">MinIO</span>
     <span class="pill" style="color:var(--search);border-color:var(--search)">OpenSearch</span>
-    <span class="pill" style="color:var(--gateway);border-color:var(--gateway)">NGINX</span>
-    <span class="pill" style="color:var(--text-dim);border-color:var(--border-bright)">gRPC · REST · WebSocket</span>
+    <span class="pill" style="color:var(--platform);border-color:var(--platform)">NGINX</span>
+    <span class="pill" style="color:var(--text-dim);border-color:var(--border-bright)">REST · WebSocket</span>
     <span class="pill" style="color:var(--text-dim);border-color:var(--border-bright)">Gotenberg · imgproxy · 2GIS</span>
-    <span class="pill" style="color:var(--infra);border-color:var(--infra)">KZ data residency compliant</span>
-    <span class="pill" style="color:var(--text-dim);border-color:var(--border-bright)">12 services · Docker/k8s</span>
+    <span class="pill" style="color:var(--infra);border-color:var(--infra)">KZ data residency</span>
+    <span class="pill" style="color:var(--text-dim);border-color:var(--border-bright)">Single binary · Docker/k8s</span>
   </div>
 </header>
 
 <!-- LEGEND -->
 <div class="legend">
-  <span class="legend-item"><span class="legend-line" style="background:var(--client)"></span>Client → Gateway (HTTPS/REST)</span>
-  <span class="legend-item"><span class="legend-line" style="background:var(--core)"></span>Service ↔ Service (gRPC)</span>
-  <span class="legend-item"><span class="legend-line" style="background:var(--async);height:2px;border-top:2px dashed var(--async);background:transparent"></span>Async (Kafka event)</span>
-  <span class="legend-item"><span class="legend-line" style="background:var(--infra)"></span>Cache read/write (Redis)</span>
-  <span class="legend-item"><span class="legend-line" style="background:var(--data)"></span>DB read/write</span>
-  <span class="legend-item"><span class="legend-line" style="background:var(--client);border-top:2px dotted var(--client);background:transparent"></span>WebSocket</span>
+  <span class="legend-item"><span class="status-badge badge-live">✓ live</span> Implemented & deployed</span>
+  <span class="legend-item"><span class="status-badge badge-planned">planned</span> Designed, not yet implemented</span>
 </div>
 
-<!-- ═══════════════════════════ CLIENT LAYER ═══════════════════════════ -->
+<!-- ═══════════════ CLIENT LAYER ═══════════════ -->
 <div class="section-header">01 · Client Layer</div>
 <div class="layer g3">
   <div class="box c-client">
     <div class="box-tag">web</div>
-    <div class="box-title"><span class="dot dot-client"></span>Web App</div>
+    <div class="box-title"><span class="dot" style="background:var(--client)"></span>Web App</div>
     <div class="box-tech">React / Next.js · TypeScript</div>
     <div class="box-desc">Main marketplace UI. Equipment catalog, listings, search, deal management, admin panel. SSR for SEO on catalog pages.</div>
   </div>
   <div class="box c-client">
     <div class="box-tag">mobile</div>
-    <div class="box-title"><span class="dot dot-client"></span>Mobile App</div>
+    <div class="box-title"><span class="dot" style="background:var(--client)"></span>Mobile App</div>
     <div class="box-tech">React Native · iOS + Android</div>
-    <div class="box-desc">Shared codebase with web where possible. Push notifications, camera for equipment photos, geolocation for region filtering.</div>
+    <div class="box-desc">Push notifications, camera for equipment photos, geolocation for region filtering.</div>
   </div>
   <div class="box c-client">
     <div class="box-tag">3rd party</div>
-    <div class="box-title"><span class="dot dot-client"></span>External Integrations</div>
+    <div class="box-title"><span class="dot" style="background:var(--client)"></span>External Integrations</div>
     <div class="box-tech">REST API · Webhooks</div>
-    <div class="box-desc">ERP/CRM integrations for enterprise clients. Payment provider callbacks. Electronic document flow (ЭДО) systems.</div>
+    <div class="box-desc">ERP/CRM integrations, payment provider callbacks, ЭДО systems.</div>
   </div>
 </div>
 
-<!-- ARROW -->
-<div class="arrow-row">
-  <div class="arrow-line">
-    <span>▼ HTTPS / REST · WebSocket</span>
-  </div>
-</div>
+<div class="arrow-row">▼ HTTPS / REST · WebSocket → NGINX → Backend Monolith (:8080)</div>
 
-<!-- ═══════════════════════════ GATEWAY LAYER ═══════════════════════════ -->
-<div class="section-header">02 · Gateway & Edge Layer</div>
-<div class="layer g2">
-  <div class="box c-gateway">
+<!-- ═══════════════ PLATFORM LAYER ═══════════════ -->
+<div class="section-header">02 · Platform Layer (Middleware)</div>
+<div class="note" style="margin-bottom:8px;border-left-color:var(--platform)">
+  <strong style="color:var(--platform)">No separate API Gateway.</strong> All gateway responsibilities (auth, rate limiting, logging, routing) are handled by in-process Fiber middleware. This eliminates gRPC token verification roundtrip and removes an entire service from the deployment.
+</div>
+<div class="layer g4">
+  <div class="box c-platform">
     <div class="box-tag">edge</div>
-    <div class="box-title"><span class="dot dot-gateway"></span>NGINX</div>
+    <div class="box-title"><span class="dot" style="background:var(--platform)"></span>NGINX</div>
     <div class="box-tech">nginx 1.25+</div>
-    <div class="box-desc">TLS termination, static file serving, load balancing across API Gateway instances, rate limiting at edge, WebSocket proxying for chat.</div>
+    <div class="box-desc">TLS termination, static files, load balancing, WebSocket proxying.</div>
   </div>
-  <div class="box c-gateway">
-    <div class="box-tag">gateway</div>
-    <div class="box-title"><span class="dot dot-gateway"></span>API Gateway</div>
-    <div class="box-tech">Go · Fiber · single deployable</div>
-    <div class="box-desc">JWT validation & auth middleware, request routing to downstream services, response aggregation, rate limiting per user/IP, request logging & tracing injection (trace-id headers).</div>
+  <div class="box c-platform">
+    <div class="box-title"><span class="dot" style="background:var(--platform)"></span>JWT Auth</div>
+    <div class="box-tech">platform/middleware/auth.go</div>
+    <div class="box-desc">Direct in-process JWT validation. Injects userID into Fiber context.</div>
   </div>
-</div>
-
-<div class="note">
-  <strong>Why a custom Go API Gateway?</strong> For medium scale, a thin Go/Fiber gateway avoids the operational complexity of Kong/Traefik while giving you full control over auth, rate limiting, and routing logic in the same language as your services. Scale to Kong if you need plugin ecosystem later.
-</div>
-
-<!-- ARROW -->
-<div class="arrow-row">
-  <div class="arrow-line">
-    <span>▼ gRPC (internal) · REST (where appropriate)</span>
+  <div class="box c-platform">
+    <div class="box-title"><span class="dot" style="background:var(--platform)"></span>Rate Limiter</div>
+    <div class="box-tech">platform/middleware/ratelimit.go</div>
+    <div class="box-desc">Redis sliding window. Per-user and per-IP limits.</div>
+  </div>
+  <div class="box c-platform">
+    <div class="box-title"><span class="dot" style="background:var(--platform)"></span>Request Logger</div>
+    <div class="box-tech">platform/middleware/logging.go</div>
+    <div class="box-desc">Structured JSON (zerolog). Method, path, status, latency, trace-id.</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ CORE SERVICES ═══════════════════════════ -->
-<div class="section-header">03 · Core Domain Services <span style="font-size:10px;font-weight:400;color:var(--text-dim);letter-spacing:0">&nbsp;— 12 services · KZ data residency compliant · all self-hosted</span></div>
+<div class="arrow-row">▼ In-process function calls (no network hop) → Domain Modules</div>
 
-<!-- KZ notice -->
-<div class="note" style="margin-bottom:8px;border-left-color:var(--infra)">
-  <strong style="color:var(--infra)">KZ Data Residency:</strong> All services run on infrastructure physically located in Kazakhstan (Jusan Cloud / KazTransCom / Yandex Cloud KZ). No personal data transits to foreign SaaS. 3rd party tools used are either self-hosted or send only transient non-personal data (geocoding queries, push tokens at send-time only).
+<!-- ═══════════════ DOMAIN MODULES ═══════════════ -->
+<div class="section-header">03 · Domain Modules <span style="font-size:10px;font-weight:400;color:var(--text-dim);letter-spacing:0">&nbsp;— 12 modules · vertical slices · strict isolation via contracts · KZ data residency</span></div>
+
+<div class="note" style="margin-bottom:8px;border-left-color:var(--module)">
+  <strong style="color:var(--module)">Vertical module pattern:</strong> Each module is a self-contained slice: <code style="font-size:10px;color:var(--async)">types.go → repository.go → service.go → handler.go → module.go</code>. Modules never import each other — cross-module data flows through <strong>contracts/</strong> interfaces.
 </div>
 
-<!-- GROUP: Identity -->
-<div class="layer-label" style="color:var(--gateway);padding-top:8px">&#9658; Identity Service &nbsp;<span style="color:var(--text-dim);font-weight:400">merges: Auth + User &amp; Profile + Company &amp; Verification</span></div>
-<div class="layer g3">
-  <div class="box c-core" style="grid-column: span 3">
-    <div class="box-tag">svc-identity</div>
-    <div class="box-title"><span class="dot dot-core"></span>Identity Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (identity_db) · Redis</div>
+<div class="note" style="margin-bottom:12px;border-left-color:var(--infra)">
+  <strong style="color:var(--infra)">KZ Data Residency:</strong> All services run on infrastructure physically located in Kazakhstan (Jusan Cloud / KazTransCom / Yandex Cloud KZ). No personal data transits to foreign SaaS.
+</div>
+
+<!-- GROUP: Identity & Trust -->
+<div class="group-label">► Identity & Trust</div>
+<div class="layer g2">
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-live">✓ live</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--done)"></span>Identity Module</div>
+    <div class="box-tech">modules/identity/ · PostgreSQL (trust_db) · Redis</div>
     <div class="box-desc">
-      Single service owning all identity concerns — no reason to split at this scale, same team owns it all.<br><br>
-      <strong style="color:var(--text)">Auth module:</strong> Registration (email/phone), login, JWT issue/refresh/revoke, OTP via self-hosted SMS gateway (KZ operators: Beeline KZ, Kcell SMPP), password reset. Sessions in Redis.<br><br>
-      <strong style="color:var(--text)">Profile module:</strong> User profiles, account settings, notification preferences, reputation score (aggregated from Review Service via Kafka). Exposes gRPC <code style="font-size:10px;color:var(--async)">GetUser</code> / <code style="font-size:10px;color:var(--async)">GetCompany</code> endpoints consumed by all services.<br><br>
-      <strong style="color:var(--text)">Company &amp; Verification module:</strong> Company profiles, БИН/ИНН validation against KZ tax authority format, document upload to MinIO (verification docs stored on-prem). Verification state machine: pending → under_review → verified / rejected. Admin review queue. Emits <code style="font-size:10px;color:var(--async)">company.verified</code> to unlock listing rights.
+      <strong style="color:var(--text)">Auth:</strong> Registration (email/phone), OTP verification, login, JWT issue/refresh, password reset. Sessions in Redis.<br><br>
+      <strong style="color:var(--text)">Profile:</strong> User profiles, account settings, avatar management.<br><br>
+      <strong style="color:var(--text)">Contract:</strong> Implements <code style="font-size:10px;color:var(--contract)">UserProvider</code> → <code style="font-size:10px;color:var(--async)">GetUserBasic()</code>
+    </div>
+  </div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-live">✓ live</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--done)"></span>Integrity Module</div>
+    <div class="box-tech">modules/integrity/ · PostgreSQL (trust_db)</div>
+    <div class="box-desc">
+      <strong style="color:var(--text)">Company management:</strong> Profiles, БИН/ИНН validation (12-digit KZ format), verification state machine: pending → verified → rejected.<br><br>
+      <strong style="color:var(--text)">Future scope:</strong> Disputes, subscription/tariff plans, immutable audit log (CIS compliance).<br><br>
+      <strong style="color:var(--text)">Contract:</strong> Implements <code style="font-size:10px;color:var(--contract)">CompanyProvider</code> → <code style="font-size:10px;color:var(--async)">GetCompanyBasic()</code>
     </div>
   </div>
 </div>
 
 <!-- GROUP: Catalog & Discovery -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Catalog &amp; Discovery</div>
+<div class="group-label">► Catalog & Discovery</div>
 <div class="layer g3">
-  <div class="box c-core">
-    <div class="box-tag">svc-catalog</div>
-    <div class="box-title"><span class="dot dot-core"></span>Catalog Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (catalog_db) · Redis</div>
-    <div class="box-desc">Equipment CRUD, category taxonomy, dynamic technical attribute schemas per category type. Canonical source of truth. Also handles <strong style="color:var(--text)">comparison endpoint</strong> — no separate service needed: <code style="font-size:10px;color:var(--async)">GET /catalog/compare?ids=1,2,3</code> normalizes specs inline. Publishes all mutations to Kafka.</div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Catalog Module</div>
+    <div class="box-tech">modules/catalog/ · PostgreSQL · Redis</div>
+    <div class="box-desc">
+      Equipment CRUD, hierarchical category taxonomy, dynamic technical attribute schemas per category type. Comparison endpoint. Publishes all mutations to Kafka for search index sync.
+    </div>
   </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-listing</div>
-    <div class="box-title"><span class="dot dot-core"></span>Listing Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (listing_db)</div>
-    <div class="box-desc">Ad lifecycle: draft → moderation → active → archived. Pricing rules, view counters, listing stats. Enforces subscription plan limits via gRPC call to Integrity Service. Manages rental booking slots. Emits to Kafka for OpenSearch sync.</div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Listing Module</div>
+    <div class="box-tech">modules/listing/ · PostgreSQL</div>
+    <div class="box-desc">
+      Ad lifecycle: draft → moderation → active → archived. Pricing rules (fixed/negotiable/rental), view counters, subscription plan limit enforcement via Integrity contract.
+    </div>
   </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-search</div>
-    <div class="box-title"><span class="dot dot-core"></span>Search Service</div>
-    <div class="box-tech">Go · Gin · OpenSearch · Redis · <span style="color:var(--client)">2GIS API*</span></div>
-    <div class="box-desc">Full-text + faceted search with dynamic filters. Geo region filtering via internal KZ/CIS region table (PostgreSQL). <strong style="color:var(--text)">2GIS API</strong> used only for address geocoding — sends only address strings, no personal data. Autocomplete, recommendations, query history in Redis. <em style="color:var(--text-dim)">Geo is a pkg/geo library, not a standalone service.</em></div>
-  </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-booking</div>
-    <div class="box-title"><span class="dot dot-core"></span>Booking &amp; Availability Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (booking_db) · Redis</div>
-    <div class="box-desc">Calendar-based availability for rentals. Hold + confirm slot pattern (Redis TTL for holds, PostgreSQL for confirmed). Optimistic locking for conflict prevention. Cancellation policies. Linked to Deal Service — booking created on deal init, released on cancel.</div>
+  <div class="box c-search">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--search)"></span>Search Module</div>
+    <div class="box-tech">modules/search/ · OpenSearch · Redis · 2GIS API*</div>
+    <div class="box-desc">
+      Full-text + faceted search with dynamic filters. Geo region filtering via 2GIS API (address strings only, no PII). Autocomplete, Redis cache for hot queries. Kafka consumer for index sync.
+    </div>
   </div>
 </div>
 
 <!-- GROUP: Marketplace & Transactions -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Marketplace &amp; Transactions</div>
+<div class="group-label">► Marketplace & Transactions</div>
 <div class="layer g3">
-  <div class="box c-core">
-    <div class="box-tag">svc-deal</div>
-    <div class="box-title"><span class="dot dot-core"></span>Deal Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (deal_db)</div>
-    <div class="box-desc">Core transaction orchestrator. State machine: inquiry → negotiation → confirmed → in_progress → completed / cancelled. Coordinates Booking, Payment, Document services via gRPC. Emits deal lifecycle events to Kafka.</div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Deal Module</div>
+    <div class="box-tech">modules/deal/ · PostgreSQL</div>
+    <div class="box-desc">
+      Core transaction orchestrator. State machine: inquiry → negotiation → confirmed → in_progress → completed / cancelled. Coordinates Booking, Payment modules via contracts. Emits deal lifecycle events to Kafka.
+    </div>
   </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-payment</div>
-    <div class="box-title"><span class="dot dot-core"></span>Payment Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (payment_db)</div>
-    <div class="box-desc">Kaspi Pay, Halyk Bank, Uzcard/Humo integrations (all CIS-local providers — no foreign payment data storage). Escrow hold/release. Invoice generation. Transaction history, refunds. Webhook ingestion. Also handles <strong style="color:var(--text)">subscription billing</strong> for seller tariff plans — Integrity Service calls Payment for charges.</div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Payment Module</div>
+    <div class="box-tech">modules/payment/ · PostgreSQL</div>
+    <div class="box-desc">
+      Kaspi Pay, Halyk Bank, Uzcard/Humo (CIS-local providers only — no foreign payment data storage). Escrow hold/release. Invoices, transaction history, refunds. Subscription billing for seller tariff plans.
+    </div>
   </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-document</div>
-    <div class="box-title"><span class="dot dot-core"></span>Document Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (doc_db) · MinIO · <span style="color:var(--client)">Gotenberg*</span></div>
-    <div class="box-desc">Contract/oferta template rendering → PDF via <strong style="color:var(--text)">Gotenberg</strong> (self-hosted, open-source HTML→PDF via headless Chrome — runs on your infra, zero data leaves KZ). ЭДО integration. Signed document storage in MinIO. Invoice PDFs. Called by Deal Service on confirmation.</div>
-  </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-review</div>
-    <div class="box-title"><span class="dot dot-core"></span>Review &amp; Rating Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (review_db)</div>
-    <div class="box-desc">Post-deal mutual reviews. Star ratings per dimension. Anti-fraud: only post-completed-deal reviews. Aggregate score recalculated on new review, pushed to Identity Service via gRPC. Unlocked by <code style="font-size:10px;color:var(--async)">deal.completed</code> Kafka event.</div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Booking Module</div>
+    <div class="box-tech">modules/booking/ · PostgreSQL · Redis</div>
+    <div class="box-desc">
+      Calendar-based availability for rentals. Hold + confirm pattern (Redis TTL for holds → PostgreSQL for confirmed). Optimistic locking for conflict prevention.
+    </div>
   </div>
 </div>
 
-<!-- GROUP: Services Marketplace -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Services Marketplace &nbsp;<span style="color:var(--text-dim);font-weight:400">merges: Additional Services + Logistics &amp; Delivery</span></div>
-<div class="layer g3">
-  <div class="box c-core" style="grid-column: span 3">
-    <div class="box-tag">svc-services-mkt</div>
-    <div class="box-title"><span class="dot dot-core"></span>Services Marketplace</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (services_db) · <span style="color:var(--client)">2GIS API* (route calc)</span></div>
+<!-- GROUP: Review & Engagement -->
+<div class="group-label">► Review & Engagement</div>
+<div class="layer g2">
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-live">✓ live</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--done)"></span>Marketplace Module</div>
+    <div class="box-tech">modules/marketplace/ · PostgreSQL (trust_db)</div>
     <div class="box-desc">
-      Single service for all third-party service offerings (TZ §2.8) — same domain, same team, different entity types in the same DB.<br><br>
-      <strong style="color:var(--text)">Service catalog module:</strong> Logistics/delivery, installation &amp; commissioning, maintenance contracts, insurance offerings. Providers register with pricing models (fixed/per-km/per-day). Attached to deals as line items.<br><br>
-      <strong style="color:var(--text)">Logistics module:</strong> Delivery requests, carrier matching, route cost estimation via 2GIS Routing API (only route coordinates sent — no personal data), status tracking: pickup → in_transit → delivered. Carrier profiles and ratings.
+      Post-deal reviews with star ratings, anti-fraud validation. Auto-calculated reputation scores per entity (gold/silver/bronze tiers).<br><br>
+      <strong style="color:var(--text)">Future scope:</strong> Favorites/watchlists, price drop alerts, price history snapshots, market benchmarks per category+region.
+    </div>
+  </div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Analytics Module</div>
+    <div class="box-tech">modules/analytics/ · Kafka consumer · PostgreSQL · Redis</div>
+    <div class="box-desc">
+      Self-hosted (no PostHog cloud). Kafka consumer consumes all events. Seller dashboards: views, contact rate, deal conversion. Admin: GMV, active listings, user growth, regional heatmaps.
     </div>
   </div>
 </div>
 
 <!-- GROUP: Communication -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Communication</div>
-<div class="layer g3">
-  <div class="box c-core">
-    <div class="box-tag">svc-chat</div>
-    <div class="box-title"><span class="dot dot-core"></span>Chat Service</div>
-    <div class="box-tech">Go · Fiber · MongoDB (chat_db) · Redis · MinIO</div>
-    <div class="box-desc">WebSocket connections via Fiber. Conversation threads scoped to deals. Read receipts, delivery status, typing indicators. File/image sharing via MinIO presigned URLs. Message history in MongoDB. User presence in Redis pub/sub. All message data stays on-prem.</div>
-  </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-notification</div>
-    <div class="box-title"><span class="dot dot-core"></span>Notification Service</div>
-    <div class="box-tech">Go · Kafka consumer · MongoDB (notif_db) · <span style="color:var(--client)">FCM* · SMPP*</span></div>
+<div class="group-label">► Communication</div>
+<div class="layer g2">
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Chat Module</div>
+    <div class="box-tech">modules/chat/ · Fiber WebSocket · MongoDB · Redis · MinIO</div>
     <div class="box-desc">
-      Pure Kafka consumer, no REST API. Fans out to channels:<br>
-      <strong style="color:var(--text)">In-app:</strong> stored in MongoDB (on-prem) ✓<br>
-      <strong style="color:var(--text)">Push:</strong> FCM/APNs — sends device token + message text only, no profile data stored at Google. Acceptable under KZ law as transient transport.<br>
-      <strong style="color:var(--text)">SMS:</strong> Beeline KZ / Kcell SMPP relay — KZ operators, data stays in KZ ✓<br>
-      <strong style="color:var(--text)">Email:</strong> Self-hosted <strong>Postal</strong> SMTP server (open-source) — no SendGrid/Mailgun ✓
+      WebSocket real-time messaging. Conversation threads scoped to deals. Read receipts, typing indicators, file sharing via MinIO presigned URLs. User presence via Redis pub/sub.
+    </div>
+  </div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Notification Module</div>
+    <div class="box-tech">modules/notification/ · Kafka consumer · MongoDB · FCM* · Postal*</div>
+    <div class="box-desc">
+      Pure Kafka consumer, no REST API. Multi-channel fanout:<br>
+      <strong style="color:var(--text)">In-app:</strong> MongoDB feed ✓ &nbsp;
+      <strong style="color:var(--text)">Push:</strong> FCM/APNs (transient tokens) ✓ &nbsp;
+      <strong style="color:var(--text)">Email:</strong> Self-hosted Postal SMTP ✓
     </div>
   </div>
 </div>
 
-<!-- GROUP: Engagement -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Engagement Service &nbsp;<span style="color:var(--text-dim);font-weight:400">merges: Favorites &amp; Watchlist + Price History</span></div>
-<div class="layer g3">
-  <div class="box c-core" style="grid-column: span 3">
-    <div class="box-tag">svc-engagement</div>
-    <div class="box-title"><span class="dot dot-core"></span>Engagement Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (engagement_db) · Redis · Kafka consumer</div>
+<!-- GROUP: Media -->
+<div class="group-label">► Media & Documents</div>
+<div class="layer g2">
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Media Module</div>
+    <div class="box-tech">modules/media/ · MinIO · imgproxy*</div>
     <div class="box-desc">
-      Lightweight read-heavy service — two closely related features, one deployment.<br><br>
-      <strong style="color:var(--text)">Favorites module:</strong> User watchlists, collection grouping, watching for price drops. Emits <code style="font-size:10px;color:var(--async)">favorite.price_dropped</code> → Notification Service. Hot lists cached in Redis.<br><br>
-      <strong style="color:var(--text)">Price History module:</strong> Consumes <code style="font-size:10px;color:var(--async)">equipment.updated</code> events, records price snapshots. Exposes price charts per listing. Market benchmarks: avg/median per category+region. Powers "price dropped" badge and seller market insight panel.
+      Presigned URL generation for direct browser→MinIO uploads. Image transforms via self-hosted imgproxy (resize, WebP, thumbnails). Video thumbnail extraction.
+    </div>
+  </div>
+  <div class="box c-module">
+    <div class="box-tag"><span class="status-badge badge-planned">planned</span></div>
+    <div class="box-title"><span class="dot" style="background:var(--planned)"></span>Document Module</div>
+    <div class="box-tech">modules/document/ · Gotenberg* · MinIO</div>
+    <div class="box-desc">
+      Contract/oferta template rendering → PDF via self-hosted Gotenberg (HTML→PDF via headless Chrome). ЭДО integration. Signed document storage in MinIO.
     </div>
   </div>
 </div>
 
-<!-- GROUP: Platform Integrity -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Platform Integrity &nbsp;<span style="color:var(--text-dim);font-weight:400">merges: Dispute + Subscription &amp; Tariff + Audit Log</span></div>
-<div class="layer g3">
-  <div class="box c-core" style="grid-column: span 3">
-    <div class="box-tag">svc-integrity</div>
-    <div class="box-title"><span class="dot dot-core"></span>Platform Integrity Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL (integrity_db: separate schemas per module) · Kafka consumer · MinIO</div>
-    <div class="box-desc">
-      Three closely coupled concerns owned by the same team — platform trust and monetization enforcement.<br><br>
-      <strong style="color:var(--text)">Dispute module:</strong> Complaint filing against deals. Evidence in MinIO. State machine: filed → under_review → resolved / escalated. Admin arbitration. Escrow release/refund decisions back to Payment via gRPC.<br><br>
-      <strong style="color:var(--text)">Subscription &amp; Tariff module:</strong> Seller plan management (free/basic/pro/enterprise). Listing limits, featured placement, analytics access. Billing via Payment Service gRPC. Feature-flag gRPC endpoint polled by Listing Service to enforce plan limits.<br><br>
-      <strong style="color:var(--text)">Audit Log module:</strong> Immutable append-only trail — write-once schema, no UPDATE/DELETE permissions. Consumes all sensitive Kafka events: deal changes, payments, verifications, moderation, disputes, subscriptions. Records actor + action + timestamp + IP + old→new state. CIS legal compliance requirement.
-    </div>
-  </div>
-</div>
-
-<!-- GROUP: Platform Support -->
-<div class="layer-label" style="color:var(--gateway);padding-top:12px">&#9658; Platform Support</div>
-<div class="layer g3">
-  <div class="box c-core">
-    <div class="box-tag">svc-media</div>
-    <div class="box-title"><span class="dot dot-core"></span>Media Service</div>
-    <div class="box-tech">Go · Fiber · MinIO · <span style="color:var(--client)">imgproxy*</span></div>
-    <div class="box-desc">Presigned URL generation for direct browser→MinIO uploads. Image transforms (resize, WebP, thumbnails) delegated to <strong style="color:var(--text)">imgproxy</strong> (self-hosted, open-source — runs on your infra, zero data leaves KZ). Video thumbnail extraction. Media metadata in PG. Public URLs proxied via NGINX.</div>
-  </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-analytics</div>
-    <div class="box-title"><span class="dot dot-core"></span>Analytics Service</div>
-    <div class="box-tech">Go · Kafka consumer · PostgreSQL (analytics_db) · Redis</div>
-    <div class="box-desc">Self-hosted analytics — no PostHog cloud (personal data concern). Consumes all Kafka events. Seller dashboard: views, contact rate, deal conversion, price vs market. Admin: GMV, active listings, user growth, regional heatmaps. Pre-aggregated in PG, hot counters in Redis. Grafana dashboards on top.</div>
-  </div>
-  <div class="box c-core">
-    <div class="box-tag">svc-admin</div>
-    <div class="box-title"><span class="dot dot-core"></span>Admin Service</div>
-    <div class="box-tech">Go · Gin · PostgreSQL</div>
-    <div class="box-desc">Moderation orchestrator. Listing review queue, user/company management, ban/suspend via gRPC to other services. Category &amp; attribute schema management. Separate JWT scope — admin tokens not valid on user-facing routes. Reads from Analytics and Integrity services.</div>
-  </div>
-</div>
-
-<!-- 3rd party legend -->
+<!-- 3rd party compliance -->
 <div style="margin-top:12px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;font-size:11px">
   <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--client);text-transform:uppercase;margin-bottom:10px">* Permitted 3rd Party Tools — KZ Compliant</div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">Gotenberg</span> <span style="color:var(--text-dim)">— self-hosted HTML→PDF. Runs on your infra. ✓</span></div>
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">imgproxy</span> <span style="color:var(--text-dim)">— self-hosted image transforms. Runs on your infra. ✓</span></div>
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">2GIS API</span> <span style="color:var(--text-dim)">— geocoding + routing. Sends address/coords only, no PII. ✓</span></div>
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">FCM / APNs</span> <span style="color:var(--text-dim)">— push delivery only. Token + message at send-time, no storage. ✓</span></div>
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">Beeline KZ / Kcell SMPP</span> <span style="color:var(--text-dim)">— KZ operators for OTP/SMS. Data stays in KZ. ✓</span></div>
-    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">Postal (self-hosted)</span> <span style="color:var(--text-dim)">— open-source SMTP server. Runs on your infra. ✓</span></div>
-    <div><span style="color:var(--infra);font-family:'IBM Plex Mono',monospace;font-size:10px">✗ Supabase / Clerk</span> <span style="color:var(--text-dim)">— stores personal data outside KZ. Not permitted.</span></div>
-    <div><span style="color:var(--infra);font-family:'IBM Plex Mono',monospace;font-size:10px">✗ SendGrid / Mailgun</span> <span style="color:var(--text-dim)">— logs email content on foreign servers. Not permitted.</span></div>
-    <div><span style="color:var(--infra);font-family:'IBM Plex Mono',monospace;font-size:10px">✗ PostHog Cloud</span> <span style="color:var(--text-dim)">— user behavioral data on foreign servers. Not permitted.</span></div>
+  <div class="compliance-grid">
+    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">Gotenberg</span> <span style="color:var(--text-dim)">— self-hosted HTML→PDF ✓</span></div>
+    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">imgproxy</span> <span style="color:var(--text-dim)">— self-hosted image transforms ✓</span></div>
+    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">2GIS API</span> <span style="color:var(--text-dim)">— geocoding, address only, no PII ✓</span></div>
+    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">FCM / APNs</span> <span style="color:var(--text-dim)">— push delivery only, no storage ✓</span></div>
+    <div><span style="color:var(--client);font-family:'IBM Plex Mono',monospace;font-size:10px">Postal</span> <span style="color:var(--text-dim)">— self-hosted SMTP ✓</span></div>
+    <div><span style="color:var(--infra);font-family:'IBM Plex Mono',monospace;font-size:10px">✗ Supabase/Clerk/SendGrid/PostHog</span> <span style="color:var(--text-dim)">— foreign data storage ✗</span></div>
   </div>
 </div>
 
+<!-- ═══════════════ CONTRACTS ═══════════════ -->
+<div class="section-header">04 · Contracts Layer</div>
+<div class="layer g2">
+  <div class="box c-contract">
+    <div class="box-title"><span class="dot" style="background:var(--contract)"></span>Cross-Module Interfaces</div>
+    <div class="box-tech">contracts/contracts.go</div>
+    <div class="box-desc">
+      <code style="font-size:10px;color:var(--async)">UserProvider</code> ← Identity &nbsp;│&nbsp;
+      <code style="font-size:10px;color:var(--async)">CompanyProvider</code> ← Integrity &nbsp;│&nbsp;
+      <code style="font-size:10px;color:var(--text-dim)">CatalogProvider</code> (future) &nbsp;│&nbsp;
+      <code style="font-size:10px;color:var(--text-dim)">ListingProvider</code> (future) &nbsp;│&nbsp;
+      <code style="font-size:10px;color:var(--text-dim)">PaymentProvider</code> (future)<br><br>
+      Modules never import each other. If a module needs data from another, it receives a <code style="font-size:10px;color:var(--contract)">*Provider</code> interface — not a direct package import. Enables future extraction to microservices.
+    </div>
+  </div>
+  <div class="box c-contract">
+    <div class="box-title"><span class="dot" style="background:var(--contract)"></span>Shared DTOs</div>
+    <div class="box-tech">contracts/types.go</div>
+    <div class="box-desc">
+      <code style="font-size:10px;color:var(--async)">UserBasic{ID, Name, Email}</code><br>
+      <code style="font-size:10px;color:var(--async)">CompanyBasic{ID, Name, BIN, Status}</code><br><br>
+      Lightweight read-only structs returned by contracts. Each module maps its internal models to these DTOs at the contract boundary.
+    </div>
+  </div>
+</div>
 
-<div class="section-header">04 · Async & Event Bus</div>
+<!-- ═══════════════ DATA LAYER ═══════════════ -->
+<div class="section-header">05 · Async & Event Bus</div>
 <div class="layer g2">
   <div class="box c-async">
     <div class="box-tag">broker</div>
-    <div class="box-title"><span class="dot dot-async"></span>Apache Kafka</div>
+    <div class="box-title"><span class="dot" style="background:var(--async)"></span>Apache Kafka</div>
     <div class="box-tech">3-node cluster · replication factor 2</div>
     <div class="box-desc">
-      Central event bus. Consumers use Kafka consumer groups — each service subscribes independently.<br><br>
-      <code style="font-size:10px;color:var(--async)">equipment.created/updated/deleted</code> &rarr; Search (index sync), Engagement (price watch), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">listing.created/deactivated</code> &rarr; Search (index sync), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">company.verified/rejected</code> &rarr; Catalog (unlock), Listing (unlock), Notification, Integrity (audit)<br>
-      <code style="font-size:10px;color:var(--async)">deal.status.changed</code> &rarr; Notification, Booking, Listing, Integrity (audit), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">deal.completed</code> &rarr; Review (unlock), Services Marketplace, Integrity (audit), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">payment.completed/failed</code> &rarr; Deal, Notification, Integrity (audit), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">message.sent</code> &rarr; Notification (offline push/SMS/email fallback)<br>
-      <code style="font-size:10px;color:var(--async)">review.created</code> &rarr; Identity (score update), Analytics<br>
-      <code style="font-size:10px;color:var(--async)">media.uploaded</code> &rarr; Media (imgproxy transform pipeline)<br>
-      <code style="font-size:10px;color:var(--async)">dispute.filed/resolved</code> &rarr; Notification, Payment (escrow action), Integrity (audit)<br>
-      <code style="font-size:10px;color:var(--async)">favorite.price_dropped</code> &rarr; Notification<br>
-      <code style="font-size:10px;color:var(--async)">subscription.activated/expired</code> &rarr; Notification, Listing (re-check limits), Integrity (audit)<br>
-      <code style="font-size:10px;color:var(--async)">delivery.status.changed</code> &rarr; Notification, Analytics<br>
-      <code style="font-size:10px;color:var(--async)">moderation.action.taken</code> &rarr; Notification, Integrity (audit)
+      <code style="font-size:10px;color:var(--async)">equipment.created/updated/deleted</code> → Search (index), Engagement (price watch), Analytics<br>
+      <code style="font-size:10px;color:var(--async)">listing.created/deactivated</code> → Search, Analytics<br>
+      <code style="font-size:10px;color:var(--async)">company.verified/rejected</code> → Catalog, Listing (unlock), Notification, Audit<br>
+      <code style="font-size:10px;color:var(--async)">deal.status.changed</code> → Notification, Booking, Analytics<br>
+      <code style="font-size:10px;color:var(--async)">deal.completed</code> → Review (unlock), Analytics<br>
+      <code style="font-size:10px;color:var(--async)">payment.completed/failed</code> → Deal, Notification, Audit<br>
+      <code style="font-size:10px;color:var(--async)">message.sent</code> → Notification (offline fallback)<br>
+      <code style="font-size:10px;color:var(--async)">review.created</code> → Reputation recalc, Analytics<br>
+      <code style="font-size:10px;color:var(--async)">media.uploaded</code> → imgproxy transform pipeline
     </div>
   </div>
   <div class="box c-infra">
     <div class="box-tag">cache</div>
-    <div class="box-title"><span class="dot dot-infra"></span>Redis</div>
-    <div class="box-tech">Redis 7 · 2 instances (cache + session)</div>
+    <div class="box-title"><span class="dot" style="background:var(--infra)"></span>Redis</div>
+    <div class="box-tech">Redis 7 · single instance</div>
     <div class="box-desc">
-      Dual-purpose:<br><br>
-      <strong style="color:var(--text)">Session store:</strong> JWT refresh tokens, OTP codes, active user sessions<br><br>
-      <strong style="color:var(--text)">Cache:</strong> Hot catalog pages (TTL 5min), search result caching (TTL 1min), user profile cache, equipment availability status<br><br>
-      <strong style="color:var(--text)">Chat presence:</strong> Online/offline status, active WebSocket connections registry<br><br>
-      <strong style="color:var(--text)">Rate limiting:</strong> Sliding window counters per user/IP
+      <strong style="color:var(--text)">Sessions:</strong> JWT tokens, OTP codes<br>
+      <strong style="color:var(--text)">Cache:</strong> hot queries, catalog pages, profiles<br>
+      <strong style="color:var(--text)">Rate limiting:</strong> sliding window counters<br>
+      <strong style="color:var(--text)">Presence:</strong> online/offline status, WS registry<br>
+      <strong style="color:var(--text)">Bookings:</strong> temporary hold TTLs
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ DATA LAYER ═══════════════════════════ -->
-<div class="section-header">05 · Data Layer</div>
+<!-- ═══════════════ DATA STORES ═══════════════ -->
+<div class="section-header">06 · Data Layer</div>
 <div class="layer g4">
   <div class="box c-data">
     <div class="box-tag">relational</div>
-    <div class="box-title"><span class="dot dot-data"></span>PostgreSQL</div>
-    <div class="box-tech">PostgreSQL 15 · per-service DBs</div>
+    <div class="box-title"><span class="dot" style="background:var(--data)"></span>PostgreSQL 15</div>
+    <div class="box-tech">Single DB (trust_db) · tables per module</div>
     <div class="box-desc">
-      <strong style="color:var(--text)">auth_db:</strong> users, sessions, verifications<br>
-      <strong style="color:var(--text)">catalog_db:</strong> equipment, categories, attributes<br>
-      <strong style="color:var(--text)">listing_db:</strong> ads, pricing, bookings<br>
-      <strong style="color:var(--text)">deal_db:</strong> transactions, contracts, status<br>
-      <strong style="color:var(--text)">payment_db:</strong> payments, invoices, escrow<br>
-      <strong style="color:var(--text)">review_db:</strong> ratings, comments<br>
-      <em style="color:var(--text-dim)">Each service owns its own schema. No cross-DB joins.</em>
+      users, companies, equipment, categories, listings, deals, payments, reviews, reputation, bookings, audit_log
     </div>
   </div>
   <div class="box c-data">
     <div class="box-tag">document</div>
-    <div class="box-title"><span class="dot dot-data"></span>MongoDB</div>
-    <div class="box-tech">MongoDB 7 · replica set</div>
-    <div class="box-desc">
-      <strong style="color:var(--text)">chat_db:</strong> messages, conversations, read receipts — flexible schema, high write throughput, easy embedding of reactions/attachments<br><br>
-      <strong style="color:var(--text)">notifications_db:</strong> in-app notification feed per user, unread counts, notification preferences
-    </div>
+    <div class="box-title"><span class="dot" style="background:var(--data)"></span>MongoDB 7</div>
+    <div class="box-tech">Replica set</div>
+    <div class="box-desc">chat messages, conversations, notification feed, read receipts</div>
   </div>
   <div class="box c-search">
     <div class="box-tag">search</div>
-    <div class="box-title"><span class="dot dot-search"></span>OpenSearch</div>
-    <div class="box-tech">OpenSearch 2.x · 3-node cluster</div>
-    <div class="box-desc">
-      Equipment index with dynamic mappings for technical attributes per category. Handles: full-text search, faceted filters (price range, region, category, specs), geo-distance queries (equipment location), autocomplete suggestions. Fed by Kafka consumer from Catalog events.
-    </div>
+    <div class="box-title"><span class="dot" style="background:var(--search)"></span>OpenSearch 2.x</div>
+    <div class="box-tech">3-node cluster</div>
+    <div class="box-desc">Equipment index with dynamic mappings. Full-text, faceted filters, geo-distance queries.</div>
   </div>
-  <div class="box c-file">
-    <div class="box-tag">object store</div>
-    <div class="box-title"><span class="dot" style="background:var(--file)"></span>MinIO</div>
-    <div class="box-tech">MinIO · S3-compatible · distributed mode</div>
-    <div class="box-desc">
-      <strong style="color:var(--text)">equipment-media:</strong> photos, videos, thumbnails<br>
-      <strong style="color:var(--text)">documents:</strong> company verification docs, contracts, invoices<br>
-      <strong style="color:var(--text)">chat-files:</strong> files/images shared in chat<br>
-      Presigned URLs for direct browser upload. NGINX proxies public bucket URLs.
-    </div>
+  <div class="box" style="border-left:3px solid var(--module)">
+    <div class="box-tag">objects</div>
+    <div class="box-title"><span class="dot" style="background:var(--module)"></span>MinIO</div>
+    <div class="box-tech">S3-compatible · distributed</div>
+    <div class="box-desc">equipment-media, documents, chat-files, verification-docs</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ OBSERVABILITY ═══════════════════════════ -->
-<div class="section-header">06 · Observability & Infrastructure</div>
+<!-- ═══════════════ DEPLOYMENT ═══════════════ -->
+<div class="section-header">07 · Observability & Deployment</div>
 <div class="layer g3">
   <div class="box c-infra">
-    <div class="box-tag">observability</div>
-    <div class="box-title"><span class="dot dot-infra"></span>Monitoring Stack</div>
+    <div class="box-title"><span class="dot" style="background:var(--infra)"></span>Monitoring</div>
     <div class="box-tech">Prometheus · Grafana · Jaeger</div>
-    <div class="box-desc">Prometheus scrapes all Go services (stdlib metrics). Grafana dashboards per service. Jaeger distributed tracing — trace-id injected at gateway, propagated via gRPC metadata through entire call chain.</div>
+    <div class="box-desc">Prometheus metrics scraping. Grafana dashboards. Jaeger distributed tracing with trace-id propagation.</div>
   </div>
   <div class="box c-infra">
-    <div class="box-tag">logging</div>
-    <div class="box-title"><span class="dot dot-infra"></span>Logging</div>
-    <div class="box-tech">Loki · structured JSON logs</div>
-    <div class="box-desc">All services emit structured JSON logs (zerolog in Go). Loki aggregates logs, queryable from Grafana. Log levels per service configurable at runtime via env. Correlation by trace-id across services.</div>
+    <div class="box-title"><span class="dot" style="background:var(--infra)"></span>Logging</div>
+    <div class="box-tech">Loki · zerolog</div>
+    <div class="box-desc">Structured JSON logs. Loki aggregation. Queryable from Grafana. Correlation by trace-id.</div>
   </div>
   <div class="box c-infra">
-    <div class="box-tag">deploy</div>
-    <div class="box-title"><span class="dot dot-infra"></span>Deployment</div>
+    <div class="box-title"><span class="dot" style="background:var(--infra)"></span>Deployment</div>
     <div class="box-tech">Docker Compose (dev) → Kubernetes (prod)</div>
-    <div class="box-desc">Each service containerized. Docker Compose for local dev with all dependencies. K8s manifests for production with HPA (horizontal pod autoscaling) per service. CI/CD via GitHub Actions → container registry → k8s rollout.</div>
+    <div class="box-desc">Single Dockerfile, multi-stage Alpine. Docker Compose for local. K8s with HPA for prod. CI/CD via GitHub Actions.</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ TYPICAL REQUEST FLOWS ═══════════════════════════ -->
-<div class="section-header">07 · Key Request Flows</div>
-
+<!-- ═══════════════ REQUEST FLOWS ═══════════════ -->
+<div class="section-header">08 · Key Request Flows</div>
 <div class="layer g2">
   <div class="flow-box">
-    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Equipment Search with Filters</div>
-    <div class="flow-step">
-      <div class="flow-num">01</div>
-      <div class="flow-text">Client sends <span class="flow-proto">GET /search?q=crane&region=almaty&price_max=5M</span> → NGINX → API Gateway</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">02</div>
-      <div class="flow-text">Gateway validates JWT, injects user context headers, routes to <strong>Search Service</strong> <span class="flow-proto">REST</span></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">03</div>
-      <div class="flow-text">Search Service checks <strong>Redis cache</strong> for identical query hash (TTL 60s)</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">04</div>
-      <div class="flow-text">Cache miss → queries <strong>OpenSearch</strong> with bool query + range filters + geo filter</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">05</div>
-      <div class="flow-text">Results cached in Redis, returned to client. Query saved to user history.</div>
-    </div>
+    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Equipment Search (Full Flow)</div>
+    <div class="flow-step"><div class="flow-num">01</div><div class="flow-text">Client sends <span class="flow-proto">GET /search?q=crane&region=almaty&price_max=5M</span> → NGINX → Backend</div></div>
+    <div class="flow-step"><div class="flow-num">02</div><div class="flow-text"><strong>Rate Limit middleware</strong> checks Redis → <strong>JWT Auth</strong> validates token → injects userID</div></div>
+    <div class="flow-step"><div class="flow-num">03</div><div class="flow-text"><strong>Search handler</strong> checks Redis cache for identical query hash (TTL 60s)</div></div>
+    <div class="flow-step"><div class="flow-num">04</div><div class="flow-text">Cache miss → queries <strong>OpenSearch</strong> with bool query + range filters + geo filter</div></div>
+    <div class="flow-step"><div class="flow-num">05</div><div class="flow-text">Results cached in Redis, returned to client. Query saved to user history.</div></div>
   </div>
-
   <div class="flow-box">
-    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Listing Creation + Media Upload</div>
-    <div class="flow-step">
-      <div class="flow-num">01</div>
-      <div class="flow-text">Seller creates listing via <span class="flow-proto">POST /listings</span> → Gateway → <strong>Listing Service</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">02</div>
-      <div class="flow-text">Listing Service calls <strong>Catalog Service</strong> <span class="flow-proto">gRPC</span> to validate category/attributes schema</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">03</div>
-      <div class="flow-text">Client requests presigned upload URL from <strong>Media Service</strong>, uploads photos directly to <strong>MinIO</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">04</div>
-      <div class="flow-text">Media Service emits <span class="flow-proto">media.uploaded</span> to <strong>Kafka</strong> → async image processing (resize, WebP)</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">05</div>
-      <div class="flow-text">Listing saved → <span class="flow-proto">equipment.created</span> event → <strong>OpenSearch indexer</strong> consumer updates search index</div>
-    </div>
-  </div>
-
-  <div class="flow-box">
-    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Real-time Chat Message</div>
-    <div class="flow-step">
-      <div class="flow-num">01</div>
-      <div class="flow-text">Buyer opens chat on deal page → establishes <span class="flow-proto">WebSocket</span> to <strong>Chat Service</strong> via NGINX proxy</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">02</div>
-      <div class="flow-text">Connection authenticated via JWT query param. Presence registered in <strong>Redis</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">03</div>
-      <div class="flow-text">Message sent → stored in <strong>MongoDB</strong>, delivered to recipient WS if online</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">04</div>
-      <div class="flow-text">Recipient offline → Chat Service emits <span class="flow-proto">message.sent</span> event to <strong>Kafka</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">05</div>
-      <div class="flow-text"><strong>Notification Service</strong> consumes event → sends push notification (FCM/APNs) or email</div>
-    </div>
-  </div>
-
-  <div class="flow-box">
-    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Deal Confirmation + Payment</div>
-    <div class="flow-step">
-      <div class="flow-num">01</div>
-      <div class="flow-text">Seller confirms deal → <span class="flow-proto">PUT /deals/:id/confirm</span> → <strong>Deal Service</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">02</div>
-      <div class="flow-text">Deal Service calls <strong>Payment Service</strong> <span class="flow-proto">gRPC</span> to initiate escrow hold</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">03</div>
-      <div class="flow-text">Deal status machine transitions → emits <span class="flow-proto">deal.status.changed</span> to <strong>Kafka</strong></div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">04</div>
-      <div class="flow-text"><strong>Notification Service</strong> sends confirmation to both parties (email + push)</div>
-    </div>
-    <div class="flow-step">
-      <div class="flow-num">05</div>
-      <div class="flow-text">Payment provider webhook → <strong>Payment Service</strong> releases escrow, emits <span class="flow-proto">payment.completed</span></div>
-    </div>
+    <div class="box-title" style="margin-bottom:12px;font-size:12px;color:var(--text-bright)">Deal Lifecycle (Buyer → Seller)</div>
+    <div class="flow-step"><div class="flow-num">01</div><div class="flow-text">Buyer sends <span class="flow-proto">POST /deals</span> referencing listing. <strong>Deal module</strong> creates deal (status: inquiry)</div></div>
+    <div class="flow-step"><div class="flow-num">02</div><div class="flow-text">Seller accepts → status: negotiation → parties chat → status: confirmed</div></div>
+    <div class="flow-step"><div class="flow-num">03</div><div class="flow-text">Deal module calls <strong>Payment contract</strong> → escrow hold. <strong>Booking contract</strong> → slot reserved.</div></div>
+    <div class="flow-step"><div class="flow-num">04</div><div class="flow-text"><span class="flow-proto">deal.completed</span> event → <strong>Kafka</strong> → Review module unlocks review flow</div></div>
+    <div class="flow-step"><div class="flow-num">05</div><div class="flow-text">Payment escrow released → Notification module fans out confirmation to all channels</div></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ DATA OWNERSHIP MATRIX ═══════════════════════════ -->
-<div class="section-header">08 · Service Boundaries & Data Ownership</div>
-<div class="layer" style="grid-template-columns: 1fr">
-  <div class="box" style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:11px">
-      <thead>
-        <tr style="border-bottom:1px solid var(--border-bright)">
-          <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">SERVICE</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">OWNS (DB)</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">EMITS (Kafka)</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">CONSUMES (Kafka)</th>
-          <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">CALLS (gRPC)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">IDENTITY</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Identity<br><span style="font-size:9px;color:var(--text-dim)">auth+profile+company</span></td><td style="padding:7px 12px">identity_db (PG) + Redis + MinIO</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">user.registered, company.verified, company.rejected</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">review.created (score update)</td><td style="padding:7px 12px;color:var(--text-dim)">— (called by all services)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">CATALOG & DISCOVERY</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Catalog<br><span style="font-size:9px;color:var(--text-dim)">+comparison endpoint</span></td><td style="padding:7px 12px">catalog_db (PG) + Redis</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">equipment.created, .updated, .deleted</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">company.verified</td><td style="padding:7px 12px;color:var(--text-dim)">Identity (verify check)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Listing</td><td style="padding:7px 12px">listing_db (PG)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">listing.created, listing.deactivated</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.status.changed, subscription.expired</td><td style="padding:7px 12px;color:var(--text-dim)">Catalog (schema), Integrity (plan limits)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Search<br><span style="font-size:9px;color:var(--text-dim)">+pkg/geo library</span></td><td style="padding:7px 12px">OpenSearch index + Redis</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">equipment.*, listing.*</td><td style="padding:7px 12px;color:var(--text-dim)">— (2GIS API for geocoding)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Booking</td><td style="padding:7px 12px">booking_db (PG) + Redis</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">booking.confirmed, booking.cancelled</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.status.changed</td><td style="padding:7px 12px;color:var(--text-dim)">Listing (availability update)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">MARKETPLACE & TRANSACTIONS</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Deal</td><td style="padding:7px 12px">deal_db (PG)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.status.changed, deal.completed</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">payment.completed, payment.failed</td><td style="padding:7px 12px;color:var(--text-dim)">Payment, Booking, Document, Identity</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Payment<br><span style="font-size:9px;color:var(--text-dim)">+subscription billing</span></td><td style="padding:7px 12px">payment_db (PG)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">payment.completed, payment.failed</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--text-dim)">— (called by Deal, Integrity)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Document<br><span style="font-size:9px;color:var(--client)">Gotenberg ✓</span></td><td style="padding:7px 12px">doc_db (PG) + MinIO</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">document.generated, document.signed</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.status.changed</td><td style="padding:7px 12px;color:var(--text-dim)">— (called by Deal)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Review</td><td style="padding:7px 12px">review_db (PG)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">review.created</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.completed</td><td style="padding:7px 12px;color:var(--text-dim)">Identity (score update)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">SERVICES MARKETPLACE</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Services Marketplace<br><span style="font-size:9px;color:var(--text-dim)">addl services + logistics</span></td><td style="padding:7px 12px">services_db (PG)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">service.order.created, delivery.status.changed</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.completed</td><td style="padding:7px 12px;color:var(--text-dim)">Identity (provider verify), 2GIS (routing)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">COMMUNICATION</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Chat</td><td style="padding:7px 12px">chat_db (Mongo)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">message.sent</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--text-dim)">Identity (profile), Deal (auth)</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Notification<br><span style="font-size:9px;color:var(--client)">Postal+FCM+SMPP ✓</span></td><td style="padding:7px 12px">notif_db (Mongo)</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">message.sent, deal.*, payment.*, company.*, dispute.*, delivery.*, favorite.*</td><td style="padding:7px 12px;color:var(--text-dim)">—</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">ENGAGEMENT</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Engagement<br><span style="font-size:9px;color:var(--text-dim)">favorites + price history</span></td><td style="padding:7px 12px">engagement_db (PG) + Redis</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">favorite.price_dropped</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">equipment.updated</td><td style="padding:7px 12px;color:var(--text-dim)">Catalog (item details)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">PLATFORM INTEGRITY</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Platform Integrity<br><span style="font-size:9px;color:var(--text-dim)">dispute+subscription+audit</span></td><td style="padding:7px 12px">integrity_db (PG, 3 schemas) + MinIO</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">dispute.filed, dispute.resolved, subscription.activated, subscription.expired</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">deal.*, payment.*, company.*, moderation.*, dispute.*, subscription.*</td><td style="padding:7px 12px;color:var(--text-dim)">Payment (escrow/billing), Listing (plan limits)</td></tr>
-
-        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01)"><td colspan="5" style="padding:5px 12px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--gateway)">PLATFORM SUPPORT</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Media<br><span style="font-size:9px;color:var(--client)">imgproxy ✓</span></td><td style="padding:7px 12px">media_db (PG) + MinIO</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">media.uploaded, media.processed</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--text-dim)">—</td></tr>
-        <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 12px;color:var(--core)">Analytics<br><span style="font-size:9px;color:var(--text-dim)">self-hosted</span></td><td style="padding:7px 12px">analytics_db (PG) + Redis</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">all events (consumer group)</td><td style="padding:7px 12px;color:var(--text-dim)">—</td></tr>
-        <tr><td style="padding:7px 12px;color:var(--core)">Admin</td><td style="padding:7px 12px">— (reads from others)</td><td style="padding:7px 12px;color:var(--async);font-family:'IBM Plex Mono',monospace;font-size:10px">moderation.action.taken</td><td style="padding:7px 12px;color:var(--text-dim)">—</td><td style="padding:7px 12px;color:var(--text-dim)">All services (mod actions)</td></tr>
-        
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- ═══════════════════════════ KEY DECISIONS ═══════════════════════════ -->
-<div class="section-header">09 · Key Architectural Decisions</div>
-<div class="layer g2">
-  <div class="note">
-    <strong>Kafka vs Redis Streams:</strong> At medium scale (1k–50k users), Redis Streams would technically suffice, but Kafka is the right choice here because: (1) OpenSearch indexing requires reliable, replayable events — Kafka's log retention is critical if OpenSearch needs reindexing; (2) Notification fanout to multiple consumers (push, email, in-app) is exactly the consumer group pattern Kafka excels at; (3) You won't need to migrate when you grow.
-  </div>
-  <div class="note">
-    <strong>PostgreSQL per service, not shared:</strong> Each service owns its DB entirely — no cross-service DB queries. Inter-service data needs go through gRPC or Kafka events. This keeps services independently deployable and prevents coupling. Consistency is eventual where needed (e.g., OpenSearch index), strong where required (deals, payments).
-  </div>
-  <div class="note">
-    <strong>MongoDB for Chat:</strong> Message schema is inherently flexible (reactions, attachments, thread replies evolve). MongoDB's document model + high write throughput suits chat better than PG. Conversations are denormalized per-thread, making read patterns efficient without joins.
-  </div>
-  <div class="note">
-    <strong>gRPC between services:</strong> Typed contracts via protobuf prevent API drift between services. Binary protocol reduces latency vs REST for internal calls. Easy code generation for Go. Keep REST only at the gateway boundary facing clients.
-  </div>
-  <div class="note">
-    <strong>MinIO for media:</strong> S3-compatible API means you can migrate to AWS S3 / Yandex Object Storage with zero code changes if needed. Presigned URL pattern offloads file upload bandwidth from your app servers entirely — client uploads direct to MinIO, only metadata goes through your API.
-  </div>
-  <div class="note">
-    <strong>OpenSearch over Elasticsearch:</strong> Fully open-source (Apache 2.0), no licensing concerns. AWS fork with active development. Equivalent feature set for your use case. Critical for complex equipment search: nested attributes (a crane has different filterable specs than a compressor) handled elegantly with dynamic mappings and nested queries.
-  </div>
-</div>
-
-<div style="margin-top:32px;padding:16px;border:1px solid var(--border);border-radius:4px;background:var(--bg2)">
-  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">MVP SCOPE — SHIP FIRST</div>
-  <div style="font-size:12px;color:var(--text-dim)">
-    For MVP, collapse to 5 deployments: <span style="color:var(--core)">Identity + Catalog/Listing (merged) + Search + Chat + Notification</span>. Single PostgreSQL with separate schemas. Redis Streams instead of Kafka. MinIO from day one. Gotenberg + imgproxy from day one (free, self-hosted). Skip Booking, Document, Services Marketplace, Engagement, Integrity, Analytics — add post-launch. The architecture above is the <strong style="color:var(--text)">target state</strong> (12 services, KZ-compliant); build toward it incrementally.
-  </div>
-</div>
-
-<div style="margin-top:24px;padding:12px 16px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim)">
-  Industrial Equipment Marketplace · Architecture v1.3 — consolidated &amp; KZ-compliant · Generated 2026-02-25
-</div>
 
 </body>
 </html>
