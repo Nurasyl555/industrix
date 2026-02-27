@@ -1,6 +1,6 @@
 module github.com/industrix/services/identity
 
-go 1.24.0
+go 1.23.1
 
 require (
 	github.com/IBM/sarama v1.43.0

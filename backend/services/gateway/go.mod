@@ -1,6 +1,6 @@
 module github.com/industrix/services/gateway
 
-go 1.24.0
+go 1.23.1
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.12

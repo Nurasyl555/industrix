@@ -81,9 +81,6 @@ Industrix is a microservices-based marketplace platform designed for industrial 
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### KZ Data Residency Compliance
-
-All services run on infrastructure physically located in Kazakhstan. Personal data does not transit to foreign SaaS services.
 
 **Self-hosted Components:**
 - Gotenberg (PDF generation)
@@ -94,7 +91,6 @@ All services run on infrastructure physically located in Kazakhstan. Personal da
 **Permitted External APIs:**
 - 2GIS API (geocoding/routing - addresses only)
 - FCM/APNs (push delivery - transient tokens)
-- Beeline KZ / Kcell (SMS delivery)
 
 ---
 

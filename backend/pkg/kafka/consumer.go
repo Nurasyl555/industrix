@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -9,67 +10,127 @@ import (
 )
 
 type ConsumerConfig struct {
-	Brokers []string
-	Group   string
-	Topics  []string
+	Brokers        []string
+	ClientID       string
+	GroupID        string
+	Topics         []string
+	RetryBackoff   time.Duration
+	MinBytes       int
+	MaxBytes       int
+	MaxWaitTime    time.Duration
+	OffsetInitial  int64
+	CommitInterval time.Duration
 }
 
-func DefaultConsumerConfig() *ConsumerConfig {
-	return &ConsumerConfig{
-		Brokers: []string{getEnv("KAFKA_BROKERS", "localhost:9092")},
-		Group:   "industrix-group",
-	}
+type Consumer struct {
+	consumer sarama.ConsumerGroup
+	config   *ConsumerConfig
+	log      *logger.Logger
+	handlers map[string]MessageHandler
 }
 
 type MessageHandler func(ctx context.Context, msg *sarama.ConsumerMessage) error
 
-type Consumer struct {
-	group   sarama.ConsumerGroup
-	handler MessageHandler
-	topics  []string
-	log     *logger.Logger
-}
-
-func NewConsumer(ctx context.Context, cfg *ConsumerConfig, handler MessageHandler) (*Consumer, error) {
-	if cfg == nil { cfg = DefaultConsumerConfig() }
-	log := logger.New("kafka-consumer")
-	saramaCfg := sarama.NewConfig()
-	saramaCfg.Consumer.Offsets.Initial = sarama.OffsetNewest
-
-	group, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, saramaCfg)
-	if err != nil { return nil, err }
-	return &Consumer{group: group, handler: handler, topics: cfg.Topics, log: log}, nil
-}
-
-type groupHandler struct {
-	handler MessageHandler
-	log     *logger.Logger
-}
-func (h *groupHandler) Setup(_ sarama.ConsumerGroupSession) error { return nil }
-func (h *groupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
-func (h *groupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	for msg := range claim.Messages() {
-		if h.handler != nil {
-			if err := h.handler(sess.Context(), msg); err != nil {
-				h.log.Error().Err(err).Msg("Error processing message")
-			}
+func NewConsumer(ctx context.Context, cfg *ConsumerConfig, handlers map[string]MessageHandler) (*Consumer, error) {
+	if cfg == nil {
+		cfg = &ConsumerConfig{
+			Brokers:        []string{"localhost:9092"},
+			ClientID:       "industrix-consumer",
+			GroupID:        "industrix-group",
+			Topics:         []string{},
+			RetryBackoff:   time.Second,
+			MinBytes:       1,
+			MaxBytes:       10 * 1024 * 1024,
+			MaxWaitTime:    time.Second,
+			OffsetInitial:  sarama.OffsetOldest,
+			CommitInterval: time.Second,
 		}
-		sess.MarkMessage(msg, "")
 	}
+
+	log := logger.New("kafka-consumer")
+
+	config := sarama.NewConfig()
+	config.ClientID = cfg.ClientID
+	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}
+	config.Consumer.Offsets.Initial = cfg.OffsetInitial
+	config.Consumer.Retry.Backoff = cfg.RetryBackoff
+	config.Consumer.Fetch.Min = int32(cfg.MinBytes)
+	config.Consumer.Fetch.Max = int32(cfg.MaxBytes)
+	config.Consumer.MaxWaitTime = cfg.MaxWaitTime
+	config.Consumer.Enable.AutoCommit = true
+	config.Consumer.Offsets.AutoCommit.Interval = cfg.CommitInterval
+
+	consumer, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.GroupID, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create consumer: %w", err)
+	}
+
+	log.Info().
+		Strs("brokers", cfg.Brokers).
+		Str("group", cfg.GroupID).
+		Msg("Kafka consumer created")
+
+	return &Consumer{
+		consumer: consumer,
+		config:   cfg,
+		log:      log,
+		handlers: handlers,
+	}, nil
+}
+
+func (c *Consumer) Start(ctx context.Context) error {
+	if len(c.config.Topics) == 0 {
+		return fmt.Errorf("no topics specified")
+	}
+
+	consumerHandler := &consumerGroupHandler{
+		handlers: c.handlers,
+		log:      c.log,
+	}
+
+	for {
+		if err := c.consumer.Consume(ctx, c.config.Topics, consumerHandler); err != nil {
+			c.log.Error().Err(err).Msg("Error consuming")
+		}
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+	}
+}
+
+func (c *Consumer) Close() error {
+	if err := c.consumer.Close(); err != nil {
+		c.log.Error().Err(err).Msg("Failed to close consumer")
+		return err
+	}
+	c.log.Info().Msg("Kafka consumer closed")
 	return nil
 }
 
-func (c *Consumer) Start(ctx context.Context) {
-	go func() {
-		h := &groupHandler{handler: c.handler, log: c.log}
-		for {
-			if err := c.group.Consume(ctx, c.topics, h); err != nil {
-				if ctx.Err() != nil { return }
-				time.Sleep(time.Second)
-			}
-		}
-	}()
+type consumerGroupHandler struct {
+	handlers map[string]MessageHandler
+	log      *logger.Logger
 }
 
-func (c *Consumer) AddTopics(topics ...string) { c.topics = append(c.topics, topics...) }
-func (c *Consumer) Close() error { return c.group.Close() }
+func (h *consumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
+func (h *consumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
+
+func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	for msg := range claim.Messages() {
+		topic := msg.Topic
+		if handler, ok := h.handlers[topic]; ok {
+			ctx := session.Context()
+			if err := handler(ctx, msg); err != nil {
+				h.log.Error().
+					Err(err).
+					Str("topic", topic).
+					Int32("partition", msg.Partition).
+					Int64("offset", msg.Offset).
+					Msg("Error handling message")
+			}
+		}
+		session.MarkMessage(msg, "")
+	}
+	return nil
+}

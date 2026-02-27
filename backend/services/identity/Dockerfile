@@ -3,9 +3,11 @@ WORKDIR /app
 COPY go.work go.work.sum ./
 COPY backend/pkg backend/pkg
 COPY backend/gen/go backend/gen/go
+COPY backend/services/gateway backend/services/gateway
 COPY backend/services/identity backend/services/identity
 RUN go work sync
 WORKDIR /app/backend/services/identity
+RUN go mod download
 RUN go build -o main main.go
 
 FROM alpine:latest

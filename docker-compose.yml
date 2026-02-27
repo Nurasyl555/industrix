@@ -18,7 +18,9 @@ services:
 
   # API Gateway
   gateway:
-    build: ./backend/services/gateway
+    build:
+      context: .
+      dockerfile: backend/services/gateway/Dockerfile
     ports:
       - "8080:8080"
     environment:
