@@ -1,154 +1,58 @@
 {
   "settings": {
-    "number_of_shards": 2,
-    "number_of_replicas": 1,
-    "analysis": {
-      "analyzer": {
-        "equipment_analyzer": {
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "russian_stemmer",
-            "english_stemmer"
-          ]
-        }
-      },
-      "filter": {
-        "russian_stemmer": {
-          "type": "stemmer",
-          "language": "russian"
-        },
-        "english_stemmer": {
-          "type": "stemmer",
-          "language": "english"
-        }
-      }
-    }
+    "number_of_shards": 1,
+    "number_of_replicas": 0
   },
   "mappings": {
-    "dynamic": "strict",
+    "dynamic_templates": [
+      {
+        "technical_attributes": {
+          "match_mapping_type": "string",
+          "path_match": "specs.*",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ],
     "properties": {
       "id": {
         "type": "keyword"
       },
       "title": {
         "type": "text",
-        "analyzer": "equipment_analyzer",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "analyzer": "standard"
       },
       "description": {
         "type": "text",
-        "analyzer": "equipment_analyzer"
+        "analyzer": "standard"
       },
-      "category": {
-        "type": "keyword"
-      },
-      "category_path": {
-        "type": "keyword"
-      },
-      "condition": {
-        "type": "keyword"
-      },
-      "listing_type": {
+      "category_id": {
         "type": "keyword"
       },
       "price": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "double"
-          },
-          "currency": {
-            "type": "keyword"
-          },
-          "negotiable": {
-            "type": "boolean"
-          }
-        }
+        "type": "double"
       },
-      "rental": {
-        "type": "object",
-        "properties": {
-          "available": {
-            "type": "boolean"
-          },
-          "price_per_day": {
-            "type": "double"
-          },
-          "price_per_month": {
-            "type": "double"
-          },
-          "min_rental_days": {
-            "type": "integer"
-          }
-        }
+      "currency": {
+        "type": "keyword"
       },
       "location": {
         "type": "geo_point"
       },
-      "region": {
+      "city_id": {
         "type": "keyword"
-      },
-      "city": {
-        "type": "keyword"
-      },
-      "manufacturer": {
-        "type": "keyword"
-      },
-      "model": {
-        "type": "keyword"
-      },
-      "year": {
-        "type": "integer"
-      },
-      "technical_specs": {
-        "type": "object",
-        "dynamic": true
-      },
-      "media": {
-        "type": "object",
-        "properties": {
-          "images": {
-            "type": "keyword"
-          },
-          "videos": {
-            "type": "keyword"
-          }
-        }
-      },
-      "seller": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "company_name": {
-            "type": "keyword"
-          },
-          "verified": {
-            "type": "boolean"
-          },
-          "rating": {
-            "type": "float"
-          }
-        }
-      },
-      "status": {
-        "type": "keyword"
-      },
-      "view_count": {
-        "type": "integer"
       },
       "created_at": {
         "type": "date"
       },
       "updated_at": {
         "type": "date"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "tags": {
+        "type": "keyword"
       }
     }
   }

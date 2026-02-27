@@ -1,21 +1,21 @@
 #!/bin/bash
 set -e
-COMMAND=${1:-up}
-SERVICE=${2:-identity_db}
-VERSION=${3}
-DB_HOST=${POSTGRES_HOST:-localhost}
-DB_PORT=${POSTGRES_PORT:-5432}
-DB_USER=${POSTGRES_USER:-postgres}
-DB_PASSWORD=${POSTGRES_PASSWORD:-devpassword}
-DB_NAME=${SERVICE}
-MIGRATIONS_DIR="./migrations/${SERVICE}"
-DB_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
-if ! command -v migrate &> /dev/null; then
-    go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-    export PATH=$PATH:$(go env GOPATH)/bin
+
+# Usage: ./scripts/migrate.sh [service] [up|down]
+
+SERVICE=$1
+DIRECTION=${2:-up}
+
+if [ -z "$SERVICE" ]; then
+  echo "Usage: ./scripts/migrate.sh [service] [up|down]"
+  echo "Services: trust, inventory, transaction, content, communication, services, analytics"
+  exit 1
 fi
-case $COMMAND in
-    up) migrate -path "$MIGRATIONS_DIR" -database "$DB_URL" up ;;
-    down) migrate -path "$MIGRATIONS_DIR" -database "$DB_URL" down 1 ;;
-    *) exit 1 ;;
-esac
+
+echo "Running migrations for $SERVICE ($DIRECTION)..."
+
+# Assuming migrate CLI is installed or running via docker
+# For now, this is a placeholder to be filled with actual migrate command
+# Example: migrate -path backend/services/$SERVICE/migrations -database $DB_DSN $DIRECTION
+
+echo "⚠️  Migration script is a placeholder. Please implement with actual migrate command."

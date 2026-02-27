@@ -80,3 +80,20 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 func (c *Client) Keys(ctx context.Context, pattern string) ([]string, error) {
 	return c.client.Keys(ctx, pattern).Result()
 }
+func (c *Client) Incr(ctx context.Context, key string) (int64, error) {
+	return c.client.Incr(ctx, key).Result()
+}
+func (c *Client) Expire(ctx context.Context, key string, expiration time.Duration) (bool, error) {
+	return c.client.Expire(ctx, key, expiration).Result()
+}
+
+// KeyBuilder helper for generating standardized Redis keys
+type KeyBuilder struct{}
+
+func (k *KeyBuilder) Session(userID string) string {
+	return fmt.Sprintf("session:%s", userID)
+}
+
+func (k *KeyBuilder) RateLimit(ip string, path string) string {
+	return fmt.Sprintf("ratelimit:%s:%s", ip, path)
+}

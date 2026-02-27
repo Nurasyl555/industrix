@@ -1,71 +1,111 @@
 package main
 
-// @title Industrix API Gateway
-// @version 1.0
-// @description API Gateway for the Industrial Equipment Marketplace.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host localhost:8080
-// @BasePath /api/v1
-
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-
 import (
+	"context"
 	"fmt"
-	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/swagger"
-	"github.com/redis/go-redis/v9"
-
-	_ "github.com/industrix/services/gateway/docs"
-	"github.com/industrix/services/gateway/internal/config"
+	"github.com/industrix/pkg/logger"
+	"github.com/industrix/pkg/redis"
 	"github.com/industrix/services/gateway/internal/middleware"
 	"github.com/industrix/services/gateway/internal/proxy"
+	trustpb "github.com/industrix/gen/go/trust/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
-	cfg := config.Load()
+	serviceName := "gateway-service"
+	l := logger.New(serviceName)
+	logger.SetGlobal(l)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Redis client for rate limiting
+	redisCfg := redis.DefaultConfig()
+	redisClient, err := redis.NewClient(ctx, redisCfg)
+	if err != nil {
+		l.Fatal().Err(err).Msg("Failed to connect to Redis")
+	}
+	defer redisClient.Close()
+
+	// gRPC connection to Trust service for Auth
+	trustAddr := getEnv("TRUST_SERVICE_ADDR", "trust:50051")
+	conn, err := grpc.NewClient(trustAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		l.Fatal().Err(err).Msg("Failed to connect to Trust Service")
+	}
+	defer conn.Close()
+
+	trustClient := trustpb.NewTrustServiceClient(conn)
+
+	// Initialize middleware
+	authMiddleware := middleware.NewAuth(trustClient)
+	rateLimitMiddleware := middleware.NewRateLimit(redisClient, 100, time.Minute) // 100 req/min/IP
+	loggingMiddleware := middleware.NewLogging(l)
+
+	// Configure Proxy
+	proxyCfg := proxy.Config{
+		TrustServiceURL:         getEnv("TRUST_SERVICE_URL", "http://trust:8081"),
+		InventoryServiceURL:     getEnv("INVENTORY_SERVICE_URL", "http://inventory:8081"),
+		TransactionServiceURL:   getEnv("TRANSACTION_SERVICE_URL", "http://transaction:8081"),
+		ContentServiceURL:       getEnv("CONTENT_SERVICE_URL", "http://content:8081"),
+		CommunicationServiceURL: getEnv("COMMUNICATION_SERVICE_URL", "http://communication:8081"),
+		ServicesMarketplaceURL:  getEnv("SERVICES_MARKETPLACE_URL", "http://services-marketplace:8081"),
+		AnalyticsServiceURL:     getEnv("ANALYTICS_SERVICE_URL", "http://analytics:8081"),
+		AdminServiceURL:         getEnv("ADMIN_SERVICE_URL", "http://admin:8081"),
+	}
 
 	app := fiber.New(fiber.Config{
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
+		DisableStartupMessage: true,
+		AppName:               "Industrix API Gateway",
 	})
-
 	app.Use(recover.New())
 	app.Use(cors.New())
 
-	app.Get("/swagger/*", swagger.HandlerDefault)
-	app.Use(middleware.InjectTraceID())
-	app.Use(middleware.RequestLogger())
+	// Apply global middleware
+	app.Use(loggingMiddleware.RequestLogger())
+	app.Use(rateLimitMiddleware.SlidingWindow())
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     cfg.Redis.Addr,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
 	})
 
-	authMiddleware := middleware.NewAuthMiddleware(cfg)
-	rateLimiter := middleware.NewRateLimiter(redisClient, cfg.RateLimit.RequestsPerMinute, cfg.RateLimit.Burst)
+	proxy.RegisterRoutes(app, proxyCfg, authMiddleware, rateLimitMiddleware, loggingMiddleware)
 
-	router := proxy.NewRouter(app, cfg, authMiddleware, rateLimiter)
-	router.RegisterRoutes()
+	httpPort := getEnv("HTTP_PORT", "8080")
 
-	addr := fmt.Sprintf(":%s", cfg.Server.Port)
-	log.Printf("Starting gateway on %s", addr)
-	if err := app.Listen(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	go func() {
+		l.Info().Str("port", httpPort).Msg("Starting API Gateway")
+		if err := app.Listen(fmt.Sprintf(":%s", httpPort)); err != nil {
+			l.Fatal().Err(err).Msg("HTTP server failed")
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	<-stop
+	l.Info().Msg("Shutting down gracefully...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
+		l.Error().Err(err).Msg("HTTP server shutdown error")
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
