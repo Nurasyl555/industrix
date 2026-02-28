@@ -15,9 +15,8 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/login": {
+        "/auth/email/login": {
             "post": {
-                "description": "Authenticate user with email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +26,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login user",
+                "summary": "Login user via Email",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -35,7 +34,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
+                            "$ref": "#/definitions/identity.EmailLoginRequest"
                         }
                     }
                 ],
@@ -45,15 +44,39 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/jwt.TokenPair"
                         }
+                    }
+                }
+            }
+        },
+        "/auth/email/register": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user via Email",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/identity.EmailRegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -61,9 +84,105 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/oauth/google": {
+            "get": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Redirect to Google OAuth consent screen",
+                "responses": {}
+            }
+        },
+        "/auth/oauth/google/callback": {
+            "get": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Handle Google OAuth callback and get tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/phone/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Request OTP for Phone login/registration",
+                "parameters": [
+                    {
+                        "description": "Phone number",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/identity.PhoneLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/auth/phone/verify": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify phone OTP and get tokens",
+                "parameters": [
+                    {
+                        "description": "OTP details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/identity.VerifyOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jwt.TokenPair"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/refresh": {
             "post": {
-                "description": "Issue new access token using refresh token",
                 "consumes": [
                     "application/json"
                 ],
@@ -81,7 +200,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RefreshRequest"
+                            "$ref": "#/definitions/identity.RefreshRequest"
                         }
                     }
                 ],
@@ -90,113 +209,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/jwt.TokenPair"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/register": {
-            "post": {
-                "description": "Creates a new user account with pending verification",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Register a new user",
-                "parameters": [
-                    {
-                        "description": "Registration details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/auth.RegisterRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/verify-otp": {
-            "post": {
-                "description": "Validates OTP sent to phone and issues initial tokens",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Verify phone OTP",
-                "parameters": [
-                    {
-                        "description": "OTP details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/auth.VerifyOTPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/jwt.TokenPair"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
                         }
                     }
                 }
@@ -209,7 +221,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Register a new company (requires verification flow to follow)",
                 "consumes": [
                     "application/json"
                 ],
@@ -227,7 +238,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/company.CreateCompanyRequest"
+                            "$ref": "#/definitions/integrity.CreateCompanyRequest"
                         }
                     }
                 ],
@@ -235,17 +246,11 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/company.Company"
+                            "$ref": "#/definitions/integrity.Company"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/errors.Error"
                         }
@@ -255,13 +260,6 @@ const docTemplate = `{
         },
         "/companies/{id}": {
             "get": {
-                "description": "Retrieve company information by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "companies"
                 ],
@@ -279,13 +277,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/company.Company"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
+                            "$ref": "#/definitions/integrity.Company"
                         }
                     }
                 }
@@ -295,13 +287,6 @@ const docTemplate = `{
                     {
                         "BearerAuth": []
                     }
-                ],
-                "description": "Update mutable fields of a company",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
                 ],
                 "tags": [
                     "companies"
@@ -321,7 +306,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/company.UpdateCompanyRequest"
+                            "$ref": "#/definitions/integrity.UpdateCompanyRequest"
                         }
                     }
                 ],
@@ -329,19 +314,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/company.Company"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
+                            "$ref": "#/definitions/integrity.Company"
                         }
                     }
                 }
@@ -354,7 +327,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Post a review and rating for a company or equipment",
                 "consumes": [
                     "application/json"
                 ],
@@ -372,7 +344,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/review.CreateReviewRequest"
+                            "$ref": "#/definitions/marketplace.CreateReviewRequest"
                         }
                     }
                 ],
@@ -380,19 +352,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/review.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
+                            "$ref": "#/definitions/marketplace.Review"
                         }
                     }
                 }
@@ -400,13 +360,6 @@ const docTemplate = `{
         },
         "/reviews/{entityID}": {
             "get": {
-                "description": "Get paginated reviews for an entity",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "reviews"
                 ],
@@ -427,25 +380,12 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
                     }
                 }
             }
         },
         "/reviews/{entityID}/reputation": {
             "get": {
-                "description": "Get aggregated reputation metrics for an entity",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "reviews"
                 ],
@@ -463,13 +403,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/review.ReputationScore"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
+                            "$ref": "#/definitions/marketplace.ReputationScore"
                         }
                     }
                 }
@@ -482,13 +416,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve profile information for the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "users"
                 ],
@@ -497,13 +424,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/profile.User"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
+                            "$ref": "#/definitions/identity.User"
                         }
                     }
                 }
@@ -513,13 +434,6 @@ const docTemplate = `{
                     {
                         "BearerAuth": []
                     }
-                ],
-                "description": "Update name and avatar of the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
                 ],
                 "tags": [
                     "users"
@@ -532,184 +446,19 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/profile.UpdateProfileRequest"
+                            "$ref": "#/definitions/identity.UpdateProfileRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.Error"
-                        }
+                        "description": "OK"
                     }
                 }
             }
         }
     },
     "definitions": {
-        "auth.LoginRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "auth.RefreshRequest": {
-            "type": "object",
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "auth.RegisterRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "auth.VerifyOTPRequest": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "company.Company": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "bin": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner_id": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "reputation_score": {
-                    "type": "number"
-                },
-                "reviewer_note": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/company.CompanyStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "verified": {
-                    "type": "boolean"
-                },
-                "website": {
-                    "type": "string"
-                }
-            }
-        },
-        "company.CompanyStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "verified",
-                "rejected"
-            ],
-            "x-enum-varnames": [
-                "StatusPending",
-                "StatusVerified",
-                "StatusRejected"
-            ]
-        },
-        "company.CreateCompanyRequest": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "bin": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "website": {
-                    "type": "string"
-                }
-            }
-        },
-        "company.UpdateCompanyRequest": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "bin": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "website": {
-                    "type": "string"
-                }
-            }
-        },
         "errors.Code": {
             "type": "string",
             "enum": [
@@ -743,13 +492,32 @@ const docTemplate = `{
                 }
             }
         },
-        "identity.LoginRequest": {
+        "identity.EmailLoginRequest": {
             "type": "object",
             "properties": {
                 "email": {
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "identity.EmailRegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "identity.PhoneLoginRequest": {
+            "type": "object",
+            "properties": {
+                "phone": {
                     "type": "string"
                 }
             }
@@ -762,20 +530,6 @@ const docTemplate = `{
                 }
             }
         },
-        "identity.RegisterRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
         "identity.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -783,9 +537,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "last_name": {
-                    "type": "string"
-                },
-                "phone": {
                     "type": "string"
                 }
             }
@@ -992,107 +743,6 @@ const docTemplate = `{
             }
         },
         "marketplace.Review": {
-            "type": "object",
-            "properties": {
-                "author_id": {
-                    "type": "string"
-                },
-                "comment": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "rating": {
-                    "type": "integer"
-                },
-                "target_entity_id": {
-                    "type": "string"
-                },
-                "transaction_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.UpdateProfileRequest": {
-            "type": "object",
-            "properties": {
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "profile.User": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "company_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "review.CreateReviewRequest": {
-            "type": "object",
-            "properties": {
-                "comment": {
-                    "type": "string"
-                },
-                "rating": {
-                    "type": "integer"
-                },
-                "target_entity_id": {
-                    "type": "string"
-                },
-                "transaction_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "review.ReputationScore": {
-            "type": "object",
-            "properties": {
-                "average_rating": {
-                    "type": "number"
-                },
-                "entity_id": {
-                    "type": "string"
-                },
-                "review_count": {
-                    "type": "integer"
-                },
-                "tier": {
-                    "description": "gold, silver, bronze, none",
-                    "type": "string"
-                }
-            }
-        },
-        "review.Review": {
             "type": "object",
             "properties": {
                 "author_id": {

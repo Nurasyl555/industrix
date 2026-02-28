@@ -27,9 +27,12 @@ services:
       - REDIS_HOST=redis
       - KAFKA_BROKERS=kafka:29092
     depends_on:
-      - postgres
-      - redis
-      - kafka
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
 
   # Include infrastructure services
   postgres:

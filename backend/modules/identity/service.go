@@ -15,9 +15,11 @@ import (
 // Service defines the identity service interface
 type Service interface {
 	// Auth
-	Register(ctx context.Context, email, phone, password string) error
-	VerifyOTP(ctx context.Context, phone, code string) (*jwt.TokenPair, error)
-	Login(ctx context.Context, email, password string) (*jwt.TokenPair, error)
+	RegisterEmail(ctx context.Context, email, password string) error
+	LoginEmail(ctx context.Context, email, password string) (*jwt.TokenPair, error)
+	RequestPhoneOTP(ctx context.Context, phone string) error
+	VerifyPhoneOTP(ctx context.Context, phone, code string) (*jwt.TokenPair, error)
+	LoginGoogle(ctx context.Context, code string) (*jwt.TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (*jwt.TokenPair, error)
 
 	// Profile
@@ -45,13 +47,13 @@ func NewService(repo *Repository, jwtClient jwt.Client) Service {
 
 // === Auth ===
 
-func (s *service) Register(ctx context.Context, email, phone, password string) error {
-	exists, err := s.repo.UserExists(ctx, email, phone)
+func (s *service) RegisterEmail(ctx context.Context, email, password string) error {
+	exists, err := s.repo.UserExistsByEmail(ctx, email)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return errors.New(errors.CodeConflict, "User already exists")
+		return errors.New(errors.CodeConflict, "Email already registered")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -59,8 +61,39 @@ func (s *service) Register(ctx context.Context, email, phone, password string) e
 		return errors.New(errors.CodeInternal, "Failed to hash password")
 	}
 
-	if err := s.repo.CreateUser(ctx, email, phone, string(hashedPassword)); err != nil {
+	_, err = s.repo.CreateUserWithEmail(ctx, email, string(hashedPassword))
+	return err
+}
+
+func (s *service) LoginEmail(ctx context.Context, email, password string) (*jwt.TokenPair, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
+	}
+
+	if user.PasswordHash == nil {
+		return nil, errors.New(errors.CodeUnauthorized, "Please login with your original authentication method")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(password)); err != nil {
+		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
+	}
+
+	return s.jwtClient.IssuePair(user.ID, user.CompanyID, user.Role, user.Verified, 15*time.Minute, 24*time.Hour)
+}
+
+func (s *service) RequestPhoneOTP(ctx context.Context, phone string) error {
+	exists, err := s.repo.UserExistsByPhone(ctx, phone)
+	if err != nil {
 		return err
+	}
+
+	if !exists {
+		// Create a pending user if they don't exist
+		_, err = s.repo.CreateUserWithPhone(ctx, phone)
+		if err != nil {
+			return err
+		}
 	}
 
 	otp := "123456" // In production, generate random code
@@ -83,7 +116,7 @@ func (s *service) sendSMS(ctx context.Context, phone, message string) error {
 	return nil
 }
 
-func (s *service) VerifyOTP(ctx context.Context, phone, code string) (*jwt.TokenPair, error) {
+func (s *service) VerifyPhoneOTP(ctx context.Context, phone, code string) (*jwt.TokenPair, error) {
 	valid, err := s.repo.ValidateOTP(ctx, phone, code)
 	if err != nil {
 		return nil, err
@@ -106,17 +139,9 @@ func (s *service) VerifyOTP(ctx context.Context, phone, code string) (*jwt.Token
 	return s.jwtClient.IssuePair(user.ID, user.CompanyID, user.Role, true, 15*time.Minute, 24*time.Hour)
 }
 
-func (s *service) Login(ctx context.Context, email, password string) (*jwt.TokenPair, error) {
-	user, err := s.repo.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return nil, errors.New(errors.CodeUnauthorized, "Invalid credentials")
-	}
-
-	return s.jwtClient.IssuePair(user.ID, user.CompanyID, user.Role, user.Verified, 15*time.Minute, 24*time.Hour)
+func (s *service) LoginGoogle(ctx context.Context, code string) (*jwt.TokenPair, error) {
+	// TODO: Exchange code for Google token and profile data
+	return nil, errors.New(errors.CodeInternal, "Google OAuth not fully implemented yet")
 }
 
 func (s *service) Refresh(ctx context.Context, refreshToken string) (*jwt.TokenPair, error) {

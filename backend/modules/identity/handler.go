@@ -20,9 +20,19 @@ func NewHandler(service Service) *Handler {
 // RegisterPublicRoutes registers routes that don't require authentication
 func (h *Handler) RegisterPublicRoutes(router fiber.Router) {
 	auth := router.Group("/auth")
-	auth.Post("/register", h.Register)
-	auth.Post("/verify-otp", h.VerifyOTP)
-	auth.Post("/login", h.Login)
+
+	// Email flow
+	auth.Post("/email/register", h.RegisterEmail)
+	auth.Post("/email/login", h.LoginEmail)
+
+	// Phone flow
+	auth.Post("/phone/login", h.LoginPhone)
+	auth.Post("/phone/verify", h.VerifyPhone)
+
+	// Google OAuth flow
+	auth.Get("/oauth/google", h.GoogleOAuthLogin)
+	auth.Get("/oauth/google/callback", h.GoogleOAuthCallback)
+
 	auth.Post("/refresh", h.Refresh)
 }
 
@@ -33,43 +43,43 @@ func (h *Handler) RegisterProtectedRoutes(router fiber.Router) {
 	users.Put("/me", h.UpdateProfile)
 }
 
-// Register godoc
-// @Summary Register a new user
+// RegisterEmail godoc
+// @Summary Register a new user via Email
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "Registration details"
+// @Param request body EmailRegisterRequest true "Registration details"
 // @Success 201
 // @Failure 400 {object} errors.Error
-// @Router /auth/register [post]
-func (h *Handler) Register(c *fiber.Ctx) error {
-	var req RegisterRequest
+// @Router /auth/email/register [post]
+func (h *Handler) RegisterEmail(c *fiber.Ctx) error {
+	var req EmailRegisterRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
 	}
 
-	if err := h.service.Register(c.Context(), req.Email, req.Phone, req.Password); err != nil {
+	if err := h.service.RegisterEmail(c.Context(), req.Email, req.Password); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err)
 	}
 
 	return c.SendStatus(http.StatusCreated)
 }
 
-// VerifyOTP godoc
-// @Summary Verify phone OTP
+// LoginEmail godoc
+// @Summary Login user via Email
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body VerifyOTPRequest true "OTP details"
+// @Param request body EmailLoginRequest true "Login credentials"
 // @Success 200 {object} jwt.TokenPair
-// @Router /auth/verify-otp [post]
-func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
-	var req VerifyOTPRequest
+// @Router /auth/email/login [post]
+func (h *Handler) LoginEmail(c *fiber.Ctx) error {
+	var req EmailLoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
 	}
 
-	tokens, err := h.service.VerifyOTP(c.Context(), req.Phone, req.Code)
+	tokens, err := h.service.LoginEmail(c.Context(), req.Email, req.Password)
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(err)
 	}
@@ -77,21 +87,71 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	return c.JSON(tokens)
 }
 
-// Login godoc
-// @Summary Login user
+// LoginPhone godoc
+// @Summary Request OTP for Phone login/registration
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body LoginRequest true "Login credentials"
-// @Success 200 {object} jwt.TokenPair
-// @Router /auth/login [post]
-func (h *Handler) Login(c *fiber.Ctx) error {
-	var req LoginRequest
+// @Param request body PhoneLoginRequest true "Phone number"
+// @Success 200
+// @Router /auth/phone/login [post]
+func (h *Handler) LoginPhone(c *fiber.Ctx) error {
+	var req PhoneLoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
 	}
 
-	tokens, err := h.service.Login(c.Context(), req.Email, req.Password)
+	if err := h.service.RequestPhoneOTP(c.Context(), req.Phone); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err)
+	}
+
+	return c.SendStatus(http.StatusOK)
+}
+
+// VerifyPhone godoc
+// @Summary Verify phone OTP and get tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body VerifyOTPRequest true "OTP details"
+// @Success 200 {object} jwt.TokenPair
+// @Router /auth/phone/verify [post]
+func (h *Handler) VerifyPhone(c *fiber.Ctx) error {
+	var req VerifyOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
+	}
+
+	tokens, err := h.service.VerifyPhoneOTP(c.Context(), req.Phone, req.Code)
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(err)
+	}
+
+	return c.JSON(tokens)
+}
+
+// GoogleOAuthLogin godoc
+// @Summary Redirect to Google OAuth consent screen
+// @Tags auth
+// @Router /auth/oauth/google [get]
+func (h *Handler) GoogleOAuthLogin(c *fiber.Ctx) error {
+	// TODO: Implement actual redirect using golang.org/x/oauth2
+	return c.SendString("Redirecting to Google...")
+}
+
+// GoogleOAuthCallback godoc
+// @Summary Handle Google OAuth callback and get tokens
+// @Tags auth
+// @Param code query string true "OAuth code"
+// @Success 200 {object} jwt.TokenPair
+// @Router /auth/oauth/google/callback [get]
+func (h *Handler) GoogleOAuthCallback(c *fiber.Ctx) error {
+	code := c.Query("code")
+	if code == "" {
+		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Missing code"))
+	}
+
+	tokens, err := h.service.LoginGoogle(c.Context(), code)
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(err)
 	}

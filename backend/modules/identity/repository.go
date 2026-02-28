@@ -22,15 +22,50 @@ func NewRepository(pg *postgres.Client, redis *redis.Client) *Repository {
 
 // === Auth operations ===
 
-func (r *Repository) UserExists(ctx context.Context, email, phone string) (bool, error) {
+func (r *Repository) UserExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var count int
-	err := r.pg.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE email = $1 OR phone = $2", email, phone).Scan(&count)
+	err := r.pg.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&count)
 	return count > 0, err
 }
 
-func (r *Repository) CreateUser(ctx context.Context, email, phone, passwordHash string) error {
-	_, err := r.pg.Exec(ctx, "INSERT INTO users (email, phone, password_hash) VALUES ($1, $2, $3)", email, phone, passwordHash)
-	return err
+func (r *Repository) UserExistsByPhone(ctx context.Context, phone string) (bool, error) {
+	var count int
+	err := r.pg.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE phone = $1", phone).Scan(&count)
+	return count > 0, err
+}
+
+func (r *Repository) UserExistsByGoogleID(ctx context.Context, googleID string) (bool, error) {
+	var count int
+	err := r.pg.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE google_id = $1", googleID).Scan(&count)
+	return count > 0, err
+}
+
+func (r *Repository) CreateUserWithEmail(ctx context.Context, email, passwordHash string) (*User, error) {
+	var user User
+	err := r.pg.QueryRow(ctx,
+		"INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role, verified, created_at, updated_at",
+		email, passwordHash).Scan(&user.ID, &user.Email, &user.Role, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	return &user, err
+}
+
+func (r *Repository) CreateUserWithPhone(ctx context.Context, phone string) (*User, error) {
+	var user User
+	err := r.pg.QueryRow(ctx,
+		"INSERT INTO users (phone) VALUES ($1) RETURNING id, phone, role, verified, created_at, updated_at",
+		phone).Scan(&user.ID, &user.Phone, &user.Role, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	return &user, err
+}
+
+func (r *Repository) CreateUserWithGoogle(ctx context.Context, googleID, email, firstName, lastName, avatarURL string) (*User, error) {
+	var user User
+	// For Google login, if email from Google is available, we store it.
+	err := r.pg.QueryRow(ctx,
+		`INSERT INTO users (google_id, email, first_name, last_name, avatar_url, verified) 
+         VALUES ($1, $2, $3, $4, $5, true) 
+         RETURNING id, google_id, email, first_name, last_name, avatar_url, role, verified, created_at, updated_at`,
+		googleID, email, firstName, lastName, avatarURL).Scan(
+		&user.ID, &user.GoogleID, &user.Email, &user.FirstName, &user.LastName, &user.AvatarURL, &user.Role, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+	return &user, err
 }
 
 func (r *Repository) SaveOTP(ctx context.Context, phone, code string, ttl time.Duration) error {
@@ -52,8 +87,8 @@ func (r *Repository) ValidateOTP(ctx context.Context, phone, code string) (bool,
 func (r *Repository) GetUserByPhone(ctx context.Context, phone string) (*User, error) {
 	var user User
 	err := r.pg.QueryRow(ctx,
-		"SELECT id, email, phone, password_hash, role, verified, COALESCE(company_id::text, '') FROM users WHERE phone = $1", phone).Scan(
-		&user.ID, &user.Email, &user.Phone, &user.PasswordHash, &user.Role, &user.Verified, &user.CompanyID,
+		"SELECT id, email, phone, password_hash, google_id, role, verified, COALESCE(company_id::text, '') FROM users WHERE phone = $1", phone).Scan(
+		&user.ID, &user.Email, &user.Phone, &user.PasswordHash, &user.GoogleID, &user.Role, &user.Verified, &user.CompanyID,
 	)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "User not found")
@@ -64,8 +99,20 @@ func (r *Repository) GetUserByPhone(ctx context.Context, phone string) (*User, e
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 	err := r.pg.QueryRow(ctx,
-		"SELECT id, email, phone, password_hash, role, verified, COALESCE(company_id::text, '') FROM users WHERE email = $1", email).Scan(
-		&user.ID, &user.Email, &user.Phone, &user.PasswordHash, &user.Role, &user.Verified, &user.CompanyID,
+		"SELECT id, email, phone, password_hash, google_id, role, verified, COALESCE(company_id::text, '') FROM users WHERE email = $1", email).Scan(
+		&user.ID, &user.Email, &user.Phone, &user.PasswordHash, &user.GoogleID, &user.Role, &user.Verified, &user.CompanyID,
+	)
+	if err != nil {
+		return nil, errors.New(errors.CodeNotFound, "User not found")
+	}
+	return &user, nil
+}
+
+func (r *Repository) GetUserByGoogleID(ctx context.Context, googleID string) (*User, error) {
+	var user User
+	err := r.pg.QueryRow(ctx,
+		"SELECT id, email, phone, password_hash, google_id, role, verified, COALESCE(company_id::text, '') FROM users WHERE google_id = $1", googleID).Scan(
+		&user.ID, &user.Email, &user.Phone, &user.PasswordHash, &user.GoogleID, &user.Role, &user.Verified, &user.CompanyID,
 	)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "User not found")

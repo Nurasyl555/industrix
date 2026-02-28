@@ -1,106 +1,5 @@
 basePath: /api/v1
 definitions:
-  auth.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    type: object
-  auth.RefreshRequest:
-    properties:
-      refresh_token:
-        type: string
-    type: object
-  auth.RegisterRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-      phone:
-        type: string
-    type: object
-  auth.VerifyOTPRequest:
-    properties:
-      code:
-        type: string
-      phone:
-        type: string
-    type: object
-  company.Company:
-    properties:
-      address:
-        type: string
-      bin:
-        type: string
-      created_at:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      owner_id:
-        type: string
-      phone:
-        type: string
-      reputation_score:
-        type: number
-      reviewer_note:
-        type: string
-      status:
-        $ref: '#/definitions/company.CompanyStatus'
-      updated_at:
-        type: string
-      user_id:
-        type: string
-      verified:
-        type: boolean
-      website:
-        type: string
-    type: object
-  company.CompanyStatus:
-    enum:
-    - pending
-    - verified
-    - rejected
-    type: string
-    x-enum-varnames:
-    - StatusPending
-    - StatusVerified
-    - StatusRejected
-  company.CreateCompanyRequest:
-    properties:
-      address:
-        type: string
-      bin:
-        type: string
-      email:
-        type: string
-      name:
-        type: string
-      phone:
-        type: string
-      website:
-        type: string
-    type: object
-  company.UpdateCompanyRequest:
-    properties:
-      address:
-        type: string
-      bin:
-        type: string
-      email:
-        type: string
-      name:
-        type: string
-      phone:
-        type: string
-      website:
-        type: string
-    type: object
   errors.Code:
     enum:
     - NOT_FOUND
@@ -126,11 +25,23 @@ definitions:
       message:
         type: string
     type: object
-  identity.LoginRequest:
+  identity.EmailLoginRequest:
     properties:
       email:
         type: string
       password:
+        type: string
+    type: object
+  identity.EmailRegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  identity.PhoneLoginRequest:
+    properties:
+      phone:
         type: string
     type: object
   identity.RefreshRequest:
@@ -138,22 +49,11 @@ definitions:
       refresh_token:
         type: string
     type: object
-  identity.RegisterRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-      phone:
-        type: string
-    type: object
   identity.UpdateProfileRequest:
     properties:
       first_name:
         type: string
       last_name:
-        type: string
-      phone:
         type: string
     type: object
   identity.User:
@@ -308,72 +208,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  profile.UpdateProfileRequest:
-    properties:
-      first_name:
-        type: string
-      last_name:
-        type: string
-      phone:
-        type: string
-    type: object
-  profile.User:
-    properties:
-      avatar_url:
-        type: string
-      company_id:
-        type: string
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
-        type: string
-      last_name:
-        type: string
-    type: object
-  review.CreateReviewRequest:
-    properties:
-      comment:
-        type: string
-      rating:
-        type: integer
-      target_entity_id:
-        type: string
-      transaction_id:
-        type: string
-    type: object
-  review.ReputationScore:
-    properties:
-      average_rating:
-        type: number
-      entity_id:
-        type: string
-      review_count:
-        type: integer
-      tier:
-        description: gold, silver, bronze, none
-        type: string
-    type: object
-  review.Review:
-    properties:
-      author_id:
-        type: string
-      comment:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: string
-      rating:
-        type: integer
-      target_entity_id:
-        type: string
-      transaction_id:
-        type: string
-      updated_at:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -381,18 +215,17 @@ info:
   title: Industrix API
   version: "1.0"
 paths:
-  /auth/login:
+  /auth/email/login:
     post:
       consumes:
       - application/json
-      description: Authenticate user with email and password
       parameters:
       - description: Login credentials
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequest'
+          $ref: '#/definitions/identity.EmailLoginRequest'
       produces:
       - application/json
       responses:
@@ -400,91 +233,84 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/jwt.TokenPair'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: Login user
+      summary: Login user via Email
       tags:
       - auth
-  /auth/refresh:
+  /auth/email/register:
     post:
       consumes:
       - application/json
-      description: Issue new access token using refresh token
-      parameters:
-      - description: Refresh token
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/auth.RefreshRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/jwt.TokenPair'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: Refresh token
-      tags:
-      - auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Creates a new user account with pending verification
       parameters:
       - description: Registration details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.RegisterRequest'
+          $ref: '#/definitions/identity.EmailRegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/errors.Error'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: Register a new user
+      summary: Register a new user via Email
       tags:
       - auth
-  /auth/verify-otp:
+  /auth/oauth/google:
+    get:
+      responses: {}
+      summary: Redirect to Google OAuth consent screen
+      tags:
+      - auth
+  /auth/oauth/google/callback:
+    get:
+      parameters:
+      - description: OAuth code
+        in: query
+        name: code
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jwt.TokenPair'
+      summary: Handle Google OAuth callback and get tokens
+      tags:
+      - auth
+  /auth/phone/login:
     post:
       consumes:
       - application/json
-      description: Validates OTP sent to phone and issues initial tokens
+      parameters:
+      - description: Phone number
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/identity.PhoneLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Request OTP for Phone login/registration
+      tags:
+      - auth
+  /auth/phone/verify:
+    post:
+      consumes:
+      - application/json
       parameters:
       - description: OTP details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.VerifyOTPRequest'
+          $ref: '#/definitions/identity.VerifyOTPRequest'
       produces:
       - application/json
       responses:
@@ -492,42 +318,50 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/jwt.TokenPair'
-        "400":
-          description: Bad Request
+      summary: Verify phone OTP and get tokens
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/identity.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/errors.Error'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.Error'
-      summary: Verify phone OTP
+            $ref: '#/definitions/jwt.TokenPair'
+      summary: Refresh token
       tags:
       - auth
   /companies:
     post:
       consumes:
       - application/json
-      description: Register a new company (requires verification flow to follow)
       parameters:
       - description: Company details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/company.CreateCompanyRequest'
+          $ref: '#/definitions/integrity.CreateCompanyRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/company.Company'
+            $ref: '#/definitions/integrity.Company'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "409":
-          description: Conflict
           schema:
             $ref: '#/definitions/errors.Error'
       security:
@@ -537,33 +371,21 @@ paths:
       - companies
   /companies/{id}:
     get:
-      consumes:
-      - application/json
-      description: Retrieve company information by ID
       parameters:
       - description: Company ID
         in: path
         name: id
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/company.Company'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/errors.Error'
+            $ref: '#/definitions/integrity.Company'
       summary: Get company details
       tags:
       - companies
     put:
-      consumes:
-      - application/json
-      description: Update mutable fields of a company
       parameters:
       - description: Company ID
         in: path
@@ -575,22 +397,12 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/company.UpdateCompanyRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/integrity.UpdateCompanyRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/company.Company'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/errors.Error'
+            $ref: '#/definitions/integrity.Company'
       security:
       - BearerAuth: []
       summary: Update company details
@@ -600,29 +412,20 @@ paths:
     post:
       consumes:
       - application/json
-      description: Post a review and rating for a company or equipment
       parameters:
       - description: Review details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/review.CreateReviewRequest'
+          $ref: '#/definitions/marketplace.CreateReviewRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/review.Review'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.Error'
+            $ref: '#/definitions/marketplace.Review'
       security:
       - BearerAuth: []
       summary: Create a review
@@ -630,100 +433,60 @@ paths:
       - reviews
   /reviews/{entityID}:
     get:
-      consumes:
-      - application/json
-      description: Get paginated reviews for an entity
       parameters:
       - description: Entity ID
         in: path
         name: entityID
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/errors.Error'
       summary: List reviews
       tags:
       - reviews
   /reviews/{entityID}/reputation:
     get:
-      consumes:
-      - application/json
-      description: Get aggregated reputation metrics for an entity
       parameters:
       - description: Entity ID
         in: path
         name: entityID
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/review.ReputationScore'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/errors.Error'
+            $ref: '#/definitions/marketplace.ReputationScore'
       summary: Get reputation score
       tags:
       - reviews
   /users/me:
     get:
-      consumes:
-      - application/json
-      description: Retrieve profile information for the authenticated user
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/profile.User'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.Error'
+            $ref: '#/definitions/identity.User'
       security:
       - BearerAuth: []
       summary: Get current user profile
       tags:
       - users
     put:
-      consumes:
-      - application/json
-      description: Update name and avatar of the authenticated user
       parameters:
       - description: Updated profile
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/profile.UpdateProfileRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/identity.UpdateProfileRequest'
       responses:
         "200":
           description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/errors.Error'
       security:
       - BearerAuth: []
       summary: Update user profile

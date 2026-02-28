@@ -1,8 +1,9 @@
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    phone VARCHAR(20) UNIQUE,
+    password_hash VARCHAR(255),
+    google_id VARCHAR(255) UNIQUE,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     role VARCHAR(50) DEFAULT 'user',
@@ -10,7 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT,
     company_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT require_one_auth_method CHECK (email IS NOT NULL OR phone IS NOT NULL OR google_id IS NOT NULL)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (

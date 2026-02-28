@@ -5,9 +5,10 @@ import "time"
 // User represents a user in the system
 type User struct {
 	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	Phone        string    `json:"phone"`
-	PasswordHash string    `json:"-"`
+	Email        *string   `json:"email"`
+	Phone        *string   `json:"phone"`
+	PasswordHash *string   `json:"-"`
+	GoogleID     *string   `json:"-"`
 	FirstName    string    `json:"first_name"`
 	LastName     string    `json:"last_name"`
 	Role         string    `json:"role"`
@@ -18,23 +19,27 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// RegisterRequest represents user registration request
-type RegisterRequest struct {
+// EmailRegisterRequest represents email registration request
+type EmailRegisterRequest struct {
 	Email    string `json:"email"`
-	Phone    string `json:"phone"`
 	Password string `json:"password"`
+}
+
+// EmailLoginRequest represents email login request
+type EmailLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// PhoneLoginRequest represents request for OTP to login/register via phone
+type PhoneLoginRequest struct {
+	Phone string `json:"phone"`
 }
 
 // VerifyOTPRequest represents OTP verification request
 type VerifyOTPRequest struct {
 	Phone string `json:"phone"`
 	Code  string `json:"code"`
-}
-
-// LoginRequest represents login request
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
 }
 
 // RefreshRequest represents token refresh request
@@ -46,5 +51,4 @@ type RefreshRequest struct {
 type UpdateProfileRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
-	Phone     string `json:"phone"`
 }
