@@ -1,10 +1,8 @@
 # Industrial Equipment Marketplace — System Architecture
 
-> Modular Monolith · CIS region · 1k–50k users · v2.0
 
 **Stack:** Go 1.24 · Fiber · PostgreSQL · Redis · Kafka · MinIO · OpenSearch · MongoDB · NGINX  
 **Architecture:** Single Go binary · 12 domain modules · contracts layer · vertical slice  
-**Compliance:** KZ data residency compliant · all self-hosted
 
 ---
 
@@ -302,21 +300,3 @@ This enforces strict vertical isolation: if a future module needs user data, it 
 | **Contracts layer**           | Shared interfaces prevent direct inter-module coupling. Modules can be extracted to separate services later by implementing the same contract remotely. |
 | **Kafka retained**            | Even with a monolith, Kafka is needed for OpenSearch indexing, notification fanout, and future service extraction.                                      |
 
----
-
-## 09 · 3rd Party Tools (KZ-Compliant)
-
-| Tool                   | Status           | Notes                                                         |
-| ---------------------- | ---------------- | ------------------------------------------------------------- |
-| **Gotenberg**          | ✅ Permitted     | Self-hosted HTML→PDF. Runs on your infra.                     |
-| **imgproxy**           | ✅ Permitted     | Self-hosted image transforms. Runs on your infra.             |
-| **2GIS API**           | ✅ Permitted     | Geocoding + routing. Sends address/coords only, no PII.       |
-| **FCM / APNs**         | ✅ Permitted     | Push delivery only. Token + message at send-time, no storage. |
-| **Postal**             | ✅ Permitted     | Self-hosted SMTP server (open-source). Runs on your infra.    |
-| **Supabase / Clerk**   | ❌ Not permitted | Stores personal data outside KZ.                              |
-| **SendGrid / Mailgun** | ❌ Not permitted | Logs email content on foreign servers.                        |
-| **PostHog Cloud**      | ❌ Not permitted | User behavioral data on foreign servers.                      |
-
----
-
-_Industrix · Architecture v2.0 — Modular Monolith · 12 modules · KZ-compliant · 2026-02-28_
