@@ -2,7 +2,7 @@
 
 A comprehensive digital platform for listing, searching, buying, and renting industrial equipment and related services in the CIS region.
 
-https://industrix-ztktsn.tiiny.site/
+https://nighbee.github.io/industrix/
 
 ## Overview
 
