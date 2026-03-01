@@ -41,28 +41,76 @@ Industrix is a **modular monolith** marketplace platform designed for industrial
 | **Search**         | OpenSearch (planned)            |
 | **Infrastructure** | Docker / Kubernetes · NGINX     |
 
-### Modular Monolith
+### Modular Monolith Flow
 
+The application is structured into strictly bounded contexts (modules) that communicate via defined Go interfaces (Contracts) locally, but publish asynchronous events to Kafka to guarantee loose coupling across the broader domain.
+
+```mermaid
+graph TD
+    Client[Web/Mobile Clients] -->|HTTPS| NGINX[NGINX Reverse Proxy]
+    NGINX -->|HTTP| Fiber[Go Fiber Router :8080]
+
+    subgraph Modular Monolith
+        Fiber --> AuthMW[Auth & Rate Limit Middleware]
+
+        AuthMW --> Identity[Identity Module\nAuth, Users]
+        AuthMW --> Integrity[Integrity Module\nCompanies, Moderation]
+        AuthMW --> Marketplace[Marketplace Module\nCatalog, Deals, Reviews]
+
+        Identity -.->|UserProvider Contract| Integrity
+        Integrity -.->|CompanyProvider Contract| Marketplace
+    end
+
+    Identity --> PG[(Postgres)]
+    Integrity --> PG
+    Marketplace --> PG
+
+    Identity --> Redis[(Redis)]
+
+    Marketplace -->|Events| Kafka[Apache Kafka]
+    Kafka --> Analytics[Analytics Consumer]
+    Kafka --> Notifications[Notification Consumer]
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                         NGINX (TLS)                            │
-└───────────────────────────┬────────────────────────────────────┘
-                            │
-┌───────────────────────────▼────────────────────────────────────┐
-│                    Backend Monolith (:8080)                     │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Platform Middleware: Logging → RateLimit → JWT Auth      │  │
-│  └──────────────┬──────────────────┬──────────────┬─────────┘  │
-│                 │                  │              │             │
-│  ┌──────────────▼───┐  ┌──────────▼──────┐  ┌───▼──────────┐  │
-│  │  Identity Module  │  │ Integrity Module│  │  Marketplace  │  │
-│  │  Auth + Profile   │  │ Companies       │  │  Reviews      │  │
-│  └──────────────────┘  └─────────────────┘  └──────────────┘  │
-│                                                                │
-│  contracts/ ── shared interfaces (UserProvider, CompanyProvider)│
-│  pkg/ ── postgres, redis, kafka, jwt, logger, errors           │
-└────────────────────────────────────────────────────────────────┘
-```
+
+## System Modules Overview
+
+The architecture is divided into the following isolated modules, each responsible for its own domain slice:
+
+1. **Identity Module**: Handles JWT Authentication, OTP verification, and User Profile management.
+2. **Integrity Module**: Manages Company onboarding, 12-digit BIN validation, Trust Scores, and the Admin Verification queue.
+3. **Core Marketplace (Catalog)**: Equipment CRUD, dynamic attribute schemas (JSON-B), and OpenSearch indexing.
+4. **Transactions (Deals)**: Escrow hold/release workflows, Deal State Machines, and Kaspi/Halyk integrations.
+5. **Communication**: Real-time Fiber WebSockets chat, Kafka-driven FCM push notifications.
+6. **Media**: Gotenberg PDF document generation and MinIO presigned URL image workflows.
+
+---
+
+## Technical Approaches & Best Practices
+
+To ensure a maintainable and scalable codebase, this project strictly adheres to the following principles:
+
+### 1. Contract-Driven Development
+
+Modules never import each other directly. Instead, they depend on defined interfaces (e.g., `UserProvider`, `CompanyProvider`) located in a shared `contracts/` directory. This allows for isolated unit testing and easy extraction into microservices if needed later.
+
+### 2. Explicit Error Handling
+
+Errors are strictly typed using custom Domain Errors (e.g., `ErrNotFound`, `ErrInsufficientFunds`). HTTP handlers map these domain errors to standard HTTP status codes (400, 401, 403, 404, 500) rather than leaking raw database errors to the client.
+
+### 3. Graceful Degradation & Locking
+
+Critical paths utilize robust locking mechanisms:
+
+- **Pessimistic Locking**: `SELECT ... FOR UPDATE` ensures data integrity during financial or deal-state transactions.
+- **Distributed Locks**: Redis TTL locks prevent double-booking on rental calendars before confirming the database transaction.
+
+### 4. Fully Documented Planning
+
+Development is driven by a comprehensive 7-phase implementation plan, meticulously documented and tracked via Notion.
+
+- [Architecture Overview (docs/architecture.md)](docs/architecture.md)
+- [Implementation Plan (docs/impl-plan.html)](docs/impl-plan.html)
+- [Design Specifications (docs/design-plan.html)](docs/design-plan.html)
 
 **Self-hosted:** PostgreSQL, Redis, Kafka, MinIO, Gotenberg, imgproxy, Postal SMTP  
 **KZ-compliant:** All data resides on infrastructure in Kazakhstan
