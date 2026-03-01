@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Industrix — Design Tasks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181d24;
+    --border: #1e2530;
+    --border-bright: #2a3545;
+    --text: #c8d6e5;
+    --text-dim: #5a7090;
+    --text-bright: #e8f0fa;
+    --accent2: #f77f00;
+    --green: #06d6a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .nav-home { color: var(--text-dim); text-decoration: none; font-size: 12px; font-family: 'IBM Plex Mono', monospace; transition: color 0.3s ease; }
+  .nav-home:hover { color: var(--text); }
+
+  header { margin-bottom: 40px; border-bottom: 1px solid var(--border-bright); padding-bottom: 24px; }
+  header h1 { font-size: 22px; font-weight: 700; color: var(--text-bright); letter-spacing: -0.5px; }
+  header p { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-top: 4px; }
+
+  .section-header {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim);
+    border-top: 1px solid var(--border); padding: 16px 0 8px; margin-top: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .rule-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .rule-box h3 {
+    font-size: 13px; font-weight: 700; color: var(--text-bright);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .rule-box ul {
+    list-style: none; padding: 0; margin-left: 10px;
+  }
+  .rule-box li {
+    font-size: 12px; color: var(--text); padding: 4px 0;
+    display: flex; gap: 8px;
+  }
+  .rule-box li::before {
+    content: '→'; color: var(--text-dim); flex-shrink: 0; font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .task-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 24px; }
+  .task-table th { text-align: left; padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border-bright); }
+  .task-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  .task-table tr:hover td { background: var(--bg3); }
+  .task-table td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent2); }
+
+  .badge-done {
+    background: #0a2d20; color: var(--green); border: 1px solid var(--green);
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+  }
+
+  footer {
+    text-align: center; padding-top: 32px; margin-top: 32px;
+    border-top: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-home">← Back to Docs</a>
+</nav>
+
+<header>
+  <h1>Design Tasks</h1>
+  <p>// Figma · KZ Marketplace · Mobile First · Progress Tracking</p>
+</header>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent2)">●</span> Design Architecture & Constraints</h3>
+  <ul>
+    <li>Primary tool is Figma. Use variables for color, typography, spacing, and grid systems.</li>
+    <li>Design for both desktop web and mobile application (mobile-first responsive design).</li>
+    <li>Include all interaction states: Default, Hover, Active, Disabled, Loading, Empty.</li>
+    <li>Ensure Cyrillic-compatible fonts (RU+KK support) and appropriate number formatting (e.g. 1 250 000).</li>
+    <li>Follow the existing "Designer Task Plan" (`design-plan.html`).</li>
+  </ul>
+</div>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent2)">●</span> Progress Tracking & Definition of Done</h3>
+  <ul>
+    <li>Tracking managed via Notion Kanban board (Imported from `design-tasks-notion.csv`).</li>
+    <li>Status flow: Not Started → In Progress → In Review → Done → Handed Off.</li>
+    <li>"Done" means: Figma link attached, dev handoff notes written, PM approved, component library updated.</li>
+    <li>For dev handoff, include a Figma comment tagging the developer: `@devname ready for handoff`.</li>
+  </ul>
+</div>
+
+<div class="section-header">Phase 1 — Foundation (Completed)</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-001–002</td><td>Design System: Colors, Typography</td><td>Figma variables, light/dark mode, CSS token names.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>DS-003–008</td><td>Core Component Library</td><td>Buttons, Inputs, Badges, Modals, Tables, Skeletons with all states.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>DS-011–015</td><td>Auth Screens</td><td>Login, OTP (6-digit input), Register, Password Reset.</td><td><span class="badge-done">Done</span></td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 2 — Core Marketplace</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-016–018</td><td>Catalog & Equipment Card</td><td>Grid/list toggle, empty states, favorited/sold/featured badges.</td><td>Planned</td></tr>
+    <tr><td>DS-019–021</td><td>Search Bar & Filter Panel</td><td>Autocomplete states, desktop sidebar, mobile bottom sheet filters.</td><td>Planned</td></tr>
+    <tr><td>DS-022–025</td><td>Equipment Detail Page</td><td>Gallery lightbox, specs table, seller card, availability calendar.</td><td>Planned</td></tr>
+    <tr><td>DS-027–031</td><td>Listing Creation Wizard</td><td>5 steps: Category → Details → Photos → Pricing → Preview.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 3 — Transactions</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-036–039</td><td>Deal Inbox & Deal Detail</td><td>Active/Completed/Cancelled tabs. 6 deal status variants.</td><td>Planned</td></tr>
+    <tr><td>DS-040–041</td><td>Payment Flow</td><td>Order summary, Kaspi Pay redirect, Success/Failure states.</td><td>Planned</td></tr>
+    <tr><td>DS-042–045</td><td>Review Modal & Public Profile</td><td>Reliability/Condition/Comm stars, company stats and review list.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 4 — Communication</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-046–050</td><td>Chat Interface</td><td>Desktop 2-panel layout, mobile view, typing indicators, file bubbles.</td><td>Planned</td></tr>
+    <tr><td>DS-051–053</td><td>Notification System</td><td>7 notification variants with distinct icons, bell dropdown menu.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 5 — Intelligence</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-054</td><td>Favorites Page</td><td>Price-drop badges, collection tabs, empty states.</td><td>Planned</td></tr>
+    <tr><td>DS-055–056</td><td>Analytics & Price Chart</td><td>Seller KPI cards, funnel chart, market price comparison widget.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 6 — Integrity & Monetization</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>DS-060–061</td><td>Subscription Plans</td><td>4-column comparison table, billing cycle toggle, checkout UI.</td><td>Planned</td></tr>
+    <tr><td>DS-062–063</td><td>Dispute Flow</td><td>3-step filing wizard, status tracker timeline.</td><td>Planned</td></tr>
+    <tr><td>DS-064–068</td><td>Admin Panel</td><td>Distinct visual identity, moderation queue, verification checklist.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <p>Industrix © 2026 · Design Task Plan</p>
+</footer>
+</body>
+</html>

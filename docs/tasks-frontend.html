@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Industrix — Frontend Tasks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181d24;
+    --border: #1e2530;
+    --border-bright: #2a3545;
+    --text: #c8d6e5;
+    --text-dim: #5a7090;
+    --text-bright: #e8f0fa;
+    --accent1: #00b4d8;
+    --green: #06d6a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .nav-home { color: var(--text-dim); text-decoration: none; font-size: 12px; font-family: 'IBM Plex Mono', monospace; transition: color 0.3s ease; }
+  .nav-home:hover { color: var(--text); }
+
+  header { margin-bottom: 40px; border-bottom: 1px solid var(--border-bright); padding-bottom: 24px; }
+  header h1 { font-size: 22px; font-weight: 700; color: var(--text-bright); letter-spacing: -0.5px; }
+  header p { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-top: 4px; }
+
+  .section-header {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim);
+    border-top: 1px solid var(--border); padding: 16px 0 8px; margin-top: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .rule-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .rule-box h3 {
+    font-size: 13px; font-weight: 700; color: var(--text-bright);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .rule-box ul {
+    list-style: none; padding: 0; margin-left: 10px;
+  }
+  .rule-box li {
+    font-size: 12px; color: var(--text); padding: 4px 0;
+    display: flex; gap: 8px;
+  }
+  .rule-box li::before {
+    content: '→'; color: var(--text-dim); flex-shrink: 0; font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .task-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 24px; }
+  .task-table th { text-align: left; padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border-bright); }
+  .task-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  .task-table tr:hover td { background: var(--bg3); }
+  .task-table td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent1); }
+
+  .badge-done {
+    background: #0a2d20; color: var(--green); border: 1px solid var(--green);
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+  }
+
+  footer {
+    text-align: center; padding-top: 32px; margin-top: 32px;
+    border-top: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-home">← Back to Docs</a>
+</nav>
+
+<header>
+  <h1>Frontend Tasks</h1>
+  <p>// React / Next.js · TypeScript · API Client Integration · Progress Tracking</p>
+</header>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent1)">●</span> Frontend Architecture & Constraints</h3>
+  <ul>
+    <li>Web App uses React/Next.js with TypeScript for SSR on catalog pages.</li>
+    <li>Mobile App uses React Native (iOS + Android) with push notifications and camera integration.</li>
+    <li>Integration strictly through the Go backend monolithic API (REST / WebSocket). No direct DB access.</li>
+    <li>UI must match Figma specifications defined by the design team.</li>
+    <li>Follow the component structure found in `frontend/src/components/`.</li>
+  </ul>
+</div>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent1)">●</span> Progress Tracking & Definition of Done</h3>
+  <ul>
+    <li>Tasks must be tracked via the project management board (e.g., Notion).</li>
+    <li>Each UI component must have a corresponding Storybook entry or visual test.</li>
+    <li>Create Pull Requests mapping to specific `FE-###` task IDs.</li>
+    <li>"Done" means: Figma matched exactly, TypeScript strict mode passes, linter passes, tested against staging API.</li>
+  </ul>
+</div>
+
+<div class="section-header">Phase 1 — Foundation (Completed)</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>FE-001</td><td>Project Setup</td><td>Next.js router setup, TypeScript config, API client base.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>FE-002</td><td>Authentication UI</td><td>Login, Register, OTP flows integrating with Identity Module.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>FE-003</td><td>Company Onboarding</td><td>Integrity Module integration, BIN validation form.</td><td><span class="badge-done">Done</span></td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 2 — Core Marketplace</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>FE-004</td><td>Catalog Page (Grid/List)</td><td>Responsive grid, pagination, sorting by price/date.</td><td>Planned</td></tr>
+    <tr><td>FE-005</td><td>Advanced Search Sidebar</td><td>Faceted filters for category, price range, region. URL state sync.</td><td>Planned</td></tr>
+    <tr><td>FE-006</td><td>Equipment Detail Page</td><td>Photo gallery, specs table, seller info, contact CTA.</td><td>Planned</td></tr>
+    <tr><td>FE-007</td><td>Listing Creation Wizard</td><td>Multi-step form, dynamic attribute forms based on category.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 3 — Transactions & Deals</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>FE-008</td><td>Deal Management Pages</td><td>List of deals, detail view with status timeline, action buttons per state.</td><td>Planned</td></tr>
+    <tr><td>FE-009</td><td>Payment Flow UI</td><td>Provider selection (Kaspi, Halyk), amount confirmation, loading/success states.</td><td>Planned</td></tr>
+    <tr><td>FE-010</td><td>Rental Booking Calendar</td><td>Date range selection, price calculation, conflict UI.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 4 — Communication & Media</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>FE-011</td><td>Real-time Chat UI</td><td>WebSocket client, message bubbles, typing indicators, file previews.</td><td>Planned</td></tr>
+    <tr><td>FE-012</td><td>Notification Dropdown</td><td>Bell icon with badge, dropdown feed, click navigation.</td><td>Planned</td></tr>
+    <tr><td>FE-013</td><td>Media Upload Component</td><td>Drag-and-drop, progress bar, presigned URL integration.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 5 — Admin & Dashboards</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>FE-014</td><td>Seller Analytics Dashboard</td><td>Stats charts, plan comparison, upgrade/downgrade flow.</td><td>Planned</td></tr>
+    <tr><td>FE-015</td><td>Admin Moderation Queue</td><td>Listing review queue, dispute resolution UI.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <p>Industrix © 2026 · Frontend Task Plan</p>
+</footer>
+</body>
+</html>

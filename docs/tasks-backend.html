@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Industrix — Backend Tasks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181d24;
+    --border: #1e2530;
+    --border-bright: #2a3545;
+    --text: #c8d6e5;
+    --text-dim: #5a7090;
+    --text-bright: #e8f0fa;
+    --accent3: #06d6a0;
+    --green: #06d6a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .nav-home { color: var(--text-dim); text-decoration: none; font-size: 12px; font-family: 'IBM Plex Mono', monospace; transition: color 0.3s ease; }
+  .nav-home:hover { color: var(--text); }
+
+  header { margin-bottom: 40px; border-bottom: 1px solid var(--border-bright); padding-bottom: 24px; }
+  header h1 { font-size: 22px; font-weight: 700; color: var(--text-bright); letter-spacing: -0.5px; }
+  header p { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-top: 4px; }
+
+  .section-header {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim);
+    border-top: 1px solid var(--border); padding: 16px 0 8px; margin-top: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .rule-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .rule-box h3 {
+    font-size: 13px; font-weight: 700; color: var(--text-bright);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .rule-box ul {
+    list-style: none; padding: 0; margin-left: 10px;
+  }
+  .rule-box li {
+    font-size: 12px; color: var(--text); padding: 4px 0;
+    display: flex; gap: 8px;
+  }
+  .rule-box li::before {
+    content: '→'; color: var(--text-dim); flex-shrink: 0; font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .task-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 24px; }
+  .task-table th { text-align: left; padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border-bright); }
+  .task-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  .task-table tr:hover td { background: var(--bg3); }
+  .task-table td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent3); }
+
+  .badge-done {
+    background: #0a2d20; color: var(--green); border: 1px solid var(--green);
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+  }
+
+  footer {
+    text-align: center; padding-top: 32px; margin-top: 32px;
+    border-top: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-home">← Back to Docs</a>
+</nav>
+
+<header>
+  <h1>Backend Tasks</h1>
+  <p>// Go 1.24 · Fiber · PostgreSQL 15 · Kafka · Progress Tracking</p>
+</header>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent3)">●</span> Backend Architecture & Constraints</h3>
+  <ul>
+    <li>Stack: Go 1.24, Fiber for REST/WebSocket, PostgreSQL 15, Redis 7, Kafka for events.</li>
+    <li>Monolithic single binary deployment via Docker.</li>
+    <li>Strict Modular Monolith: `modules/<name>/` must contain `types.go`, `repository.go`, `service.go`, `handler.go`, `module.go`.</li>
+    <li>No cross-module imports allowed. Use `contracts.Provider` interfaces.</li>
+    <li>All DB migrations in `backend/migrations/` using `.up.sql` and `.down.sql`.</li>
+  </ul>
+</div>
+
+<div class="rule-box">
+  <h3><span style="color:var(--accent3)">●</span> Progress Tracking & Definition of Done</h3>
+  <ul>
+    <li>Tracking managed via GitHub Issues or Notion Kanban. Prefix branch names: `feat/` or `fix/`.</li>
+    <li>Unit test coverage must be ≥70% for the service layer.</li>
+    <li>All APIs must have Swagger annotations (`// @Summary`, `// @Tags`, etc.).</li>
+    <li>"Done" means: PR reviewed, tests passing (`go test ./...`), migrations verified, `golangci-lint` passes.</li>
+  </ul>
+</div>
+
+<div class="section-header">Phase 1 — Foundation (Completed)</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>BE-001</td><td>Setup & Auth Middleware</td><td>JWT validation, Redis rate-limiting, Zerolog tracing.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>BE-002</td><td>Identity Module</td><td>Registration, Login, OTP verification endpoints. PostgreSQL & Redis.</td><td><span class="badge-done">Done</span></td></tr>
+    <tr><td>BE-003</td><td>Integrity Module</td><td>Company CRUD, 12-digit BIN format validation.</td><td><span class="badge-done">Done</span></td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 2 — Core Marketplace</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>BE-004</td><td>Catalog Module</td><td>Equipment CRUD, Category hierarchy, Dynamic attribute schemas.</td><td>Planned</td></tr>
+    <tr><td>BE-005</td><td>Listing Module</td><td>State machine (draft → moderation → active → archived), pricing rules.</td><td>Planned</td></tr>
+    <tr><td>BE-006</td><td>Search Module</td><td>OpenSearch indexing, Kafka consumer for `equipment.*` events, 2GIS API integration.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 3 — Transactions & Deals</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>BE-007</td><td>Deal Module</td><td>Deal state machine, Kafka event publisher (`deal.status.changed`).</td><td>Planned</td></tr>
+    <tr><td>BE-008</td><td>Payment Module</td><td>Kaspi/Halyk integrations, escrow hold/release, invoice generation.</td><td>Planned</td></tr>
+    <tr><td>BE-009</td><td>Booking Module</td><td>Rental calendar, hold pattern using Redis TTL, pessimistic locking.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 4 — Communication</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>BE-010</td><td>Chat Module</td><td>Fiber WebSockets, MongoDB message threads, Redis pub/sub presence.</td><td>Planned</td></tr>
+    <tr><td>BE-011</td><td>Notification Module</td><td>Kafka consumer routing to FCM, self-hosted Postal SMTP, MongoDB in-app feed.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<div class="section-header">Phase 5 — Media & Intelligence</div>
+<table class="task-table">
+  <thead><tr><th>ID</th><th>Task</th><th>Acceptance Criteria</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>BE-012</td><td>Media Module</td><td>MinIO presigned URLs, imgproxy integration for image transforms.</td><td>Planned</td></tr>
+    <tr><td>BE-013</td><td>Document Module</td><td>Gotenberg HTML→PDF generation for contracts/ofertas.</td><td>Planned</td></tr>
+    <tr><td>BE-014</td><td>Analytics Module</td><td>Kafka event aggregation, PostgreSQL pre-aggregated views.</td><td>Planned</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <p>Industrix © 2026 · Backend Task Plan</p>
+</footer>
+</body>
+</html>
