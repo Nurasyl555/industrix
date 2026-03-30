@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { cookies } from "next/headers";
-import LogoutButton from "@/components/LogoutButton"
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function HomePage() {
   const cookieStore = await cookies();
@@ -57,6 +57,23 @@ export default async function HomePage() {
               label="Forgot password"
               description="Send code → verify OTP"
               method="POST /auth/phone/login"
+            />
+          </div>
+        </div>
+
+        {/* Integrity Module */}
+        <div className="rounded-xl border bg-background shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b bg-muted/30">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Integrity Module flows
+            </p>
+          </div>
+          <div className="divide-y">
+            <DemoLink
+              href="/company/register"
+              label="Register company"
+              description="BIN mask (12-digit) → company profile"
+              method="POST /api/v1/companies · requires login"
             />
           </div>
         </div>
