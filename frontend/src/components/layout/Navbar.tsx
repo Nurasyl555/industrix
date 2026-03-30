@@ -53,7 +53,7 @@ export function Navbar() {
 
           <Link
             href="/auth/login"
-            className="rounded-4xl bg-gray-900 px-5 py-2 font-semibold text-white no-underline transition-colors hover:bg-gray-700"
+            className="rounded-4xl bg-gray-900 px-5 py-1 font-semibold text-white no-underline transition-colors hover:bg-gray-700 max-h-8"
             style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
           >
             Sign In
