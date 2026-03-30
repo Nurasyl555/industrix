@@ -10,7 +10,7 @@ export function HeroBanner() {
 
   return (
     <section
-      className="relative overflow-hidden text-center py-18 px-6"
+      className="relative overflow-hidden text-center py-18 px-6 max-h-120"
       style={{
         background:
           "linear-gradient(135deg, #0D1F4E 0%, #142260 60%, #1a2d78 100%)",
