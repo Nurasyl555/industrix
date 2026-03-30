@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import Link from "next/link";
 
 export interface Product {
   name: string;
@@ -82,13 +83,12 @@ export function ProductCard({ product, index }: ProductCardProps) {
           </span>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-gray-200 px-3 text-[12px] hover:border-amber-500 hover:text-amber-600"
+            <Link
+              href="/shop/details"
+              className="flex items-center h-8 border border-gray-200 px-3 text-[12px] hover:border-amber-500 hover:text-amber-600 rounded-md"
             >
               View Details
-            </Button>
+            </Link>
 
             <Button
               variant="outline"
