@@ -27,7 +27,7 @@ export function Newsletter() {
         arrivals in your category.
       </p>
 
-      <div className="flex max-w-[460px] mx-auto border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+      <div className="flex max-w-115 mx-auto border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
         <Input
           type="email"
           value={email}

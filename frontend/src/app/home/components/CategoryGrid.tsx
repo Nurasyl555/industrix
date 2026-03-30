@@ -30,7 +30,7 @@ export function CategoryGrid() {
         </a>
       </div>
 
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {CATEGORIES.map((cat) => (
           <Card
             key={cat.name}
