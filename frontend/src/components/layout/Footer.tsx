@@ -37,7 +37,7 @@ export function Footer() {
               Industrix
             </h2>
 
-            <p className="mt-3 text-[14px] leading-7 text-[#94A3B8]">
+            <p className="mt-3 text-sm leading-7 text-[#94A3B8]">
               Global leader in industrial equipment commerce. Facilitating the
               trade of heavy machinery for construction, mining, and agriculture
               since 2010.
@@ -114,7 +114,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-[#E5E7EB]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-8 py-4 text-[12px] text-[#94A3B8] sm:flex-row sm:items-center sm:justify-between lg:px-12">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-8 py-4 text-sm text-[#94A3B8] sm:flex-row sm:items-center sm:justify-between lg:px-12">
           <p>© 2026 Industrix International. All rights reserved.</p>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
@@ -142,7 +142,7 @@ type FooterColumnProps = {
 function FooterColumn({ title, links }: FooterColumnProps) {
   return (
     <div>
-      <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#0F172A]">
+      <h3 className="text-lg font-bold uppercase tracking-[0.12em] text-[#0F172A]">
         {title}
       </h3>
 

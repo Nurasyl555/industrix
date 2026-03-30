@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ALL_EQUIPMENT, applyFiltersAndSort, paginate } from "../catalog/data"
 import { type ViewMode, type SortOption, type Filters, type Equipment } from "../catalog/types";
+import Link from "next/link";
 
 const PER_PAGE = 6; // 6 items visible in the Figma screenshots
 
@@ -81,10 +82,13 @@ function GridCard({ item, seed }: { item: Equipment; seed: number }) {
         </div>
 
         <Button
+          asChild
           variant="outline"
           className="w-full h-9 text-[13px] font-semibold border-gray-200 hover:border-gray-400 mt-auto"
         >
-          View Details
+          <Link href="/shop/details">
+            View Details
+          </Link>
         </Button>
       </div>
     </div>
@@ -147,11 +151,14 @@ function ListCard({ item, seed }: { item: Equipment; seed: number }) {
 
         <div className="mt-auto">
           <Button
+            asChild
             variant="outline"
             size="sm"
             className="h-8 text-[12px] font-semibold border-gray-200 hover:border-gray-400 px-5"
           >
-            View Details
+            <Link href="/shop/details">
+              View Details
+            </Link>
           </Button>
         </div>
       </div>

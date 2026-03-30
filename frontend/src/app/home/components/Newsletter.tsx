@@ -22,23 +22,23 @@ export function Newsletter() {
       >
         Never Miss a Heavy Machinery Deal
       </h2>
-      <p className="text-[14px] text-gray-500 max-w-md mx-auto leading-relaxed mb-8">
+      <p className="text-lg font-weight-600 text-gray-500 max-w-md mx-auto leading-relaxed mb-8">
         Subscribe to get monthly reports on equipment pricing trends and new
         arrivals in your category.
       </p>
 
-      <div className="flex max-w-115 mx-auto border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+      <div className="flex items-stretch max-w-108 h-12 mx-auto border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
         <Input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
           placeholder="Your email"
-          className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[14px] rounded-none px-5"
+          className="flex-1 h-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[14px] rounded-none px-5"
         />
         <Button
           onClick={handleSubscribe}
-          className="rounded-none px-7 bg-amber-500 hover:bg-amber-600 text-white font-bold shrink-0"
+          className="rounded-none rounded-r-xl px-7 bg-amber-500 hover:bg-amber-600 text-white font-bold shrink-0 h-full"
           style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
         >
           Subscribe
