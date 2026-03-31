@@ -10,6 +10,11 @@ interface PaginationProps {
   onPageChange: (p: number) => void;
 }
 
+const btnBase = `
+  w-9 h-9 flex items-center justify-center rounded-lg text-[13px] font-semibold
+  border transition-colors cursor-pointer
+`;
+
 export function Pagination({
   currentPage,
   totalPages,
@@ -20,37 +25,12 @@ export function Pagination({
   const start = (currentPage - 1) * perPage + 1;
   const end   = Math.min(currentPage * perPage, totalResults);
 
-  // Build page buttons: always show 1, 2, 3, …, last
   const pages: (number | "…")[] = [];
   if (totalPages <= 5) {
     for (let i = 1; i <= totalPages; i++) pages.push(i);
   } else {
     pages.push(1, 2, 3, "…", totalPages);
   }
-
-  const btn = (
-    label: React.ReactNode,
-    onClick: () => void,
-    active = false,
-    disabled = false
-  ) => (
-    <button
-      key={String(label)}
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        w-9 h-9 flex items-center justify-center rounded-lg text-[13px] font-semibold
-        border transition-colors cursor-pointer
-        ${active
-          ? "bg-blue-600 text-white border-blue-600"
-          : disabled
-          ? "text-gray-300 border-gray-100 cursor-not-allowed bg-white"
-          : "text-gray-700 border-gray-200 bg-white hover:border-gray-400"}
-      `}
-    >
-      {label}
-    </button>
-  );
 
   return (
     <div className="flex items-center justify-between py-6 border-t border-gray-100 mt-2">
@@ -59,29 +39,54 @@ export function Pagination({
       </span>
 
       <div className="flex items-center gap-1.5">
-        {btn(
-          <ChevronLeft size={15} />,
-          () => onPageChange(currentPage - 1),
-          false,
-          currentPage === 1
-        )}
+        {/* Prev */}
+        <button
+          key="prev"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={btnBase + (currentPage === 1
+            ? "text-gray-300 border-gray-100 cursor-not-allowed bg-white"
+            : "text-gray-700 border-gray-200 bg-white hover:border-gray-400"
+          )}
+        >
+          <ChevronLeft size={15} />
+        </button>
 
+        {/* Page numbers */}
         {pages.map((p, i) =>
           p === "…" ? (
-            <span key={`ellipsis-${i}`} className="w-9 text-center text-[13px] text-gray-400">
+            <span
+              key={`ellipsis-${i}`}
+              className="w-9 text-center text-[13px] text-gray-400"
+            >
               …
             </span>
           ) : (
-            btn(p, () => onPageChange(p as number), p === currentPage)
+            <button
+              key={p}
+              onClick={() => onPageChange(p as number)}
+              className={btnBase + (p === currentPage
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-700 border-gray-200 bg-white hover:border-gray-400"
+              )}
+            >
+              {p}
+            </button>
           )
         )}
 
-        {btn(
-          <ChevronRight size={15} />,
-          () => onPageChange(currentPage + 1),
-          false,
-          currentPage === totalPages
-        )}
+        {/* Next */}
+        <button
+          key="next"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className={btnBase + (currentPage === totalPages
+            ? "text-gray-300 border-gray-100 cursor-not-allowed bg-white"
+            : "text-gray-700 border-gray-200 bg-white hover:border-gray-400"
+          )}
+        >
+          <ChevronRight size={15} />
+        </button>
       </div>
     </div>
   );
