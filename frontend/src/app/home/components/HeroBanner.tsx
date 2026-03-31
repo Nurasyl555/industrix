@@ -26,18 +26,17 @@ export function HeroBanner() {
         }}
       />
 
-      <div className="relative z-10 max-w-2xl mx-auto">
+      <div className="relative z-10 max-w-4xl mx-auto">
         <h1
-          className="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight tracking-tight text-white"
+          className="text-[clamp(40px,5vw,56px)] font-extrabold leading-tight tracking-tight text-white"
           style={{ fontFamily: "var(--font-inter, 'Outfit', sans-serif)" }}
         >
           The Trusted Marketplace for
           <span className="block text-amber-400">Heavy Machinery</span>
         </h1>
 
-        <p className="mt-4 text-[14px] text-white/60 leading-relaxed max-w-sm mx-auto">
-          Buy, sell, or rent industrial equipment from verified sellers across
-          the globe.
+        <p className="mt-4 text-[14px] text-white/60 leading-relaxed max-w-base mx-auto">
+          Buy, sell, or rent industrial equipment from verified sellers across the globe.
           <br />
           Professional tools for professional work.
         </p>
