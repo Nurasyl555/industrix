@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Search, Shield, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Link from "next/link"
 
 export function HeroBanner() {
   const [query, setQuery] = useState("");
 
   return (
     <section
-      className="relative overflow-hidden text-center py-18 px-6"
+      className="relative overflow-hidden text-center py-18 px-6 max-h-120"
       style={{
         background:
           "linear-gradient(135deg, #0D1F4E 0%, #142260 60%, #1a2d78 100%)",
@@ -49,13 +50,13 @@ export function HeroBanner() {
             placeholder="What equipment are you looking for..."
             className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[14px] placeholder:text-gray-400 rounded-none h-13 px-5"
           />
-          <Button
-            className="rounded-none px-6 bg-amber-500 hover:bg-amber-600 text-white font-bold gap-2 shrink-0 h-auto"
-            style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
+          <Link
+            href="/shop/catalog"
+            className="inline-flex items-center justify-center rounded-none px-6 bg-amber-500 hover:bg-amber-600 text-white font-bold gap-2 shrink-0 h-13"
           >
             <Search size={15} />
             Search
-          </Button>
+          </Link>
         </div>
 
         {/* Trust badges */}

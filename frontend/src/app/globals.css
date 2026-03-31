@@ -121,10 +121,16 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
     @apply font-sans;
+    /* esche mozhno budet ubrat scrollbar */
+    /* overflow-y: scroll;
+    -ms-overflow-style: none;   /* IE and Edge */
+    /* scrollbar-width: none;     /* Firefox  */
+  }
+
+  body {
+    @apply bg-background text-foreground;
   }
 }
