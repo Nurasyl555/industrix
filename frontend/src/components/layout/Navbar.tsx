@@ -10,6 +10,12 @@ const NAV_LINKS = [
   { label: "Help", href: "/help" },
 ];
 
+const ACTION_LINKS = [
+  { icon: Bell, href: "/notifications", label: "Notifications" },
+  { icon: Heart, href: "/shop/favorites", label: "Favorites" },
+  { icon: ShoppingCart, href: "/cart", label: "Cart" },
+];
+
 export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white">
@@ -41,21 +47,22 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-4 justify-self-end">
-          {[Bell, Heart, ShoppingCart].map((Icon, i) => (
-            <button
-              key={i}
-              type="button"
+          {ACTION_LINKS.map(({ icon: Icon, href, label }) => (
+            <Link
+              key={label}
+              href={href}
+              aria-label={label}
               className="cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
             >
               <Icon size={20} />
-            </button>
+            </Link>
           ))}
 
           <Link
             href="/auth/login"
             className="rounded-4xl bg-gray-900 px-5 py-1 font-semibold text-white no-underline transition-colors hover:bg-gray-700 max-h-8"
             style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
-          > 
+          >
             Sign In
           </Link>
         </div>
