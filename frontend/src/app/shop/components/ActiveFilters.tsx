@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { type Filters } from "../types";
+import { type Filters } from "@/types";
 
 interface ActiveFiltersProps {
   filters:    Filters;

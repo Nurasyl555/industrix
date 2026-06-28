@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Equipment } from "../../catalog/types";
+import { Equipment } from "@/types";
 import { WishlistButton } from "../../components/WishlistButton";
 
 function formatPrice(n: number) {

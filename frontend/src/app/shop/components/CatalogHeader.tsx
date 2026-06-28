@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type SortOption, type ViewMode } from "@/app/shop/catalog/types";
+import { type SortOption, type ViewMode } from "@/types";
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "relevance",  label: "Relevance"       },

@@ -5,7 +5,7 @@ import { Heart, Calendar, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ALL_EQUIPMENT, applyFiltersAndSort, paginate } from "../catalog/data"
-import { type ViewMode, type SortOption, type Filters, type Equipment } from "../catalog/types";
+import { type ViewMode, type SortOption, type Filters, type Equipment } from "@/types";
 import Link from "next/link";
 
 const PER_PAGE = 6; // 6 items visible in the Figma screenshots

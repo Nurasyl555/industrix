@@ -3,7 +3,7 @@
 // src/app/auth/verify/page.tsx
 // ⚠️ DEMO MODE: accepts "123456" without hitting the backend
 // Remove DEMO_CODE and the demo branch in handleVerify() before production
-
+import { Suspense } from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyPhoneOTP, requestPhoneOTP, friendlyError } from "@/lib/auth";
@@ -15,7 +15,7 @@ const OTP_LENGTH  = 6;
 const TIMER_START = 60;
 const DEMO_CODE   = "123456"; // ⚠️ remove before production
 
-export default function VerifyPage() {
+function VerifyContent() {
   const router  = useRouter();
   const params  = useSearchParams();
   const phone   = params.get("phone") ?? "";
@@ -216,5 +216,13 @@ export default function VerifyPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <VerifyContent />
+    </Suspense>
   );
 }

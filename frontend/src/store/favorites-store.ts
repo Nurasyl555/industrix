@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Equipment } from "@/app/shop/catalog/types";
+import { type Equipment } from "@/types";
 
 interface FavoritesStore {
   items:     Equipment[];

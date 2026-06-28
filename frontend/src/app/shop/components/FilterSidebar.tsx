@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { type Filters } from "../types";
+import { type Filters } from "@/types";
 
 const CATEGORIES = [
   { label: "Excavators", count: 124 },

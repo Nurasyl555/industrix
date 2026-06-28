@@ -1,4 +1,4 @@
-import { type Equipment, type SortOption, type Filters } from "./types";
+import { type Equipment, type SortOption, type Filters } from "@/types";
 
 export const ALL_EQUIPMENT: Equipment[] = [
   { id: 1,  title: "2018 Caterpillar 320 GC Hydraulic...", price: 148000, year: 2018, hours: 3420, location: "Houston, TX",  condition: "Used", badge: "VERIFIED",    image: "0" },

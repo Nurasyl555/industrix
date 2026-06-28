@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Filters, SortOption, ViewMode } from "./types";
+import { Filters, SortOption, ViewMode } from "@/types";
 import { FilterSidebar } from "../components/FilterSidebar";
 import { CatalogHeader } from "../components/CatalogHeader";
 import { EquipmentGrid } from "../components/EquipmentGrid";
