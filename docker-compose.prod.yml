@@ -1,0 +1,103 @@
+# Production/staging deploy — uses pre-built images from GHCR instead of
+# building from source (that happens in CI, see .github/workflows/cd-*.yml).
+#
+# Usage on the server:
+#   export GHCR_OWNER=<github org/user>
+#   export IMAGE_TAG=<git sha or release tag>
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d --remove-orphans
+#
+# Required .env on the server (not committed — copy from .env.example):
+#   DB_DSN, JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, etc.
+
+services:
+  postgres:
+    extends:
+      file: docker-compose.infra.yml
+      service: postgres
+    restart: unless-stopped
+    ports: [] # not exposed to the host — only the backend talks to it
+
+  redis:
+    extends:
+      file: docker-compose.infra.yml
+      service: redis
+    restart: unless-stopped
+    ports: []
+
+  zookeeper:
+    extends:
+      file: docker-compose.infra.yml
+      service: zookeeper
+    restart: unless-stopped
+    ports: []
+
+  kafka:
+    extends:
+      file: docker-compose.infra.yml
+      service: kafka
+    restart: unless-stopped
+    ports: []
+
+  backend:
+    image: ghcr.io/${GHCR_OWNER}/industrix-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    # Only nginx talks to this — not exposed on the public interface.
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER}/industrix-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    # NOTE: NEXT_PUBLIC_API_URL is NOT set here — it's baked into the
+    # frontend image at build time (see cd-staging.yml/cd-prod.yml's
+    # NEXT_PUBLIC_API_URL build-arg). Setting it here does nothing.
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+
+  # Renews the cert every 12h (certbot no-ops unless it's actually close to
+  # expiry). The FIRST certificate must be obtained manually before nginx
+  # can start at all — see scripts/init-tls.sh and infra/nginx/README.md.
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h; done'"
+
+volumes:
+  postgres_data:
+  redis_cache_data:
+  kafka_data:
+  certbot_conf:
+  certbot_www:

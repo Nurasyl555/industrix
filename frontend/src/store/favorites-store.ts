@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Equipment } from "@/types";
+import { type ListingView } from "@/lib/listing";
 
 interface FavoritesStore {
-  items:     Equipment[];
-  add:       (item: Equipment) => void;
-  remove:    (id: number)      => void;
-  toggle:    (item: Equipment) => void;
-  isFav:     (id: number)      => boolean;
+  items:  ListingView[];
+  add:    (item: ListingView) => void;
+  remove: (id: string) => void;
+  toggle: (item: ListingView) => void;
+  isFav:  (id: string) => boolean;
 }
 
 export const useFavorites = create<FavoritesStore>()(

@@ -21,8 +21,9 @@ type User struct {
 
 // EmailRegisterRequest represents email registration request
 type EmailRegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
 }
 
 // EmailLoginRequest represents email login request

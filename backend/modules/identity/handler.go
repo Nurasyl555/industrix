@@ -49,7 +49,7 @@ func (h *Handler) RegisterProtectedRoutes(router fiber.Router) {
 // @Accept json
 // @Produce json
 // @Param request body EmailRegisterRequest true "Registration details"
-// @Success 201
+// @Success 200 {object} jwt.TokenPair
 // @Failure 400 {object} errors.Error
 // @Router /auth/email/register [post]
 func (h *Handler) RegisterEmail(c *fiber.Ctx) error {
@@ -58,11 +58,15 @@ func (h *Handler) RegisterEmail(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
 	}
 
-	if err := h.service.RegisterEmail(c.Context(), req.Email, req.Password); err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err)
+	tokens, err := h.service.RegisterEmail(c.Context(), req.Email, req.Password, req.FirstName)
+	if err != nil {
+		if domainErr, ok := err.(*errors.Error); ok {
+			return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
+		}
+		return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Registration failed"))
 	}
 
-	return c.SendStatus(http.StatusCreated)
+	return c.JSON(tokens)
 }
 
 // LoginEmail godoc

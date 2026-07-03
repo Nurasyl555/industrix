@@ -11,18 +11,13 @@ import {
 import { type SortOption, type ViewMode } from "@/types";
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "relevance",  label: "Relevance"       },
-  { value: "price-asc",  label: "Price: Low → High" },
-  { value: "price-desc", label: "Price: High → Low" },
-  { value: "date-desc",  label: "Newest first"    },
-  { value: "date-asc",   label: "Oldest first"    },
-  { value: "hours-asc",  label: "Fewest hours"    },
-  { value: "hours-desc", label: "Most hours"      },
+  { value: "newest",     label: "Newest first"      },
+  { value: "price_asc",  label: "Price: Low → High" },
+  { value: "price_desc", label: "Price: High → Low" },
 ];
 
 interface CatalogHeaderProps {
   total:         number;
-  query:         string;
   sort:          SortOption;
   view:          ViewMode;
   onSortChange:  (s: SortOption) => void;
@@ -31,7 +26,6 @@ interface CatalogHeaderProps {
 
 export function CatalogHeader({
   total,
-  query,
   sort,
   view,
   onSortChange,
@@ -46,11 +40,8 @@ export function CatalogHeader({
             className="text-[28px] font-extrabold text-gray-900 leading-tight"
             style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
           >
-            {total} Excavators for Sale
+            {total} Listings
           </h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">
-            Showing search results for &ldquo;{query}&rdquo;
-          </p>
         </div>
 
         {/* Sort + view toggle */}

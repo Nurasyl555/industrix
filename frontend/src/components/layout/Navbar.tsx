@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Heart, ShoppingCart } from "lucide-react";
+import { Bell, Handshake, Heart } from "lucide-react";
 
+// href: null means the page doesn't exist yet — render as disabled, not a 404 link.
 const NAV_LINKS = [
   { label: "Home", href: "/home" },
-  { label: "About Us", href: "/about-us" },
-  { label: "Products", href: "/products" },
-  { label: "Help", href: "/help" },
+  { label: "Products", href: "/shop/catalog" },
+  { label: "Sell Equipment", href: "/shop/sell" },
+  { label: "About Us", href: null },
 ];
 
 const ACTION_LINKS = [
-  { icon: Bell, href: "/notifications", label: "Notifications" },
+  { icon: Bell, href: null, label: "Notifications" },
+  { icon: Handshake, href: "/shop/deals", label: "My Deals" },
   { icon: Heart, href: "/shop/favorites", label: "Favorites" },
-  { icon: ShoppingCart, href: "/cart", label: "Cart" },
 ];
 
 export function Navbar() {
@@ -33,30 +34,52 @@ export function Navbar() {
 
         {/* Nav links */}
         <ul className="hidden list-none items-center justify-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
-            <li key={link.label}>
-              <Link
-                href={link.href}
-                className="text-base font-medium text-gray-700 no-underline transition-colors hover:text-amber-500"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
+          {NAV_LINKS.map((link) =>
+            link.href ? (
+              <li key={link.label}>
+                <Link
+                  href={link.href}
+                  className="text-base font-medium text-gray-700 no-underline transition-colors hover:text-amber-500"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ) : (
+              <li key={link.label}>
+                <span
+                  title="Coming soon"
+                  className="cursor-not-allowed text-base font-medium text-gray-400 select-none"
+                >
+                  {link.label}
+                </span>
+              </li>
+            )
+          )}
         </ul>
 
         {/* Actions */}
         <div className="flex items-center gap-4 justify-self-end">
-          {ACTION_LINKS.map(({ icon: Icon, href, label }) => (
-            <Link
-              key={label}
-              href={href}
-              aria-label={label}
-              className="cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
-            >
-              <Icon size={20} />
-            </Link>
-          ))}
+          {ACTION_LINKS.map(({ icon: Icon, href, label }) =>
+            href ? (
+              <Link
+                key={label}
+                href={href}
+                aria-label={label}
+                className="cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
+              >
+                <Icon size={20} />
+              </Link>
+            ) : (
+              <span
+                key={label}
+                title="Coming soon"
+                aria-label={`${label} (coming soon)`}
+                className="cursor-not-allowed border-none bg-transparent p-1 text-gray-300"
+              >
+                <Icon size={20} />
+              </span>
+            )
+          )}
 
           <Link
             href="/auth/login"

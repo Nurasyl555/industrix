@@ -9,8 +9,21 @@ services:
     ports:
       - "8080:8080"
 
+  # Host already has native Postgres/MongoDB bound to the default ports,
+  # remap the container's host-side port only — internal docker network
+  # traffic (backend -> postgres:5432) is unaffected.
+  postgres:
+    ports: !override
+      - "5433:5432"
+  mongodb:
+    ports: !override
+      - "27018:27017"
+
   # Add hot reload volumes for services
+  # The image's default CMD is production "npm run start" — override to the
+  # dev server here so local runs get hot reload.
   frontend:
+    command: npm run dev
     environment:
       - NODE_ENV=development
     volumes:

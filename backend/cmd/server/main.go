@@ -19,8 +19,11 @@ import (
 
 	_ "github.com/industrix/backend/docs"
 
+	"github.com/industrix/backend/modules/catalog"
+	"github.com/industrix/backend/modules/deal"
 	"github.com/industrix/backend/modules/identity"
 	"github.com/industrix/backend/modules/integrity"
+	"github.com/industrix/backend/modules/listing"
 	"github.com/industrix/backend/modules/marketplace"
 	"github.com/industrix/backend/pkg/jwt"
 	"github.com/industrix/backend/pkg/logger"
@@ -76,6 +79,9 @@ func main() {
 	identityMod := identity.NewModule(pgClient, redisClient, jwtClient)
 	integrityMod := integrity.NewModule(pgClient)
 	marketplaceMod := marketplace.NewModule(pgClient)
+	catalogMod := catalog.NewModule(pgClient)
+	listingMod := listing.NewModule(pgClient, catalogMod.Service)
+	dealMod := deal.NewModule(pgClient, listingMod.Service)
 
 	// === HTTP Server ===
 
@@ -105,12 +111,17 @@ func main() {
 
 	// Public routes (no auth required)
 	identityMod.Handler.RegisterPublicRoutes(api)
+	catalogMod.Handler.RegisterPublicRoutes(api)
+	listingMod.Handler.RegisterPublicRoutes(api)
 
 	// Protected routes (auth required)
 	protected := api.Group("/", authMw.ValidateJWT())
 	identityMod.Handler.RegisterProtectedRoutes(protected)
 	integrityMod.Handler.RegisterRoutes(protected)
 	marketplaceMod.Handler.RegisterRoutes(protected)
+	catalogMod.Handler.RegisterProtectedRoutes(protected)
+	listingMod.Handler.RegisterProtectedRoutes(protected)
+	dealMod.Handler.RegisterRoutes(protected)
 
 	// === Start ===
 

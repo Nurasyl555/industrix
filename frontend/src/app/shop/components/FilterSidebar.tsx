@@ -4,30 +4,27 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { type Filters } from "@/types";
+import { type Category } from "@/lib/catalog";
 
-const CATEGORIES = [
-  { label: "Excavators", count: 124 },
-  { label: "Loaders",    count: 86  },
-  { label: "Dozers",     count: 42  },
+const CONDITIONS: { value: "new" | "used"; label: string }[] = [
+  { value: "new", label: "New" },
+  { value: "used", label: "Used" },
 ];
 
-const CONDITIONS = ["New", "Used"];
+const LISTING_TYPES: { value: "sale" | "rental"; label: string }[] = [
+  { value: "sale", label: "For Sale" },
+  { value: "rental", label: "For Rent" },
+];
 
 interface FilterSidebarProps {
-  filters:  Filters;
-  onChange: (f: Filters) => void;
+  filters:    Filters;
+  categories: Category[];
+  onChange:   (f: Filters) => void;
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
     <div className="border-b border-gray-100 pb-4 mb-4 last:border-none last:mb-0">
@@ -36,42 +33,20 @@ function Section({
         className="flex items-center justify-between w-full text-left bg-transparent border-none cursor-pointer p-0 mb-3"
       >
         <span className="text-[13px] font-bold text-gray-900">{title}</span>
-        {open ? (
-          <ChevronUp size={15} className="text-gray-400" />
-        ) : (
-          <ChevronDown size={15} className="text-gray-400" />
-        )}
+        {open ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
       </button>
       {open && children}
     </div>
   );
 }
 
-export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
-  const toggle = (key: "categories" | "conditions", value: string) => {
-    const arr = filters[key];
-    onChange({
-      ...filters,
-      [key]: arr.includes(value)
-        ? arr.filter((v) => v !== value)
-        : [...arr, value],
-    });
-  };
-
+export function FilterSidebar({ filters, categories, onChange }: FilterSidebarProps) {
   const handleReset = () => {
-    onChange({
-      categories: [],
-      priceMin: "",
-      priceMax: "",
-      conditions: [],
-      yearMin: 2000,
-      yearMax: 2024,
-    });
+    onChange({ categoryId: "", priceMin: "", priceMax: "", condition: "", listingType: "" });
   };
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <span className="text-[15px] font-bold text-gray-900">Filters</span>
         <button
@@ -82,29 +57,23 @@ export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
         </button>
       </div>
 
-      {/* Category */}
       <Section title="Category">
         <div className="flex flex-col gap-2.5">
-          {CATEGORIES.map(({ label, count }) => (
-            <label
-              key={label}
-              className="flex items-center gap-2.5 cursor-pointer"
-            >
+          {categories.map((cat) => (
+            <label key={cat.id} className="flex items-center gap-2.5 cursor-pointer">
               <Checkbox
-                checked={filters.categories.includes(label)}
-                onCheckedChange={() => toggle("categories", label)}
+                checked={filters.categoryId === cat.id}
+                onCheckedChange={() =>
+                  onChange({ ...filters, categoryId: filters.categoryId === cat.id ? "" : cat.id })
+                }
                 className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
               />
-              <span className="text-[13px] text-gray-700">
-                {label}{" "}
-                <span className="text-gray-400">({count})</span>
-              </span>
+              <span className="text-[13px] text-gray-700">{cat.name}</span>
             </label>
           ))}
         </div>
       </Section>
 
-      {/* Price Range */}
       <Section title="Price Range">
         <div className="flex gap-2">
           <Input
@@ -122,39 +91,37 @@ export function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
         </div>
       </Section>
 
-      {/* Condition */}
       <Section title="Condition">
         <div className="flex flex-col gap-2.5">
           {CONDITIONS.map((c) => (
-            <label key={c} className="flex items-center gap-2.5 cursor-pointer">
+            <label key={c.value} className="flex items-center gap-2.5 cursor-pointer">
               <Checkbox
-                checked={filters.conditions.includes(c)}
-                onCheckedChange={() => toggle("conditions", c)}
+                checked={filters.condition === c.value}
+                onCheckedChange={() =>
+                  onChange({ ...filters, condition: filters.condition === c.value ? "" : c.value })
+                }
                 className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
               />
-              <span className="text-[13px] text-gray-700">{c}</span>
+              <span className="text-[13px] text-gray-700">{c.label}</span>
             </label>
           ))}
         </div>
       </Section>
 
-      {/* Year */}
-      <Section title="Year">
-        <div className="px-1">
-          <Slider
-            min={2000}
-            max={2024}
-            step={1}
-            value={[filters.yearMin, filters.yearMax]}
-            onValueChange={([min, max]) =>
-              onChange({ ...filters, yearMin: min, yearMax: max })
-            }
-            className="mb-3"
-          />
-          <div className="flex justify-between text-[12px] text-gray-500">
-            <span>{filters.yearMin}</span>
-            <span>{filters.yearMax}</span>
-          </div>
+      <Section title="Sale or Rent">
+        <div className="flex flex-col gap-2.5">
+          {LISTING_TYPES.map((t) => (
+            <label key={t.value} className="flex items-center gap-2.5 cursor-pointer">
+              <Checkbox
+                checked={filters.listingType === t.value}
+                onCheckedChange={() =>
+                  onChange({ ...filters, listingType: filters.listingType === t.value ? "" : t.value })
+                }
+                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+              />
+              <span className="text-[13px] text-gray-700">{t.label}</span>
+            </label>
+          ))}
         </div>
       </Section>
 

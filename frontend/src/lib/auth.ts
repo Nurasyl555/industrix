@@ -42,9 +42,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 // ── Identity Module endpoints ─────────────────────────────────────────────────
 
-/** Step 1 of registration — create account, triggers OTP via email/phone */
-export function registerWithEmail(email: string, password: string) {
-  return post<void>("/auth/email/register", { email, password });
+/** Create account via email — returns JWT pair immediately (no OTP step) */
+export function registerWithEmail(email: string, password: string, firstName: string) {
+  return post<TokenPair>("/auth/email/register", { email, password, first_name: firstName });
 }
 
 /** Login with email + password → returns JWT pair */

@@ -1,8 +1,7 @@
 "use client";
 
 // src/app/auth/verify/page.tsx
-// ⚠️ DEMO MODE: accepts "123456" without hitting the backend
-// Remove DEMO_CODE and the demo branch in handleVerify() before production
+// Phone OTP verification — used by the phone login/register flow.
 import { Suspense } from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,7 +12,6 @@ import { cn } from "@/lib/utils";
 
 const OTP_LENGTH  = 6;
 const TIMER_START = 60;
-const DEMO_CODE   = "123456"; // ⚠️ remove before production
 
 function VerifyContent() {
   const router  = useRouter();
@@ -86,16 +84,6 @@ function VerifyContent() {
     setApiError("");
     setLoading(true);
 
-    // ⚠️ DEMO bypass — remove this block when backend is ready
-    if (otpCode === DEMO_CODE) {
-      await new Promise((r) => setTimeout(r, 600));
-      setSuccess(true);
-      setLoading(false);
-      setTimeout(() => { router.push("/"); router.refresh(); }, 1000);
-      return;
-    }
-
-    // Real API
     try {
       const tokens = await verifyPhoneOTP(phone, otpCode);
       await fetch("/api/auth/session", {
@@ -151,11 +139,6 @@ function VerifyContent() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-
-          {/* ⚠️ Demo hint — remove before production */}
-          <div className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-center text-xs text-amber-700">
-            Demo mode — use code <span className="font-mono font-bold">{DEMO_CODE}</span>
-          </div>
 
           {success && (
             <div className="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">

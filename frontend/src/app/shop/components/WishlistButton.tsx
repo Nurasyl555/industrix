@@ -1,11 +1,11 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { Equipment } from "@/types";
+import { type ListingView } from "@/lib/listing";
 import { useFavorites } from "@/store/favorites-store";
 
 interface WishlistButtonProps {
-  item:      Equipment;
+  item:      ListingView;
   size?:     number;
   className?: string;
 }

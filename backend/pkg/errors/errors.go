@@ -17,10 +17,10 @@ const (
 )
 
 type Error struct {
-	Code    Code
-	Message string
-	Details map[string]interface{}
-	Err     error
+	Code    Code                   `json:"code"`
+	Message string                 `json:"message"`
+	Details map[string]interface{} `json:"details,omitempty"`
+	Err     error                  `json:"-"`
 }
 
 func (e *Error) Error() string {

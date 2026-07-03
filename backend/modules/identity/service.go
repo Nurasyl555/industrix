@@ -15,7 +15,7 @@ import (
 // Service defines the identity service interface
 type Service interface {
 	// Auth
-	RegisterEmail(ctx context.Context, email, password string) error
+	RegisterEmail(ctx context.Context, email, password, firstName string) (*jwt.TokenPair, error)
 	LoginEmail(ctx context.Context, email, password string) (*jwt.TokenPair, error)
 	RequestPhoneOTP(ctx context.Context, phone string) error
 	VerifyPhoneOTP(ctx context.Context, phone, code string) (*jwt.TokenPair, error)
@@ -47,22 +47,26 @@ func NewService(repo *Repository, jwtClient jwt.Client) Service {
 
 // === Auth ===
 
-func (s *service) RegisterEmail(ctx context.Context, email, password string) error {
+func (s *service) RegisterEmail(ctx context.Context, email, password, firstName string) (*jwt.TokenPair, error) {
 	exists, err := s.repo.UserExistsByEmail(ctx, email)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if exists {
-		return errors.New(errors.CodeConflict, "Email already registered")
+		return nil, errors.New(errors.CodeConflict, "Email already registered")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New(errors.CodeInternal, "Failed to hash password")
+		return nil, errors.New(errors.CodeInternal, "Failed to hash password")
 	}
 
-	_, err = s.repo.CreateUserWithEmail(ctx, email, string(hashedPassword))
-	return err
+	user, err := s.repo.CreateUserWithEmail(ctx, email, string(hashedPassword), firstName)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.jwtClient.IssuePair(user.ID, user.CompanyID, user.Role, user.Verified, 15*time.Minute, 24*time.Hour)
 }
 
 func (s *service) LoginEmail(ctx context.Context, email, password string) (*jwt.TokenPair, error) {

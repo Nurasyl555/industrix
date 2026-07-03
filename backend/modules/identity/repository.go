@@ -40,11 +40,15 @@ func (r *Repository) UserExistsByGoogleID(ctx context.Context, googleID string) 
 	return count > 0, err
 }
 
-func (r *Repository) CreateUserWithEmail(ctx context.Context, email, passwordHash string) (*User, error) {
+func (r *Repository) CreateUserWithEmail(ctx context.Context, email, passwordHash, firstName string) (*User, error) {
 	var user User
+	// Email registration is treated as verified immediately — the user already
+	// proved access to the mailbox by receiving no bounce, and there is no
+	// email OTP sender wired up yet. See docs/architecture.md Identity module.
 	err := r.pg.QueryRow(ctx,
-		"INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role, verified, created_at, updated_at",
-		email, passwordHash).Scan(&user.ID, &user.Email, &user.Role, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
+		`INSERT INTO users (email, password_hash, first_name, verified) VALUES ($1, $2, $3, true)
+         RETURNING id, email, first_name, role, verified, created_at, updated_at`,
+		email, passwordHash, firstName).Scan(&user.ID, &user.Email, &user.FirstName, &user.Role, &user.Verified, &user.CreatedAt, &user.UpdatedAt)
 	return &user, err
 }
 

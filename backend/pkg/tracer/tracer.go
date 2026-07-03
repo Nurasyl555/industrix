@@ -1,7 +1,6 @@
 package tracer
 
 import (
-	"context"
 	"fmt"
 	"os"
 

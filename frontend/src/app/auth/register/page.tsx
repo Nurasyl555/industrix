@@ -86,10 +86,14 @@ export default function RegisterPage() {
     if (!validateStep3()) return;
     setLoading(true);
     try {
-      await registerWithEmail(email, password);
-      // Pass phone + email to verify page so it knows where to send OTP
-      const params = new URLSearchParams({ phone, email });
-      router.push(`/auth/verify?${params.toString()}`);
+      const tokens = await registerWithEmail(email, password, fullName);
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokens),
+      });
+      router.push("/");
+      router.refresh();
     } catch (err) {
       setApiError(friendlyError(err));
       const e = err as { code?: string };
