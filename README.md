@@ -129,7 +129,10 @@ industrix/
 │   ├── modules/
 │   │   ├── identity/           # auth + profile
 │   │   ├── integrity/          # companies + verification
-│   │   └── marketplace/        # reviews + reputation
+│   │   ├── marketplace/        # reviews + reputation
+│   │   ├── catalog/            # equipment + categories
+│   │   ├── listing/            # sale/rental listings
+│   │   └── deal/               # buyer inquiries (MVP)
 │   ├── platform/middleware/    # auth, ratelimit, logging
 │   ├── pkg/                    # shared packages
 │   ├── migrations/             # SQL migration files
@@ -206,9 +209,11 @@ Available at http://localhost:8080/swagger/ when the backend is running.
 
 | Group         | Method | Path                                   | Auth |
 | ------------- | ------ | -------------------------------------- | ---- |
-| **Auth**      | POST   | `/api/v1/auth/register`                | No   |
-|               | POST   | `/api/v1/auth/login`                   | No   |
-|               | POST   | `/api/v1/auth/verify-otp`              | No   |
+| **Auth**      | POST   | `/api/v1/auth/email/register`          | No   |
+|               | POST   | `/api/v1/auth/email/login`             | No   |
+|               | POST   | `/api/v1/auth/phone/login`             | No   |
+|               | POST   | `/api/v1/auth/phone/verify`            | No   |
+|               | GET    | `/api/v1/auth/oauth/google`            | No   |
 |               | POST   | `/api/v1/auth/refresh`                 | No   |
 | **Users**     | GET    | `/api/v1/users/me`                     | Yes  |
 |               | PUT    | `/api/v1/users/me`                     | Yes  |
@@ -218,6 +223,24 @@ Available at http://localhost:8080/swagger/ when the backend is running.
 | **Reviews**   | POST   | `/api/v1/reviews`                      | Yes  |
 |               | GET    | `/api/v1/reviews/:entityID`            | Yes  |
 |               | GET    | `/api/v1/reviews/:entityID/reputation` | Yes  |
+| **Catalog**   | GET    | `/api/v1/catalog/categories`           | No   |
+|               | GET    | `/api/v1/catalog/equipment`            | No   |
+|               | GET    | `/api/v1/catalog/equipment/:id`        | No   |
+|               | POST   | `/api/v1/catalog/equipment`            | Yes  |
+|               | PUT    | `/api/v1/catalog/equipment/:id`        | Yes  |
+|               | DELETE | `/api/v1/catalog/equipment/:id`        | Yes  |
+| **Listings**  | GET    | `/api/v1/listings`                     | No   |
+|               | GET    | `/api/v1/listings/:id`                 | No   |
+|               | POST   | `/api/v1/listings`                     | Yes  |
+|               | GET    | `/api/v1/my-listings`                  | Yes  |
+|               | PUT    | `/api/v1/my-listings/:id`              | Yes  |
+|               | PUT    | `/api/v1/my-listings/:id/publish`      | Yes  |
+|               | PUT    | `/api/v1/my-listings/:id/archive`      | Yes  |
+|               | DELETE | `/api/v1/my-listings/:id`              | Yes  |
+| **Deals**     | POST   | `/api/v1/deals`                        | Yes  |
+|               | GET    | `/api/v1/deals/:id`                    | Yes  |
+|               | PUT    | `/api/v1/deals/:id/close`              | Yes  |
+|               | GET    | `/api/v1/my-deals`                     | Yes  |
 | **Health**    | GET    | `/health`                              | No   |
 
 ---

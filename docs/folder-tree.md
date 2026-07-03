@@ -62,9 +62,30 @@ industrix/
 │   │   │   ├── service.go                 # + contracts.CompanyProvider
 │   │   │   └── handler.go
 │   │   │
-│   │   └── marketplace/                    # Reviews & reputation
-│   │       ├── module.go
-│   │       ├── types.go                    # Review, ReputationScore, CreateReviewReq
+│   │   ├── marketplace/                    # Reviews & reputation
+│   │   │   ├── module.go
+│   │   │   ├── types.go                    # Review, ReputationScore, CreateReviewReq
+│   │   │   ├── repository.go
+│   │   │   ├── service.go
+│   │   │   └── handler.go
+│   │   │
+│   │   ├── catalog/                         # Equipment + categories
+│   │   │   ├── module.go
+│   │   │   ├── types.go                    # Equipment, Category, filters
+│   │   │   ├── repository.go
+│   │   │   ├── service.go                 # + contracts.EquipmentProvider
+│   │   │   └── handler.go
+│   │   │
+│   │   ├── listing/                         # Sale/rental listings
+│   │   │   ├── module.go                   # NewModule(pg, EquipmentProvider)
+│   │   │   ├── types.go                    # Listing, ListingView, filters
+│   │   │   ├── repository.go
+│   │   │   ├── service.go                 # + contracts.ListingProvider
+│   │   │   └── handler.go
+│   │   │
+│   │   └── deal/                            # Buyer inquiries (MVP)
+│   │       ├── module.go                   # NewModule(pg, ListingProvider)
+│   │       ├── types.go                    # Deal, DealView, CreateDealReq
 │   │       ├── repository.go
 │   │       ├── service.go
 │   │       └── handler.go
@@ -88,8 +109,12 @@ industrix/
 │   │
 │   ├── migrations/                         # ── Database migrations ───────────────────
 │   │   ├── 001_users.up.sql
-│   │   ├── 002_companies.up.sql
-│   │   └── 003_reviews.up.sql
+│   │   ├── 002_auth_providers.up.sql
+│   │   ├── 003_companies.up.sql
+│   │   ├── 004_reviews.up.sql
+│   │   ├── 005_equipment.up.sql
+│   │   ├── 006_listings.up.sql
+│   │   └── 007_deals.up.sql
 │   │
 │   ├── docs/                               # ── Swagger generated docs ────────────────
 │   │   ├── docs.go
@@ -148,6 +173,11 @@ Modules never import each other. Communication happens through `contracts/`:
 ```
 identity.Service ──implements──► contracts.UserProvider
 integrity.Service ──implements──► contracts.CompanyProvider
+catalog.Service  ──implements──► contracts.EquipmentProvider
+listing.Service  ──implements──► contracts.ListingProvider
+
+listing.Service ──consumes──► contracts.EquipmentProvider   (validate equipment ownership)
+deal.Service    ──consumes──► contracts.ListingProvider     (validate listing is active)
 ```
 
 ### Single Binary Deployment

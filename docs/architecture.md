@@ -67,7 +67,7 @@ All requests flow through the platform middleware stack — no separate gateway 
 | **DB**        | `users` table (PostgreSQL) + OTP codes (Redis)                                         |
 | **Contracts** | Implements `UserProvider` — exposes `GetUserBasic()` for cross-module use              |
 
-**Public routes**: `/auth/register`, `/auth/login`, `/auth/verify-otp`, `/auth/refresh`  
+**Public routes**: `/auth/email/register`, `/auth/email/login`, `/auth/phone/login`, `/auth/phone/verify`, `/auth/oauth/google`, `/auth/refresh`  
 **Protected routes**: `GET /users/me`, `PUT /users/me`
 
 ### Integrity Module ✅
@@ -86,31 +86,39 @@ All requests flow through the platform middleware stack — no separate gateway 
 
 **Protected routes**: `POST /companies`, `GET /companies/:id`, `PUT /companies/:id`
 
-### Catalog Module
+### Catalog Module 🟡 MVP
 
 > Equipment CRUD & category taxonomy
 
+**Implemented (MVP):** equipment CRUD with owner checks, flat category list,
+SQL filtering by category/region/search, public browse + protected writes.
+**Deferred:** dynamic attribute schemas, `/catalog/compare`, Kafka events.
+
 | Concern        | Details                                                        |
 | -------------- | -------------------------------------------------------------- |
-| **Equipment**  | Create, read, update, delete equipment items                   |
-| **Categories** | Hierarchical category taxonomy by industry and purpose         |
-| **Attributes** | Dynamic technical attribute schemas per category type          |
-| **Comparison** | Compare endpoint: `GET /catalog/compare?ids=1,2,3`             |
-| **DB**         | `equipment`, `categories`, `attributes` tables (PostgreSQL)    |
-| **Events**     | Publishes `equipment.created`, `.updated`, `.deleted` to Kafka |
+| **Equipment**  | Create, read, update, delete equipment items ✅                |
+| **Categories** | Category list (hierarchy column exists, flat for now) ✅        |
+| **Attributes** | Dynamic technical attribute schemas per category type — planned |
+| **Comparison** | Compare endpoint: `GET /catalog/compare?ids=1,2,3` — planned   |
+| **DB**         | `equipment`, `categories` tables (PostgreSQL) ✅                |
+| **Events**     | `equipment.created/updated/deleted` to Kafka — planned         |
 
-### Listing Module
+### Listing Module 🟡 MVP
 
 > Ad lifecycle & pricing
 
+**Implemented (MVP):** sale/rental listings with price + optional rental
+period, owner checks, public browse (joined with equipment) + protected
+CRUD/publish/archive. **Deferred:** moderation state, stats, plan limits, Kafka.
+
 | Concern       | Details                                                     |
 | ------------- | ----------------------------------------------------------- |
-| **Lifecycle** | State machine: `draft → moderation → active → archived`     |
-| **Pricing**   | Fixed price, negotiable, rental per-day                     |
-| **Stats**     | View counters, contact rate, listing analytics              |
-| **Limits**    | Subscription plan enforcement via Integrity module contract |
-| **DB**        | `listings`, `pricing`, `listing_stats` tables (PostgreSQL)  |
-| **Events**    | Publishes `listing.created`, `.deactivated` to Kafka        |
+| **Lifecycle** | State machine: `draft → active → archived` ✅ (no moderation step yet) |
+| **Pricing**   | Fixed price (sale) or per day/week/month (rental) ✅         |
+| **Stats**     | View counters, contact rate, listing analytics — planned    |
+| **Limits**    | Subscription plan enforcement via Integrity contract — planned |
+| **DB**        | `listings` table (PostgreSQL) ✅                             |
+| **Events**    | `listing.created/deactivated` to Kafka — planned            |
 
 ### Search Module
 
@@ -124,16 +132,23 @@ All requests flow through the platform middleware stack — no separate gateway 
 | **Cache**        | Redis cache for hot queries (TTL 60s)                                   |
 | **Indexer**      | Kafka consumer for OpenSearch index sync from Catalog/Listing events    |
 
-### Deal Module
+### Deal Module 🟡 MVP
 
 > Transaction orchestrator
 
+**Implemented (MVP):** a buyer inquiry on a listing with a **two-way realtime
+message thread** — both parties view it in `/my-deals`, chat live over a
+WebSocket, either can close it. Validates the listing is active and that
+buyers can't inquire on their own listings. **Deferred:** the full negotiation
+state machine, Booking/Payment/Document orchestration, Kafka events.
+
 | Concern           | Details                                                                   |
 | ----------------- | ------------------------------------------------------------------------- |
-| **State machine** | `inquiry → negotiation → confirmed → in_progress → completed → cancelled` |
-| **Coordination**  | Orchestrates Booking, Payment, Document modules                           |
-| **DB**            | `deals`, `deal_history` tables (PostgreSQL)                               |
-| **Events**        | Publishes `deal.status.changed`, `deal.completed` to Kafka                |
+| **State machine** | `inquiry → closed` ✅ (full `negotiation → confirmed → … → completed` planned) |
+| **Messaging**     | Two-way thread, realtime via Fiber WebSocket `/ws/deals/:id` ✅ (cookie-auth, in-memory hub) |
+| **Coordination**  | Orchestrates Booking, Payment, Document modules — planned                  |
+| **DB**            | `deals`, `deal_messages` tables (PostgreSQL) ✅                            |
+| **Events**        | `deal.status.changed`, `deal.completed` to Kafka — planned                 |
 
 ### Payment Module
 
@@ -231,8 +246,16 @@ type CompanyProvider interface {
     GetCompanyBasic(ctx context.Context, companyID string) (*CompanyBasic, error)
 }
 
+type EquipmentProvider interface { // implemented by catalog
+    GetEquipmentBasic(ctx context.Context, equipmentID string) (*EquipmentBasic, error)
+}
+
+type ListingProvider interface { // implemented by listing
+    GetListingBasic(ctx context.Context, listingID string) (*ListingBasic, error)
+}
+
 // Future contracts added as modules grow:
-// CatalogProvider, ListingProvider, PaymentProvider, etc.
+// PaymentProvider, BookingProvider, etc.
 ```
 
 This enforces strict vertical isolation: if a future module needs user data, it receives a `UserProvider` — not a direct import of the identity package.

@@ -81,7 +81,7 @@ func main() {
 	marketplaceMod := marketplace.NewModule(pgClient)
 	catalogMod := catalog.NewModule(pgClient)
 	listingMod := listing.NewModule(pgClient, catalogMod.Service)
-	dealMod := deal.NewModule(pgClient, listingMod.Service)
+	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient)
 
 	// === HTTP Server ===
 
@@ -122,6 +122,9 @@ func main() {
 	catalogMod.Handler.RegisterProtectedRoutes(protected)
 	listingMod.Handler.RegisterProtectedRoutes(protected)
 	dealMod.Handler.RegisterRoutes(protected)
+
+	// WebSocket (self-authenticates via cookie, mounted outside /api/v1)
+	dealMod.Handler.RegisterWebSocket(app)
 
 	// === Start ===
 

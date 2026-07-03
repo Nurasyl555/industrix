@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar } from "../../components/layout/Navbar";
 import { HeroBanner } from "./components/HeroBanner";
 import { CategoryGrid } from "./components/CategoryGrid";
 import { FeaturedEquipment } from "./components/FeaturedEquipment";

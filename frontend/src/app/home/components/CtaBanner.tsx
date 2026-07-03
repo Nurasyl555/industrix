@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function CtaBanner() {
@@ -24,17 +25,19 @@ export function CtaBanner() {
           </p>
           <div className="flex gap-3">
             <Button
+              asChild
               className="bg-gray-900 hover:bg-gray-700 text-white font-bold px-6"
               style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
             >
-              Start Selling Now
+              <Link href="/shop/sell">Start Selling Now</Link>
             </Button>
             <Button
+              asChild
               variant="outline"
               className="border-2 border-white/70 text-white bg-transparent hover:bg-white/15 hover:border-white font-bold px-6"
               style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
             >
-              Learn More
+              <Link href="/shop/catalog">Learn More</Link>
             </Button>
           </div>
         </div>

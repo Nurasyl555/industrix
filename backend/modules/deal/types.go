@@ -27,3 +27,17 @@ type CreateDealRequest struct {
 	ListingID string `json:"listing_id"`
 	Message   string `json:"message"`
 }
+
+// DealMessage is a single message in a deal's conversation thread.
+type DealMessage struct {
+	ID        string    `json:"id"`
+	DealID    string    `json:"deal_id"`
+	SenderID  string    `json:"sender_id"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// PostMessageRequest represents a reply within a deal thread.
+type PostMessageRequest struct {
+	Body string `json:"body"`
+}

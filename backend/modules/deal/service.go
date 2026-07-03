@@ -13,6 +13,9 @@ type Service interface {
 	GetDeal(ctx context.Context, id, userID string) (*DealView, error)
 	ListMy(ctx context.Context, userID string) ([]*DealView, error)
 	Close(ctx context.Context, id, userID string) error
+
+	ListMessages(ctx context.Context, dealID, userID string) ([]*DealMessage, error)
+	PostMessage(ctx context.Context, dealID, userID, body string) (*DealMessage, error)
 }
 
 type service struct {
@@ -93,4 +96,37 @@ func (s *service) Close(ctx context.Context, id, userID string) error {
 		return errors.New(errors.CodeUnauthorized, "You are not part of this deal")
 	}
 	return s.repo.UpdateStatus(ctx, id, "closed")
+}
+
+// requireParticipant loads a deal and asserts the user is buyer or seller.
+func (s *service) requireParticipant(ctx context.Context, dealID, userID string) (*Deal, error) {
+	d, err := s.repo.GetDealByID(ctx, dealID)
+	if err != nil {
+		return nil, err
+	}
+	if d.BuyerID != userID && d.SellerID != userID {
+		return nil, errors.New(errors.CodeUnauthorized, "You are not part of this deal")
+	}
+	return d, nil
+}
+
+func (s *service) ListMessages(ctx context.Context, dealID, userID string) ([]*DealMessage, error) {
+	if _, err := s.requireParticipant(ctx, dealID, userID); err != nil {
+		return nil, err
+	}
+	return s.repo.ListMessages(ctx, dealID)
+}
+
+func (s *service) PostMessage(ctx context.Context, dealID, userID, body string) (*DealMessage, error) {
+	if body == "" {
+		return nil, errors.New(errors.CodeValidation, "Message cannot be empty")
+	}
+	d, err := s.requireParticipant(ctx, dealID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if d.Status == "closed" {
+		return nil, errors.New(errors.CodeValidation, "This deal is closed")
+	}
+	return s.repo.AddMessage(ctx, dealID, userID, body)
 }

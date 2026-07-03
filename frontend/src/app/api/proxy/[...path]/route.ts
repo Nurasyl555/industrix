@@ -9,7 +9,19 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1").replace(/\/$/, "");
+// This route runs SERVER-SIDE (inside the frontend container in Docker), so
+// it must reach the backend over the docker network hostname, NOT the
+// browser-facing localhost URL. NEXT_PUBLIC_API_URL is baked for the browser
+// (e.g. http://localhost:8080/api/v1) and would resolve to the frontend
+// container itself here → ECONNREFUSED. BACKEND_INTERNAL_URL is a plain
+// runtime env var (not NEXT_PUBLIC_), set to http://backend:8080/api/v1 in
+// docker-compose. Falls back to the public URL for bare `npm run dev` on the
+// host, where localhost works for both sides.
+const API = (
+  process.env.BACKEND_INTERNAL_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8080/api/v1"
+).replace(/\/$/, "");
 
 async function forward(req: NextRequest, method: string, path: string[]) {
   const cookieStore = await cookies();

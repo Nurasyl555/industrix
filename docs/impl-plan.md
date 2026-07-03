@@ -8,11 +8,21 @@
 
 ### Implemented Backend Modules
 
-| Module          | Routes                                                                            | Contracts         |
-| --------------- | --------------------------------------------------------------------------------- | ----------------- |
-| **Identity**    | `/auth/register`, `/auth/login`, `/auth/verify-otp`, `/auth/refresh`, `/users/me` | `UserProvider`    |
-| **Integrity**   | `/companies`, `/companies/:id`                                                    | `CompanyProvider` |
-| **Marketplace** | `/reviews`, `/reviews/:entityID`, `/reviews/:entityID/reputation`                 | —                 |
+| Module          | Routes                                                                                                    | Contracts                        |
+| --------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Identity**    | `/auth/email/register`, `/auth/email/login`, `/auth/phone/login`, `/auth/phone/verify`, `/auth/oauth/google`, `/auth/refresh`, `/users/me` | `UserProvider`    |
+| **Integrity**   | `/companies`, `/companies/:id`                                                                            | `CompanyProvider`                |
+| **Marketplace** | `/reviews`, `/reviews/:entityID`, `/reviews/:entityID/reputation`                                         | —                                |
+| **Catalog**     | `/catalog/categories`, `/catalog/equipment` (CRUD + filter)                                               | `EquipmentProvider`              |
+| **Listing**     | `/listings` (browse), `/my-listings` (CRUD + publish/archive)                                             | `ListingProvider`                |
+| **Deal**        | `/deals` (create/get/close), `/my-deals`                                                                  | —                                |
+
+> **MVP scope note:** Catalog/Listing/Deal are implemented as a minimal
+> end-to-end slice. Deliberately deferred vs. the full architecture.md vision:
+> Catalog has no `/compare` endpoint and publishes no Kafka events yet; Listing
+> has no `moderation` state (`draft → active → archived`); Deal is a simple
+> inquiry (`inquiry → closed`), not the full negotiation state machine. Search
+> is plain SQL filtering, not OpenSearch.
 
 ### Implemented Platform
 
@@ -23,7 +33,7 @@
 | Logging middleware       | ✅ Structured JSON with trace-id                 |
 | Single Dockerfile        | ✅ Multi-stage, optimized layer caching          |
 | Swagger docs             | ✅ Auto-generated at `/swagger/`                 |
-| Migrations               | ✅ 3 migration files (users, companies, reviews) |
+| Migrations               | ✅ 7 migration files (users, auth_providers, companies, reviews, equipment, listings, deals) |
 
 ### Shared Packages (`pkg/`)
 

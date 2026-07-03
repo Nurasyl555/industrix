@@ -1,34 +1,22 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ProductCard, type Product } from "./ProductCard";
-
-const PRODUCTS: Product[] = [
-  {
-    name:   "Caterpillar 320 GC Excavator",
-    desc:   "20-ton excavator with hydraulic thumb. Low hours, well maintained.",
-    loc:    "Almaty, KZ",
-    rating: 4.6,
-    price:  "$82 500",
-  },
-  {
-    name:   "Caterpillar 320 GC Excavator",
-    desc:   "20-ton excavator with hydraulic thumb. Low hours, well maintained.",
-    loc:    "Almaty, KZ",
-    rating: 4.6,
-    price:  "$82 500",
-  },
-  {
-    name:   "Caterpillar 320 GC Excavator",
-    desc:   "20-ton excavator with hydraulic thumb. Low hours, well maintained.",
-    loc:    "Almaty, KZ",
-    rating: 4.6,
-    price:  "$82 500",
-  },
-];
+import { ProductCard } from "./ProductCard";
+import { listActiveListings, type ListingView } from "@/lib/listing";
 
 export function FeaturedEquipment() {
+  const [items, setItems] = useState<ListingView[]>([]);
+
+  useEffect(() => {
+    listActiveListings({ sort: "newest", limit: 3 })
+      .then((res) => setItems(res.items ?? []))
+      .catch(() => setItems([]));
+  }, []);
+
+  if (items.length === 0) return null;
+
   return (
     <section className="max-w-7xl mx-auto px-6 pb-14">
       {/* Header */}
@@ -39,28 +27,23 @@ export function FeaturedEquipment() {
         >
           Featured Equipment
         </h2>
-        <Button
-          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold gap-2 text-[13px] h-9"
-          style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
-        >
-          Sort by: Newest first <ChevronDown size={14} />
-        </Button>
       </div>
 
       {/* Cards grid */}
       <div className="grid grid-cols-3 gap-6">
-        {PRODUCTS.map((product, i) => (
-          <ProductCard key={i} product={product} index={i} />
+        {items.map((item) => (
+          <ProductCard key={item.id} item={item} />
         ))}
       </div>
 
       {/* View all */}
       <div className="text-center mt-10">
         <Button
+          asChild
           className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-5 text-[15px] h-auto rounded-xl"
           style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
         >
-          View All Listings
+          <Link href="/shop/catalog">View All Listings</Link>
         </Button>
       </div>
     </section>

@@ -27,7 +27,51 @@ func (r *Repository) CreateDeal(ctx context.Context, d *Deal) error {
 	if err != nil {
 		return fmt.Errorf("failed to create deal: %w", err)
 	}
+	// Record the initial inquiry as the first message in the thread so the
+	// conversation view is complete.
+	if d.Message != "" {
+		if _, err := r.pg.Exec(ctx,
+			`INSERT INTO deal_messages (deal_id, sender_id, body) VALUES ($1, $2, $3)`,
+			d.ID, d.BuyerID, d.Message,
+		); err != nil {
+			return fmt.Errorf("failed to record initial message: %w", err)
+		}
+	}
 	return nil
+}
+
+func (r *Repository) AddMessage(ctx context.Context, dealID, senderID, body string) (*DealMessage, error) {
+	var m DealMessage
+	err := r.pg.QueryRow(ctx,
+		`INSERT INTO deal_messages (deal_id, sender_id, body) VALUES ($1, $2, $3)
+		 RETURNING id, deal_id, sender_id, body, created_at`,
+		dealID, senderID, body,
+	).Scan(&m.ID, &m.DealID, &m.SenderID, &m.Body, &m.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add message: %w", err)
+	}
+	return &m, nil
+}
+
+func (r *Repository) ListMessages(ctx context.Context, dealID string) ([]*DealMessage, error) {
+	rows, err := r.pg.Query(ctx,
+		`SELECT id, deal_id, sender_id, body, created_at
+		 FROM deal_messages WHERE deal_id = $1 ORDER BY created_at ASC`, dealID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*DealMessage
+	for rows.Next() {
+		var m DealMessage
+		if err := rows.Scan(&m.ID, &m.DealID, &m.SenderID, &m.Body, &m.CreatedAt); err != nil {
+			continue
+		}
+		items = append(items, &m)
+	}
+	return items, nil
 }
 
 func (r *Repository) GetDealByID(ctx context.Context, id string) (*Deal, error) {
