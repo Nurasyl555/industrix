@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { listCategories, createEquipment, type Category } from "@/lib/catalog";
 import { createListing, publishListing, type ListingType, type PricePeriod } from "@/lib/listing";
+import { getMyCompany } from "@/lib/company";
+import { getCurrentUser } from "@/lib/user";
+import { uploadImage } from "@/lib/media";
 import { friendlyError } from "@/lib/api";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function SellPage() {
   const router = useRouter();
@@ -28,12 +33,24 @@ export default function SellPage() {
   const [price, setPrice] = useState("");
   const [pricePeriod, setPricePeriod] = useState<PricePeriod>("day");
 
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Gate: selling requires a registered company (verification workflow).
+  const [gate, setGate] = useState<"checking" | "no-company" | "ok">("checking");
+
   useEffect(() => {
+    (async () => {
+      const user = await getCurrentUser();
+      if (!user) { router.push("/auth/login"); return; }
+      const company = await getMyCompany();
+      setGate(company ? "ok" : "no-company");
+    })();
     listCategories().then(setCategories).catch(() => setCategories([]));
-  }, []);
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +69,7 @@ export default function SellPage() {
         description,
         condition,
         region,
+        image_url: imageUrl || undefined,
       });
 
       const listing = await createListing({
@@ -76,12 +94,37 @@ export default function SellPage() {
     }
   }
 
+  if (gate === "checking") {
+    return <div className="py-24 text-center text-gray-400">Loading…</div>;
+  }
+
+  if (gate === "no-company") {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Register your company first</CardTitle>
+            <CardDescription>
+              Only registered companies can list equipment. It takes a minute — your
+              BIN and contact details.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/account/company">Register company</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4 py-10">
       <Card className="w-full max-w-lg shadow-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">List your equipment</CardTitle>
-          <CardDescription>Note: this listing goes live immediately — moderation isn&apos;t built yet.</CardDescription>
+          <CardDescription>Your listing is submitted for moderation and goes live once an admin approves it.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,6 +135,43 @@ export default function SellPage() {
             <div className="space-y-1.5">
               <Label htmlFor="title">Title</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="2018 Caterpillar 320 Excavator" />
+            </div>
+
+            {/* Photo */}
+            <div className="space-y-1.5">
+              <Label htmlFor="photo">Photo</Label>
+              <div className="flex items-center gap-4">
+                <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                  {imageUrl ? (
+                    <Image src={imageUrl} alt="preview" fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-gray-400">No photo</div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <input
+                    id="photo"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={uploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setError("");
+                      setUploading(true);
+                      try {
+                        setImageUrl(await uploadImage(file));
+                      } catch (err) {
+                        setError(friendlyError(err));
+                      } finally {
+                        setUploading(false);
+                      }
+                    }}
+                    className="text-sm"
+                  />
+                  {uploading && <p className="text-xs text-gray-400">Uploading…</p>}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1.5">

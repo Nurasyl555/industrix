@@ -37,7 +37,7 @@ function GridCard({ item }: { item: ListingView }) {
       className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col no-underline text-inherit"
     >
       <div className="relative h-46.25 overflow-hidden bg-sky-50">
-        <Image src="/pics/sample.jpg" alt={item.title} fill className="object-cover" />
+        <Image src={item.image_url || "/pics/sample.jpg"} alt={item.title} fill className="object-cover" unoptimized />
         <ConditionBadge condition={item.condition} />
         <WishlistButton item={item} size={14} className="absolute top-3 right-3 w-8 h-8" />
       </div>
@@ -88,7 +88,7 @@ function ListCard({ item }: { item: ListingView }) {
       className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-all duration-200 flex no-underline text-inherit"
     >
       <div className="relative w-55 shrink-0 overflow-hidden bg-sky-50">
-        <Image src="/pics/sample.jpg" alt={item.title} fill className="object-cover" />
+        <Image src={item.image_url || "/pics/sample.jpg"} alt={item.title} fill className="object-cover" unoptimized />
         <ConditionBadge condition={item.condition} />
         <WishlistButton item={item} size={13} className="absolute top-3 right-3 w-7 h-7" />
       </div>

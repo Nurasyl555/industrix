@@ -19,6 +19,7 @@ type Equipment struct {
 	Description string    `json:"description"`
 	Condition   string    `json:"condition"` // new, used
 	Region      string    `json:"region"`
+	ImageURL    string    `json:"image_url"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -30,6 +31,7 @@ type CreateEquipmentRequest struct {
 	Description string `json:"description"`
 	Condition   string `json:"condition"`
 	Region      string `json:"region"`
+	ImageURL    string `json:"image_url"`
 }
 
 // UpdateEquipmentRequest represents a request to update equipment details
@@ -38,6 +40,7 @@ type UpdateEquipmentRequest struct {
 	Description string `json:"description"`
 	Condition   string `json:"condition"`
 	Region      string `json:"region"`
+	ImageURL    string `json:"image_url"`
 }
 
 // ListEquipmentFilter represents query filters for listing equipment

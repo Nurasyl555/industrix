@@ -5,7 +5,8 @@
 // BIN: 12-digit KZ format, displayed as XXXX XXXX XXXX, sent as raw 12-digit string
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { createCompany } from "@/lib/company";
+import { friendlyError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,15 +19,6 @@ import {
 } from "@/components/ui/card";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface CreateCompanyRequest {
-  name: string;
-  bin: string;
-  email: string;
-  phone: string;
-  address: string;
-  website: string;
-}
 
 interface FieldErrors {
   name?: string;
@@ -42,38 +34,13 @@ const sanitizeBIN = (raw: string) => raw.replace(/\D/g, "").slice(0, 12);
 const formatBIN   = (digits: string) => digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 const isBINValid  = (digits: string) => digits.length === 12;
 
-// ── API ───────────────────────────────────────────────────────────────────────
-
-async function createCompany(data: CreateCompanyRequest, accessToken: string) {
-  const res = await fetch("/api/v1/companies", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.message ?? `Request failed (${res.status})`);
-  }
-
-  return res.json();
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
-  accessToken: string;
-  successRedirectPath?: string;
+  onSuccess?: () => void;
 }
 
-export default function CompanyRegistrationForm({
-  accessToken,
-  successRedirectPath = "/",
-}: Props) {
-  const router = useRouter();
+export default function CompanyRegistrationForm({ onSuccess }: Props) {
 
   const [binDigits, setBinDigits] = useState("");
   const [fields, setFields] = useState({
@@ -127,21 +94,18 @@ export default function CompanyRegistrationForm({
     if (!validate()) return;
     setLoading(true);
     try {
-      await createCompany(
-        {
-          name:    fields.name.trim(),
-          bin:     binDigits,           // raw 12 digits — no spaces
-          email:   fields.email.trim(),
-          phone:   fields.phone.trim(),
-          address: fields.address.trim(),
-          website: fields.website.trim(),
-        },
-        accessToken
-      );
+      await createCompany({
+        name:    fields.name.trim(),
+        bin:     binDigits,           // raw 12 digits — no spaces
+        email:   fields.email.trim(),
+        phone:   fields.phone.trim(),
+        address: fields.address.trim(),
+        website: fields.website.trim(),
+      });
       setSuccess(true);
-      setTimeout(() => router.push(successRedirectPath), 1500);
+      setTimeout(() => onSuccess?.(), 1200);
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Something went wrong.");
+      setApiError(friendlyError(err));
     } finally {
       setLoading(false);
     }

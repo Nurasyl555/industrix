@@ -19,10 +19,16 @@ func NewRepository(pg *postgres.Client) *Repository {
 }
 
 func (r *Repository) CreateReview(ctx context.Context, rev *Review) error {
+	// transaction_id is a nullable UUID column — an empty string is not a
+	// valid UUID, so send NULL when the review isn't tied to a transaction.
+	var txID interface{}
+	if rev.TransactionID != "" {
+		txID = rev.TransactionID
+	}
 	err := r.pg.QueryRow(ctx,
 		`INSERT INTO reviews (author_id, target_entity_id, rating, comment, transaction_id)
 		 VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
-		rev.AuthorID, rev.TargetEntityID, rev.Rating, rev.Comment, rev.TransactionID,
+		rev.AuthorID, rev.TargetEntityID, rev.Rating, rev.Comment, txID,
 	).Scan(&rev.ID, &rev.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create review: %w", err)

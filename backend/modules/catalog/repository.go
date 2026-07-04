@@ -53,9 +53,9 @@ func (r *Repository) CategoryExists(ctx context.Context, categoryID string) (boo
 
 func (r *Repository) CreateEquipment(ctx context.Context, eq *Equipment) error {
 	err := r.pg.QueryRow(ctx,
-		`INSERT INTO equipment (owner_id, category_id, title, description, condition, region)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
-		eq.OwnerID, eq.CategoryID, eq.Title, eq.Description, eq.Condition, eq.Region,
+		`INSERT INTO equipment (owner_id, category_id, title, description, condition, region, image_url)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
+		eq.OwnerID, eq.CategoryID, eq.Title, eq.Description, eq.Condition, eq.Region, eq.ImageURL,
 	).Scan(&eq.ID, &eq.CreatedAt, &eq.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create equipment: %w", err)
@@ -66,9 +66,9 @@ func (r *Repository) CreateEquipment(ctx context.Context, eq *Equipment) error {
 func (r *Repository) GetEquipmentByID(ctx context.Context, id string) (*Equipment, error) {
 	var eq Equipment
 	err := r.pg.QueryRow(ctx,
-		`SELECT id, owner_id, category_id, title, COALESCE(description, ''), condition, COALESCE(region, ''), created_at, updated_at
+		`SELECT id, owner_id, category_id, title, COALESCE(description, ''), condition, COALESCE(region, ''), COALESCE(image_url, ''), created_at, updated_at
 		 FROM equipment WHERE id = $1`, id,
-	).Scan(&eq.ID, &eq.OwnerID, &eq.CategoryID, &eq.Title, &eq.Description, &eq.Condition, &eq.Region, &eq.CreatedAt, &eq.UpdatedAt)
+	).Scan(&eq.ID, &eq.OwnerID, &eq.CategoryID, &eq.Title, &eq.Description, &eq.Condition, &eq.Region, &eq.ImageURL, &eq.CreatedAt, &eq.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Equipment not found")
 	}
@@ -99,7 +99,7 @@ func (r *Repository) ListEquipment(ctx context.Context, f ListEquipmentFilter) (
 
 	offset := (f.Page - 1) * f.Limit
 	query := fmt.Sprintf(
-		`SELECT id, owner_id, category_id, title, COALESCE(description, ''), condition, COALESCE(region, ''), created_at, updated_at
+		`SELECT id, owner_id, category_id, title, COALESCE(description, ''), condition, COALESCE(region, ''), COALESCE(image_url, ''), created_at, updated_at
 		 FROM equipment WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
 		whereClause, argN, argN+1,
 	)
@@ -114,7 +114,7 @@ func (r *Repository) ListEquipment(ctx context.Context, f ListEquipmentFilter) (
 	var items []*Equipment
 	for rows.Next() {
 		var eq Equipment
-		if err := rows.Scan(&eq.ID, &eq.OwnerID, &eq.CategoryID, &eq.Title, &eq.Description, &eq.Condition, &eq.Region, &eq.CreatedAt, &eq.UpdatedAt); err != nil {
+		if err := rows.Scan(&eq.ID, &eq.OwnerID, &eq.CategoryID, &eq.Title, &eq.Description, &eq.Condition, &eq.Region, &eq.ImageURL, &eq.CreatedAt, &eq.UpdatedAt); err != nil {
 			continue
 		}
 		items = append(items, &eq)
@@ -129,9 +129,9 @@ func (r *Repository) ListEquipment(ctx context.Context, f ListEquipmentFilter) (
 
 func (r *Repository) UpdateEquipment(ctx context.Context, eq *Equipment) error {
 	_, err := r.pg.Exec(ctx,
-		`UPDATE equipment SET title = $1, description = $2, condition = $3, region = $4, updated_at = NOW()
-		 WHERE id = $5`,
-		eq.Title, eq.Description, eq.Condition, eq.Region, eq.ID,
+		`UPDATE equipment SET title = $1, description = $2, condition = $3, region = $4, image_url = $5, updated_at = NOW()
+		 WHERE id = $6`,
+		eq.Title, eq.Description, eq.Condition, eq.Region, eq.ImageURL, eq.ID,
 	)
 	return err
 }

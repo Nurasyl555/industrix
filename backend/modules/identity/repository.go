@@ -134,8 +134,8 @@ func (r *Repository) UpdateUserVerification(ctx context.Context, userID string, 
 func (r *Repository) GetUserByID(ctx context.Context, id string) (*User, error) {
 	var user User
 	err := r.pg.QueryRow(ctx,
-		"SELECT id, email, COALESCE(first_name, ''), COALESCE(last_name, ''), COALESCE(avatar_url, ''), COALESCE(company_id::text, '') FROM users WHERE id = $1", id).Scan(
-		&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.AvatarURL, &user.CompanyID,
+		"SELECT id, email, COALESCE(first_name, ''), COALESCE(last_name, ''), COALESCE(avatar_url, ''), COALESCE(company_id::text, ''), role FROM users WHERE id = $1", id).Scan(
+		&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.AvatarURL, &user.CompanyID, &user.Role,
 	)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "User not found")

@@ -24,6 +24,7 @@ type ListingView struct {
 	CategoryID  string    `json:"category_id"`
 	Region      string    `json:"region"`
 	Condition   string    `json:"condition"`
+	ImageURL    string    `json:"image_url"`
 	SellerID    string    `json:"seller_id"`
 	ListingType string    `json:"listing_type"`
 	Price       float64   `json:"price"`

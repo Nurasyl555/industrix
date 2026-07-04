@@ -18,6 +18,11 @@ type Service interface {
 	Archive(ctx context.Context, id, sellerID string) error
 	DeleteListing(ctx context.Context, id, sellerID string) error
 
+	// Admin moderation
+	ListForModeration(ctx context.Context) ([]*ListingView, error)
+	Approve(ctx context.Context, id string) error
+	Reject(ctx context.Context, id string) error
+
 	// Contracts
 	contracts.ListingProvider
 }
@@ -119,11 +124,13 @@ func (s *service) UpdateListing(ctx context.Context, id, sellerID string, req Up
 	return l, nil
 }
 
+// Publish submits a draft for moderation — it does NOT go live directly. An
+// admin approves it (Approve) before buyers can see it.
 func (s *service) Publish(ctx context.Context, id, sellerID string) error {
 	if _, err := s.requireOwner(ctx, id, sellerID); err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, id, "active")
+	return s.repo.UpdateStatus(ctx, id, "moderation")
 }
 
 func (s *service) Archive(ctx context.Context, id, sellerID string) error {
@@ -138,6 +145,26 @@ func (s *service) DeleteListing(ctx context.Context, id, sellerID string) error 
 		return err
 	}
 	return s.repo.DeleteListing(ctx, id)
+}
+
+// === Admin moderation ===
+
+func (s *service) ListForModeration(ctx context.Context) ([]*ListingView, error) {
+	return s.repo.ListByStatusView(ctx, "moderation")
+}
+
+func (s *service) Approve(ctx context.Context, id string) error {
+	if _, err := s.repo.GetListingByID(ctx, id); err != nil {
+		return err
+	}
+	return s.repo.UpdateStatus(ctx, id, "active")
+}
+
+func (s *service) Reject(ctx context.Context, id string) error {
+	if _, err := s.repo.GetListingByID(ctx, id); err != nil {
+		return err
+	}
+	return s.repo.UpdateStatus(ctx, id, "rejected")
 }
 
 // === Contracts (ListingProvider) ===

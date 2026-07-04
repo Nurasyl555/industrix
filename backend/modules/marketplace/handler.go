@@ -50,7 +50,10 @@ func (h *Handler) CreateReview(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.CreateReview(c.Context(), review); err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err)
+		if domainErr, ok := err.(*errors.Error); ok {
+			return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
+		}
+		return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Failed to create review"))
 	}
 
 	return c.Status(http.StatusCreated).JSON(review)

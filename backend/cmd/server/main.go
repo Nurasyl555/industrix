@@ -19,12 +19,14 @@ import (
 
 	_ "github.com/industrix/backend/docs"
 
+	"github.com/industrix/backend/modules/admin"
 	"github.com/industrix/backend/modules/catalog"
 	"github.com/industrix/backend/modules/deal"
 	"github.com/industrix/backend/modules/identity"
 	"github.com/industrix/backend/modules/integrity"
 	"github.com/industrix/backend/modules/listing"
 	"github.com/industrix/backend/modules/marketplace"
+	"github.com/industrix/backend/modules/media"
 	"github.com/industrix/backend/pkg/jwt"
 	"github.com/industrix/backend/pkg/logger"
 	"github.com/industrix/backend/pkg/postgres"
@@ -82,6 +84,18 @@ func main() {
 	catalogMod := catalog.NewModule(pgClient)
 	listingMod := listing.NewModule(pgClient, catalogMod.Service)
 	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient)
+	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
+
+	mediaMod, err := media.NewModule(media.Config{
+		InternalEndpoint: getEnv("MINIO_ENDPOINT", "minio:9000"),
+		PublicEndpoint:   getEnv("MINIO_PUBLIC_ENDPOINT", "localhost:9000"),
+		AccessKey:        getEnv("MINIO_ROOT_USER", "minio"),
+		SecretKey:        getEnv("MINIO_ROOT_PASSWORD", "minio123"),
+		UseSSL:           getEnv("MINIO_USE_SSL", "false") == "true",
+	})
+	if err != nil {
+		l.Fatal().Err(err).Msg("Failed to init media module")
+	}
 
 	// === HTTP Server ===
 
@@ -122,6 +136,11 @@ func main() {
 	catalogMod.Handler.RegisterProtectedRoutes(protected)
 	listingMod.Handler.RegisterProtectedRoutes(protected)
 	dealMod.Handler.RegisterRoutes(protected)
+	mediaMod.Handler.RegisterRoutes(protected)
+
+	// Admin routes — protected + admin-role gated
+	adminRoutes := api.Group("/", authMw.ValidateJWT(), authMw.RequireAdmin())
+	adminMod.Handler.RegisterRoutes(adminRoutes)
 
 	// WebSocket (self-authenticates via cookie, mounted outside /api/v1)
 	dealMod.Handler.RegisterWebSocket(app)

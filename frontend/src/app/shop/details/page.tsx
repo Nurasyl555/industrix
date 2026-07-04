@@ -7,6 +7,7 @@ import { getListing, type ListingView } from "@/lib/listing";
 import { createDeal } from "@/lib/deal";
 import { friendlyError } from "@/lib/api";
 import { WishlistButton } from "../components/WishlistButton";
+import { SellerReviews } from "../components/SellerReviews";
 
 function formatPrice(item: ListingView) {
   const price = "$" + item.price.toLocaleString("en-US");
@@ -80,7 +81,8 @@ function DetailsContent() {
           <section className="space-y-6">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="relative aspect-video w-full bg-linear-to-br from-sky-300 via-sky-500 to-sky-700">
-                <img src="/pics/sample.jpg" alt={listing.title} className="h-full w-full object-cover" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={listing.image_url || "/pics/sample.jpg"} alt={listing.title} className="h-full w-full object-cover" />
                 <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
                   <span className="rounded-md bg-sky-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
                     {listing.listing_type === "rental" ? "For Rent" : "For Sale"}
@@ -120,6 +122,8 @@ function DetailsContent() {
                 <p className="max-w-4xl text-base leading-8 text-slate-600">{listing.description}</p>
               </section>
             )}
+
+            <SellerReviews sellerId={listing.seller_id} />
           </section>
 
           {/* ── RIGHT COLUMN ── */}

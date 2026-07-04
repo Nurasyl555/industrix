@@ -25,11 +25,12 @@ export function ProductCard({ item }: ProductCardProps) {
     <Card className="overflow-hidden rounded-3xl border border-gray-200 p-0 hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
       <div className="relative h-56 w-full overflow-hidden rounded-t-3xl bg-sky-100">
         <Image
-          src="/pics/sample.jpg"
+          src={item.image_url || "/pics/sample.jpg"}
           alt={item.title}
           fill
           className="object-cover object-center"
           sizes="(max-width: 768px) 100vw, 33vw"
+          unoptimized
         />
         <WishlistButton item={item} size={15} className="absolute top-3 right-3 h-8 w-8" />
       </div>

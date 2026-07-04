@@ -65,6 +65,7 @@ func (s *service) CreateEquipment(ctx context.Context, ownerID string, req Creat
 		Description: req.Description,
 		Condition:   req.Condition,
 		Region:      req.Region,
+		ImageURL:    req.ImageURL,
 	}
 	if err := s.repo.CreateEquipment(ctx, eq); err != nil {
 		return nil, err
@@ -109,6 +110,9 @@ func (s *service) UpdateEquipment(ctx context.Context, id, ownerID string, req U
 	}
 	if req.Region != "" {
 		eq.Region = req.Region
+	}
+	if req.ImageURL != "" {
+		eq.ImageURL = req.ImageURL
 	}
 
 	if err := s.repo.UpdateEquipment(ctx, eq); err != nil {

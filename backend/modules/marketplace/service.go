@@ -26,6 +26,12 @@ func (s *service) CreateReview(ctx context.Context, review *Review) error {
 	if review.Rating < 1 || review.Rating > 5 {
 		return errors.New(errors.CodeValidation, "Rating must be between 1 and 5")
 	}
+	if review.TargetEntityID == "" {
+		return errors.New(errors.CodeValidation, "Target is required")
+	}
+	if review.AuthorID == review.TargetEntityID {
+		return errors.New(errors.CodeValidation, "You cannot review yourself")
+	}
 
 	if err := s.repo.CreateReview(ctx, review); err != nil {
 		return err

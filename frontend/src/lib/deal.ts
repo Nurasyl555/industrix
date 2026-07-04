@@ -27,8 +27,8 @@ export function createDeal(listing_id: string, message: string) {
   return authPost<Deal>("/deals", { listing_id, message });
 }
 
-export function listMyDeals() {
-  return authGet<Deal[]>("/my-deals");
+export async function listMyDeals(): Promise<Deal[]> {
+  return (await authGet<Deal[] | null>("/my-deals")) ?? [];
 }
 
 export function getDeal(id: string) {
@@ -39,8 +39,8 @@ export function closeDeal(id: string) {
   return authPut<void>(`/deals/${id}/close`);
 }
 
-export function listDealMessages(dealId: string) {
-  return authGet<DealMessage[]>(`/deals/${dealId}/messages`);
+export async function listDealMessages(dealId: string): Promise<DealMessage[]> {
+  return (await authGet<DealMessage[] | null>(`/deals/${dealId}/messages`)) ?? [];
 }
 
 export function postDealMessage(dealId: string, body: string) {

@@ -11,7 +11,12 @@ import (
 type Service interface {
 	CreateCompany(ctx context.Context, company *Company) error
 	GetCompany(ctx context.Context, id string) (*Company, error)
+	GetMyCompany(ctx context.Context, ownerID string) (*Company, error)
 	UpdateCompany(ctx context.Context, company *Company) error
+
+	// Admin
+	ListCompaniesByStatus(ctx context.Context, status string) ([]*Company, error)
+	SetCompanyStatus(ctx context.Context, id string, status CompanyStatus, note string) error
 
 	// Contracts
 	contracts.CompanyProvider
@@ -43,8 +48,28 @@ func (s *service) GetCompany(ctx context.Context, id string) (*Company, error) {
 	return s.repo.GetCompanyByID(ctx, id)
 }
 
+func (s *service) GetMyCompany(ctx context.Context, ownerID string) (*Company, error) {
+	return s.repo.GetCompanyByOwner(ctx, ownerID)
+}
+
 func (s *service) UpdateCompany(ctx context.Context, company *Company) error {
 	return s.repo.UpdateCompany(ctx, company)
+}
+
+// === Admin ===
+
+func (s *service) ListCompaniesByStatus(ctx context.Context, status string) ([]*Company, error) {
+	return s.repo.ListByStatus(ctx, status)
+}
+
+func (s *service) SetCompanyStatus(ctx context.Context, id string, status CompanyStatus, note string) error {
+	if status != StatusVerified && status != StatusRejected && status != StatusPending {
+		return errors.New(errors.CodeValidation, "Invalid status")
+	}
+	if _, err := s.repo.GetCompanyByID(ctx, id); err != nil {
+		return err
+	}
+	return s.repo.SetStatus(ctx, id, status, note)
 }
 
 // === Contracts (CompanyProvider) ===

@@ -28,10 +28,11 @@ export interface CreateEquipmentInput {
   description: string;
   condition: "new" | "used";
   region: string;
+  image_url?: string;
 }
 
-export function listCategories() {
-  return publicGet<Category[]>("/catalog/categories");
+export async function listCategories(): Promise<Category[]> {
+  return (await publicGet<Category[] | null>("/catalog/categories")) ?? [];
 }
 
 export function getEquipment(id: string) {

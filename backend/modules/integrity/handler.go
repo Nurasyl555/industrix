@@ -17,12 +17,23 @@ func NewHandler(service Service) *Handler {
 	return &Handler{service: service}
 }
 
-// RegisterRoutes registers all integrity routes (all protected)
+// RegisterRoutes registers all integrity routes (all protected).
+// "/me" is a distinct group from "/:id" to avoid the static-vs-param
+// shadowing issue (see modules/listing/handler.go).
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	companies := router.Group("/companies")
 	companies.Post("/", h.CreateCompany)
 	companies.Get("/:id", h.GetCompany)
 	companies.Put("/:id", h.UpdateCompany)
+
+	router.Get("/my-company", h.GetMyCompany)
+}
+
+func respondErr(c *fiber.Ctx, err error) error {
+	if domainErr, ok := err.(*errors.Error); ok {
+		return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
+	}
+	return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Something went wrong"))
 }
 
 // CreateCompany godoc
@@ -53,10 +64,25 @@ func (h *Handler) CreateCompany(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.CreateCompany(c.Context(), company); err != nil {
-		return c.Status(http.StatusConflict).JSON(err)
+		return respondErr(c, err)
 	}
 
 	return c.Status(http.StatusCreated).JSON(company)
+}
+
+// GetMyCompany godoc
+// @Summary Get the current user's company (404 if none yet)
+// @Tags companies
+// @Security BearerAuth
+// @Success 200 {object} Company
+// @Router /my-company [get]
+func (h *Handler) GetMyCompany(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	company, err := h.service.GetMyCompany(c.Context(), userID)
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(company)
 }
 
 // GetCompany godoc

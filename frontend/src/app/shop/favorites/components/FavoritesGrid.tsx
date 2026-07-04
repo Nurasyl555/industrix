@@ -17,10 +17,11 @@ function FavoriteCard({ item }: { item: ListingView }) {
       {/* Image */}
       <div className="relative h-46.25 overflow-hidden bg-sky-50">
         <Image
-          src="/pics/sample.jpg"
+          src={item.image_url || "/pics/sample.jpg"}
           alt={item.title}
           fill
           className="object-cover"
+          unoptimized
         />
         <WishlistButton
           item={item}

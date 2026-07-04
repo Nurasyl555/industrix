@@ -50,16 +50,42 @@ func (r *Repository) GetListingByID(ctx context.Context, id string) (*Listing, e
 func (r *Repository) GetListingViewByID(ctx context.Context, id string) (*ListingView, error) {
 	var v ListingView
 	err := r.pg.QueryRow(ctx,
-		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition,
+		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
 		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE l.id = $1`, id,
-	).Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition,
+	).Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
 		&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Listing not found")
 	}
 	return &v, nil
+}
+
+// ListByStatusView returns listings in a given status joined with equipment —
+// used by the admin moderation queue.
+func (r *Repository) ListByStatusView(ctx context.Context, status string) ([]*ListingView, error) {
+	rows, err := r.pg.Query(ctx,
+		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
+		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
+		 WHERE l.status = $1 ORDER BY l.created_at ASC`, status,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*ListingView
+	for rows.Next() {
+		var v ListingView
+		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
+			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt); err != nil {
+			continue
+		}
+		items = append(items, &v)
+	}
+	return items, nil
 }
 
 // ListActive returns active listings joined with equipment, for public browsing.
@@ -115,7 +141,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 
 	offset := (f.Page - 1) * f.Limit
 	query := fmt.Sprintf(
-		`SELECT l.id, l.equipment_id, e.title, e.category_id, COALESCE(e.region, ''), e.condition,
+		`SELECT l.id, l.equipment_id, e.title, e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
 		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE %s ORDER BY %s LIMIT $%d OFFSET $%d`,
@@ -132,7 +158,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 	var items []*ListingView
 	for rows.Next() {
 		var v ListingView
-		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.CategoryID, &v.Region, &v.Condition,
+		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
 			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt); err != nil {
 			continue
 		}

@@ -11,6 +11,7 @@ export interface CurrentUser {
   last_name: string;
   avatar_url: string;
   company_id: string;
+  role: string;
 }
 
 /** Returns the signed-in user, or null if not authenticated. */

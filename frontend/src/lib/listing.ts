@@ -15,6 +15,7 @@ export interface ListingView {
   category_id: string;
   region: string;
   condition: "new" | "used";
+  image_url?: string;
   seller_id: string;
   listing_type: ListingType;
   price: number;
@@ -83,8 +84,8 @@ export function createListing(input: {
   return authPost<Listing>("/listings", input);
 }
 
-export function listMyListings() {
-  return authGet<Listing[]>("/my-listings");
+export async function listMyListings(): Promise<Listing[]> {
+  return (await authGet<Listing[] | null>("/my-listings")) ?? [];
 }
 
 export function updateListingPrice(id: string, price: number, price_period?: PricePeriod) {

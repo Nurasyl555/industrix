@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/home" },
   { label: "Products", href: "/shop/catalog" },
   { label: "Sell Equipment", href: "/shop/sell" },
-  { label: "About Us", href: null },
+  { label: "My Company", href: "/account/company" },
 ];
 
 const ACTION_LINKS = [
@@ -81,6 +81,16 @@ export function Navbar() {
                 </span>
               </li>
             )
+          )}
+          {user?.role === "admin" && (
+            <li>
+              <Link
+                href="/admin"
+                className="text-base font-bold text-amber-600 no-underline transition-colors hover:text-amber-500"
+              >
+                Admin
+              </Link>
+            </li>
           )}
         </ul>
 

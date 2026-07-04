@@ -49,3 +49,15 @@ func (m *AuthMiddleware) ValidateJWT() fiber.Handler {
 		return c.Next()
 	}
 }
+
+// RequireAdmin gates a route to admin users. Must run AFTER ValidateJWT so the
+// role is already in Locals.
+func (m *AuthMiddleware) RequireAdmin() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		role, _ := c.Locals("role").(string)
+		if role != "admin" {
+			return c.Status(fiber.StatusForbidden).JSON(errors.New(errors.CodeUnauthorized, "Admin access required"))
+		}
+		return c.Next()
+	}
+}
