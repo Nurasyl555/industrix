@@ -20,6 +20,7 @@ import (
 	_ "github.com/industrix/backend/docs"
 
 	"github.com/industrix/backend/modules/admin"
+	"github.com/industrix/backend/modules/booking"
 	"github.com/industrix/backend/modules/catalog"
 	"github.com/industrix/backend/modules/deal"
 	"github.com/industrix/backend/modules/identity"
@@ -27,6 +28,7 @@ import (
 	"github.com/industrix/backend/modules/listing"
 	"github.com/industrix/backend/modules/marketplace"
 	"github.com/industrix/backend/modules/media"
+	"github.com/industrix/backend/modules/notification"
 	"github.com/industrix/backend/pkg/jwt"
 	"github.com/industrix/backend/pkg/logger"
 	"github.com/industrix/backend/pkg/postgres"
@@ -78,12 +80,18 @@ func main() {
 
 	// === Modules ===
 
+	// Notification service is created first — other modules receive it as a
+	// contracts.Notifier to emit user-facing events.
+	notificationMod := notification.NewModule(pgClient)
+	notifier := notificationMod.Service
+
 	identityMod := identity.NewModule(pgClient, redisClient, jwtClient)
-	integrityMod := integrity.NewModule(pgClient)
+	integrityMod := integrity.NewModule(pgClient, notifier)
 	marketplaceMod := marketplace.NewModule(pgClient)
 	catalogMod := catalog.NewModule(pgClient)
-	listingMod := listing.NewModule(pgClient, catalogMod.Service)
-	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient)
+	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier)
+	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient, notifier)
+	bookingMod := booking.NewModule(pgClient, listingMod.Service, notifier)
 	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
 
 	mediaMod, err := media.NewModule(media.Config{
@@ -127,6 +135,7 @@ func main() {
 	identityMod.Handler.RegisterPublicRoutes(api)
 	catalogMod.Handler.RegisterPublicRoutes(api)
 	listingMod.Handler.RegisterPublicRoutes(api)
+	bookingMod.Handler.RegisterPublicRoutes(api)
 
 	// Protected routes (auth required)
 	protected := api.Group("/", authMw.ValidateJWT())
@@ -136,7 +145,9 @@ func main() {
 	catalogMod.Handler.RegisterProtectedRoutes(protected)
 	listingMod.Handler.RegisterProtectedRoutes(protected)
 	dealMod.Handler.RegisterRoutes(protected)
+	bookingMod.Handler.RegisterProtectedRoutes(protected)
 	mediaMod.Handler.RegisterRoutes(protected)
+	notificationMod.Handler.RegisterRoutes(protected)
 
 	// Admin routes — protected + admin-role gated
 	adminRoutes := api.Group("/", authMw.ValidateJWT(), authMw.RequireAdmin())

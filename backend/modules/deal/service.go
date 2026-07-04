@@ -21,11 +21,12 @@ type Service interface {
 type service struct {
 	repo     *Repository
 	listings contracts.ListingProvider
+	notifier contracts.Notifier
 }
 
 // NewService creates a new deal service
-func NewService(repo *Repository, listings contracts.ListingProvider) Service {
-	return &service{repo: repo, listings: listings}
+func NewService(repo *Repository, listings contracts.ListingProvider, notifier contracts.Notifier) Service {
+	return &service{repo: repo, listings: listings, notifier: notifier}
 }
 
 func (s *service) CreateDeal(ctx context.Context, buyerID string, req CreateDealRequest) (*Deal, error) {
@@ -52,6 +53,9 @@ func (s *service) CreateDeal(ctx context.Context, buyerID string, req CreateDeal
 	}
 	if err := s.repo.CreateDeal(ctx, d); err != nil {
 		return nil, err
+	}
+	if s.notifier != nil {
+		s.notifier.Notify(ctx, d.SellerID, "inquiry", "You have a new inquiry on your listing", "/shop/deals/"+d.ID)
 	}
 	return d, nil
 }
@@ -128,5 +132,17 @@ func (s *service) PostMessage(ctx context.Context, dealID, userID, body string) 
 	if d.Status == "closed" {
 		return nil, errors.New(errors.CodeValidation, "This deal is closed")
 	}
-	return s.repo.AddMessage(ctx, dealID, userID, body)
+	msg, err := s.repo.AddMessage(ctx, dealID, userID, body)
+	if err != nil {
+		return nil, err
+	}
+	// Notify the other participant.
+	if s.notifier != nil {
+		recipient := d.SellerID
+		if userID == d.SellerID {
+			recipient = d.BuyerID
+		}
+		s.notifier.Notify(ctx, recipient, "message", "New message in a deal", "/shop/deals/"+dealID)
+	}
+	return msg, nil
 }

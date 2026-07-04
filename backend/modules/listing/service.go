@@ -30,11 +30,12 @@ type Service interface {
 type service struct {
 	repo      *Repository
 	equipment contracts.EquipmentProvider
+	notifier  contracts.Notifier
 }
 
 // NewService creates a new listing service
-func NewService(repo *Repository, equipment contracts.EquipmentProvider) Service {
-	return &service{repo: repo, equipment: equipment}
+func NewService(repo *Repository, equipment contracts.EquipmentProvider, notifier contracts.Notifier) Service {
+	return &service{repo: repo, equipment: equipment, notifier: notifier}
 }
 
 var validListingTypes = map[string]bool{"sale": true, "rental": true}
@@ -154,17 +155,31 @@ func (s *service) ListForModeration(ctx context.Context) ([]*ListingView, error)
 }
 
 func (s *service) Approve(ctx context.Context, id string) error {
-	if _, err := s.repo.GetListingByID(ctx, id); err != nil {
+	l, err := s.repo.GetListingByID(ctx, id)
+	if err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, id, "active")
+	if err := s.repo.UpdateStatus(ctx, id, "active"); err != nil {
+		return err
+	}
+	if s.notifier != nil {
+		s.notifier.Notify(ctx, l.SellerID, "listing_approved", "Your listing was approved and is now live", "/shop/details?id="+id)
+	}
+	return nil
 }
 
 func (s *service) Reject(ctx context.Context, id string) error {
-	if _, err := s.repo.GetListingByID(ctx, id); err != nil {
+	l, err := s.repo.GetListingByID(ctx, id)
+	if err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, id, "rejected")
+	if err := s.repo.UpdateStatus(ctx, id, "rejected"); err != nil {
+		return err
+	}
+	if s.notifier != nil {
+		s.notifier.Notify(ctx, l.SellerID, "listing_rejected", "Your listing was rejected by moderation", "")
+	}
+	return nil
 }
 
 // === Contracts (ListingProvider) ===
@@ -179,5 +194,6 @@ func (s *service) GetListingBasic(ctx context.Context, listingID string) (*contr
 		EquipmentID: l.EquipmentID,
 		SellerID:    l.SellerID,
 		Status:      l.Status,
+		ListingType: l.ListingType,
 	}, nil
 }

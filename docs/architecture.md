@@ -162,16 +162,22 @@ state machine, Booking/Payment/Document orchestration, Kafka events.
 | **Subscriptions** | Subscription billing for seller tariff plans         |
 | **DB**            | `payments`, `invoices`, `escrow` tables (PostgreSQL) |
 
-### Booking Module
+### Booking Module 🟡 MVP
 
 > Calendar-based availability
 
+**Implemented (MVP):** date-range bookings for rental listings with a real
+calendar UI (booked days disabled), booked-dates endpoint driving availability,
+cancel by either party. Double-booking is prevented **race-free at the DB
+level** via a Postgres `EXCLUDE` constraint on overlapping `daterange`s.
+**Deferred:** Redis TTL soft-holds, price/payment on the booking itself.
+
 | Concern          | Details                                                          |
 | ---------------- | ---------------------------------------------------------------- |
-| **Availability** | Calendar-based availability for rentals                          |
-| **Holds**        | Redis TTL for temporary holds, PostgreSQL for confirmed bookings |
-| **Conflicts**    | Optimistic locking for conflict prevention                       |
-| **DB**           | `bookings`, `availability` tables (PostgreSQL)                   |
+| **Availability** | Calendar-based availability for rentals ✅                        |
+| **Conflicts**    | `EXCLUDE USING gist (listing_id =, daterange &&)` — atomic, race-free ✅ |
+| **Holds**        | Redis TTL soft-holds — planned                                   |
+| **DB**           | `bookings` table (PostgreSQL) ✅                                  |
 
 ### Chat Module
 
@@ -185,16 +191,22 @@ state machine, Booking/Payment/Document orchestration, Kafka events.
 | **DB**        | MongoDB (chat_db) — messages, conversations                             |
 | **Presence**  | Redis pub/sub for online/offline status                                 |
 
-### Notification Module
+### Notification Module 🟡 MVP
 
 > Multi-channel alerts
 
+**Implemented (MVP):** in-app notification feed. Modules emit events through a
+`contracts.Notifier` interface (fire-and-forget) — new inquiry, new deal
+message, rental booked, listing approved/rejected, company verified/rejected.
+Bell badge polls unread count. **Deferred:** Kafka fanout, push (FCM/APNs),
+email (Postal).
+
 | Concern            | Details                                                         |
 | ------------------ | --------------------------------------------------------------- |
-| **Kafka consumer** | Fans out events to channels — no REST API                       |
-| **In-app**         | MongoDB notification feed per user                              |
-| **Push**           | FCM/APNs — device token + message only, no PII stored at Google |
-| **Email**          | Self-hosted Postal SMTP server (open-source)                    |
+| **In-app**         | PostgreSQL `notifications` feed per user ✅ (emit via contracts.Notifier) |
+| **Kafka consumer** | Fan-out to channels — planned                                   |
+| **Push**           | FCM/APNs — planned                                              |
+| **Email**          | Self-hosted Postal SMTP — planned                               |
 
 ### Media Module
 

@@ -3,19 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Handshake, Heart, LogOut } from "lucide-react";
+import { Bell, CalendarDays, Handshake, Heart, LogOut } from "lucide-react";
 import { getCurrentUser, logout, type CurrentUser } from "@/lib/user";
+import { unreadCount } from "@/lib/notification";
 
-// href: null means the page doesn't exist yet — render as disabled, not a 404 link.
 const NAV_LINKS = [
   { label: "Home", href: "/home" },
   { label: "Products", href: "/shop/catalog" },
   { label: "Sell Equipment", href: "/shop/sell" },
   { label: "My Company", href: "/account/company" },
+  { label: "About Us", href: "/about-us" },
 ];
 
 const ACTION_LINKS = [
-  { icon: Bell, href: null, label: "Notifications" },
+  { icon: CalendarDays, href: "/shop/bookings", label: "My Bookings" },
   { icon: Handshake, href: "/shop/deals", label: "My Deals" },
   { icon: Heart, href: "/shop/favorites", label: "Favorites" },
 ];
@@ -25,6 +26,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   // Re-check on every route change: the navbar lives in the root layout and
   // never remounts on client-side navigation, so a mount-only effect would
@@ -34,6 +36,15 @@ export function Navbar() {
       setUser(u);
       setLoaded(true);
     });
+  }, [pathname]);
+
+  // Poll the unread notification count (refreshes on nav + every 20s).
+  useEffect(() => {
+    let active = true;
+    const tick = () => unreadCount().then((n) => active && setUnread(n));
+    tick();
+    const id = setInterval(tick, 20000);
+    return () => { active = false; clearInterval(id); };
   }, [pathname]);
 
   async function handleLogout() {
@@ -96,6 +107,20 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-4 justify-self-end">
+          {/* Notifications bell with unread badge */}
+          <Link
+            href="/notifications"
+            aria-label="Notifications"
+            className="relative cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
+          >
+            <Bell size={20} />
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Link>
+
           {ACTION_LINKS.map(({ icon: Icon, href, label }) =>
             href ? (
               <Link

@@ -8,6 +8,7 @@ import { createDeal } from "@/lib/deal";
 import { friendlyError } from "@/lib/api";
 import { WishlistButton } from "../components/WishlistButton";
 import { SellerReviews } from "../components/SellerReviews";
+import { RentalCalendar } from "../components/RentalCalendar";
 
 function formatPrice(item: ListingView) {
   const price = "$" + item.price.toLocaleString("en-US");
@@ -153,6 +154,13 @@ function DetailsContent() {
                     >
                       <Mail size={16} /> {sending ? "Sending…" : "Contact Seller"}
                     </button>
+                  </div>
+                )}
+
+                {/* Rental calendar — only for rental listings */}
+                {listing.listing_type === "rental" && (
+                  <div className="mt-6 border-t border-slate-100 pt-5">
+                    <RentalCalendar listing={listing} />
                   </div>
                 )}
               </div>

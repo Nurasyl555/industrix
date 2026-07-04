@@ -14,9 +14,9 @@ type Module struct {
 // NewModule wires internal dependencies and returns the module.
 // equipment is the catalog module's EquipmentProvider — listing never
 // imports catalog directly, only the shared contract.
-func NewModule(pg *postgres.Client, equipment contracts.EquipmentProvider) *Module {
+func NewModule(pg *postgres.Client, equipment contracts.EquipmentProvider, notifier contracts.Notifier) *Module {
 	repo := NewRepository(pg)
-	svc := NewService(repo, equipment)
+	svc := NewService(repo, equipment, notifier)
 	handler := NewHandler(svc)
 	return &Module{
 		Handler: handler,

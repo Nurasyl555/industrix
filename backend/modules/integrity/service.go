@@ -23,12 +23,13 @@ type Service interface {
 }
 
 type service struct {
-	repo *Repository
+	repo     *Repository
+	notifier contracts.Notifier
 }
 
 // NewService creates a new integrity service
-func NewService(repo *Repository) Service {
-	return &service{repo: repo}
+func NewService(repo *Repository, notifier contracts.Notifier) Service {
+	return &service{repo: repo, notifier: notifier}
 }
 
 func (s *service) CreateCompany(ctx context.Context, company *Company) error {
@@ -66,10 +67,22 @@ func (s *service) SetCompanyStatus(ctx context.Context, id string, status Compan
 	if status != StatusVerified && status != StatusRejected && status != StatusPending {
 		return errors.New(errors.CodeValidation, "Invalid status")
 	}
-	if _, err := s.repo.GetCompanyByID(ctx, id); err != nil {
+	company, err := s.repo.GetCompanyByID(ctx, id)
+	if err != nil {
 		return err
 	}
-	return s.repo.SetStatus(ctx, id, status, note)
+	if err := s.repo.SetStatus(ctx, id, status, note); err != nil {
+		return err
+	}
+	if s.notifier != nil && company.OwnerID != "" {
+		switch status {
+		case StatusVerified:
+			s.notifier.Notify(ctx, company.OwnerID, "company_verified", "Your company was verified", "/account/company")
+		case StatusRejected:
+			s.notifier.Notify(ctx, company.OwnerID, "company_rejected", "Your company registration was rejected", "/account/company")
+		}
+	}
+	return nil
 }
 
 // === Contracts (CompanyProvider) ===

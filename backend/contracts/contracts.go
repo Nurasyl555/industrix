@@ -22,6 +22,13 @@ type ListingProvider interface {
 	GetListingBasic(ctx context.Context, listingID string) (*ListingBasic, error)
 }
 
+// Notifier is implemented by the notification module and consumed by any module
+// that emits user-facing events. Fire-and-forget: emitting a notification must
+// never fail the underlying operation, so there's no error return.
+type Notifier interface {
+	Notify(ctx context.Context, userID, ntype, message, link string)
+}
+
 // UserBasic is a minimal user DTO for cross-module communication
 type UserBasic struct {
 	ID        string
@@ -50,4 +57,5 @@ type ListingBasic struct {
 	EquipmentID string
 	SellerID    string
 	Status      string
+	ListingType string // sale | rental
 }
