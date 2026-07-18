@@ -31,11 +31,43 @@ type service struct {
 	repo      *Repository
 	equipment contracts.EquipmentProvider
 	notifier  contracts.Notifier
+	events    contracts.EventPublisher
 }
 
 // NewService creates a new listing service
-func NewService(repo *Repository, equipment contracts.EquipmentProvider, notifier contracts.Notifier) Service {
-	return &service{repo: repo, equipment: equipment, notifier: notifier}
+func NewService(repo *Repository, equipment contracts.EquipmentProvider, notifier contracts.Notifier, events contracts.EventPublisher) Service {
+	return &service{repo: repo, equipment: equipment, notifier: notifier, events: events}
+}
+
+// listingEvent is the payload published on listing.* topics — enough for search
+// indexing without consumers calling back into listing.
+type listingEvent struct {
+	ID          string  `json:"id"`
+	EquipmentID string  `json:"equipment_id"`
+	SellerID    string  `json:"seller_id"`
+	ListingType string  `json:"listing_type"`
+	Price       float64 `json:"price"`
+	PricePeriod string  `json:"price_period"`
+	Status      string  `json:"status"`
+}
+
+func toListingEvent(l *Listing) listingEvent {
+	return listingEvent{
+		ID:          l.ID,
+		EquipmentID: l.EquipmentID,
+		SellerID:    l.SellerID,
+		ListingType: l.ListingType,
+		Price:       l.Price,
+		PricePeriod: l.PricePeriod,
+		Status:      l.Status,
+	}
+}
+
+// emit publishes a domain event if a publisher is wired.
+func (s *service) emit(ctx context.Context, topic, key string, payload any) {
+	if s.events != nil {
+		s.events.Publish(ctx, topic, key, payload)
+	}
 }
 
 var validListingTypes = map[string]bool{"sale": true, "rental": true}
@@ -128,17 +160,29 @@ func (s *service) UpdateListing(ctx context.Context, id, sellerID string, req Up
 // Publish submits a draft for moderation — it does NOT go live directly. An
 // admin approves it (Approve) before buyers can see it.
 func (s *service) Publish(ctx context.Context, id, sellerID string) error {
-	if _, err := s.requireOwner(ctx, id, sellerID); err != nil {
+	l, err := s.requireOwner(ctx, id, sellerID)
+	if err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, id, "moderation")
+	if err := s.repo.UpdateStatus(ctx, id, "moderation"); err != nil {
+		return err
+	}
+	l.Status = "moderation"
+	s.emit(ctx, contracts.TopicListingSubmitted, id, toListingEvent(l))
+	return nil
 }
 
 func (s *service) Archive(ctx context.Context, id, sellerID string) error {
-	if _, err := s.requireOwner(ctx, id, sellerID); err != nil {
+	l, err := s.requireOwner(ctx, id, sellerID)
+	if err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, id, "archived")
+	if err := s.repo.UpdateStatus(ctx, id, "archived"); err != nil {
+		return err
+	}
+	l.Status = "archived"
+	s.emit(ctx, contracts.TopicListingDeactivated, id, toListingEvent(l))
+	return nil
 }
 
 func (s *service) DeleteListing(ctx context.Context, id, sellerID string) error {
@@ -162,6 +206,8 @@ func (s *service) Approve(ctx context.Context, id string) error {
 	if err := s.repo.UpdateStatus(ctx, id, "active"); err != nil {
 		return err
 	}
+	l.Status = "active"
+	s.emit(ctx, contracts.TopicListingPublished, id, toListingEvent(l))
 	if s.notifier != nil {
 		s.notifier.Notify(ctx, l.SellerID, "listing_approved", "Your listing was approved and is now live", "/shop/details?id="+id)
 	}
@@ -176,6 +222,8 @@ func (s *service) Reject(ctx context.Context, id string) error {
 	if err := s.repo.UpdateStatus(ctx, id, "rejected"); err != nil {
 		return err
 	}
+	l.Status = "rejected"
+	s.emit(ctx, contracts.TopicListingDeactivated, id, toListingEvent(l))
 	if s.notifier != nil {
 		s.notifier.Notify(ctx, l.SellerID, "listing_rejected", "Your listing was rejected by moderation", "")
 	}

@@ -22,12 +22,47 @@ type ListingProvider interface {
 	GetListingBasic(ctx context.Context, listingID string) (*ListingBasic, error)
 }
 
+// DealProvider is implemented by the deal module, consumed by the payment
+// module to validate participants and coordinate escrow with deal state.
+type DealProvider interface {
+	GetDealBasic(ctx context.Context, dealID string) (*DealBasic, error)
+}
+
 // Notifier is implemented by the notification module and consumed by any module
 // that emits user-facing events. Fire-and-forget: emitting a notification must
 // never fail the underlying operation, so there's no error return.
 type Notifier interface {
 	Notify(ctx context.Context, userID, ntype, message, link string)
 }
+
+// EventPublisher is implemented by the platform's Kafka layer and consumed by
+// any module that emits domain events onto the bus. Fire-and-forget, mirroring
+// Notifier: publishing must never fail the underlying operation, so there's no
+// error return — transport failures are logged by the implementation.
+//
+// key is the partition key (usually the entity ID) so all events for one entity
+// land on the same partition and stay ordered. payload is JSON-marshalled by the
+// implementation.
+type EventPublisher interface {
+	Publish(ctx context.Context, topic, key string, payload any)
+}
+
+// Kafka topic names — the canonical domain-event vocabulary shared across
+// modules. Kept in sync with infra/kafka/topics.sh (topics are pre-created;
+// auto-create is disabled on the broker).
+const (
+	TopicEquipmentCreated     = "equipment.created"
+	TopicEquipmentUpdated     = "equipment.updated"
+	TopicEquipmentDeleted     = "equipment.deleted"
+	TopicListingSubmitted     = "listing.submitted"
+	TopicListingPublished     = "listing.published"
+	TopicListingDeactivated   = "listing.deactivated"
+	TopicDealStatusChanged    = "deal.status.changed"
+	TopicPaymentCompleted     = "payment.completed"
+	TopicPaymentFailed        = "payment.failed"
+	TopicPaymentRefunded      = "payment.refunded"
+	TopicNotificationDispatch = "notification.dispatch"
+)
 
 // UserBasic is a minimal user DTO for cross-module communication
 type UserBasic struct {
@@ -58,4 +93,13 @@ type ListingBasic struct {
 	SellerID    string
 	Status      string
 	ListingType string // sale | rental
+}
+
+// DealBasic is a minimal deal DTO for cross-module communication
+type DealBasic struct {
+	ID        string
+	ListingID string
+	BuyerID   string
+	SellerID  string
+	Status    string
 }

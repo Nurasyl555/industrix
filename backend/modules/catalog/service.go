@@ -22,12 +22,47 @@ type Service interface {
 }
 
 type service struct {
-	repo *Repository
+	repo   *Repository
+	events contracts.EventPublisher
 }
 
 // NewService creates a new catalog service
-func NewService(repo *Repository) Service {
-	return &service{repo: repo}
+func NewService(repo *Repository, events contracts.EventPublisher) Service {
+	return &service{repo: repo, events: events}
+}
+
+// equipmentEvent is the payload published on equipment.* topics. It carries
+// enough for search indexing without consumers calling back into catalog.
+type equipmentEvent struct {
+	ID          string `json:"id"`
+	OwnerID     string `json:"owner_id"`
+	CategoryID  string `json:"category_id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Condition   string `json:"condition"`
+	Region      string `json:"region"`
+	ImageURL    string `json:"image_url"`
+}
+
+func toEquipmentEvent(eq *Equipment) equipmentEvent {
+	return equipmentEvent{
+		ID:          eq.ID,
+		OwnerID:     eq.OwnerID,
+		CategoryID:  eq.CategoryID,
+		Title:       eq.Title,
+		Description: eq.Description,
+		Condition:   eq.Condition,
+		Region:      eq.Region,
+		ImageURL:    eq.ImageURL,
+	}
+}
+
+// emit publishes a domain event if a publisher is wired. Guarded so the service
+// works with a nil publisher in tests.
+func (s *service) emit(ctx context.Context, topic, key string, payload any) {
+	if s.events != nil {
+		s.events.Publish(ctx, topic, key, payload)
+	}
 }
 
 var validConditions = map[string]bool{"new": true, "used": true}
@@ -70,6 +105,7 @@ func (s *service) CreateEquipment(ctx context.Context, ownerID string, req Creat
 	if err := s.repo.CreateEquipment(ctx, eq); err != nil {
 		return nil, err
 	}
+	s.emit(ctx, contracts.TopicEquipmentCreated, eq.ID, toEquipmentEvent(eq))
 	return eq, nil
 }
 
@@ -118,6 +154,7 @@ func (s *service) UpdateEquipment(ctx context.Context, id, ownerID string, req U
 	if err := s.repo.UpdateEquipment(ctx, eq); err != nil {
 		return nil, err
 	}
+	s.emit(ctx, contracts.TopicEquipmentUpdated, eq.ID, toEquipmentEvent(eq))
 	return eq, nil
 }
 
@@ -129,7 +166,11 @@ func (s *service) DeleteEquipment(ctx context.Context, id, ownerID string) error
 	if eq.OwnerID != ownerID {
 		return errors.New(errors.CodeUnauthorized, "You do not own this equipment")
 	}
-	return s.repo.DeleteEquipment(ctx, id)
+	if err := s.repo.DeleteEquipment(ctx, id); err != nil {
+		return err
+	}
+	s.emit(ctx, contracts.TopicEquipmentDeleted, id, equipmentEvent{ID: id, OwnerID: ownerID})
+	return nil
 }
 
 // === Contracts (EquipmentProvider) ===

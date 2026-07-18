@@ -12,6 +12,10 @@ import (
 type Service interface {
 	contracts.Notifier
 
+	// Dispatch delivers a notification across the requested channels (defaults
+	// to in-app). Used by the Kafka consumer for multi-channel fan-out.
+	Dispatch(ctx context.Context, d Dispatch)
+
 	List(ctx context.Context, userID string) ([]*Notification, error)
 	UnreadCount(ctx context.Context, userID string) (int, error)
 	MarkRead(ctx context.Context, id, userID string) error
@@ -19,22 +23,48 @@ type Service interface {
 }
 
 type service struct {
-	repo *Repository
-	log  *logger.Logger
+	repo     *Repository
+	channels map[string]Channel
+	log      *logger.Logger
 }
 
 func NewService(repo *Repository) Service {
-	return &service{repo: repo, log: logger.New("notification-service")}
+	return &service{
+		repo:     repo,
+		channels: defaultChannels(repo),
+		log:      logger.New("notification-service"),
+	}
 }
 
-// Notify is fire-and-forget: a failure to record a notification is logged but
-// never propagated, so it can't break the operation that triggered it.
+// Notify is fire-and-forget: it delivers to the in-app feed only. A failure is
+// logged but never propagated, so it can't break the operation that triggered
+// it. For multi-channel delivery, publish to notification.dispatch instead.
 func (s *service) Notify(ctx context.Context, userID, ntype, message, link string) {
 	if userID == "" {
 		return
 	}
-	if err := s.repo.Create(ctx, userID, ntype, message, link); err != nil {
-		s.log.Error().Err(err).Str("user_id", userID).Str("type", ntype).Msg("failed to record notification")
+	s.Dispatch(ctx, Dispatch{UserID: userID, Type: ntype, Message: message, Link: link})
+}
+
+// Dispatch fans a notification out to each requested channel. Unknown channels
+// are skipped; per-channel failures are logged but never stop the others.
+func (s *service) Dispatch(ctx context.Context, d Dispatch) {
+	if d.UserID == "" {
+		return
+	}
+	channels := d.Channels
+	if len(channels) == 0 {
+		channels = []string{ChannelInApp}
+	}
+	for _, name := range channels {
+		ch, ok := s.channels[name]
+		if !ok {
+			s.log.Warn().Str("channel", name).Msg("unknown notification channel — skipped")
+			continue
+		}
+		if err := ch.Send(ctx, d); err != nil {
+			s.log.Error().Err(err).Str("channel", name).Str("user_id", d.UserID).Msg("channel delivery failed")
+		}
 	}
 }
 

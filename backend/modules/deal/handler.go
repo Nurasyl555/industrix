@@ -31,6 +31,7 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	deals := router.Group("/deals")
 	deals.Post("/", h.CreateDeal)
 	deals.Get("/:id", h.GetDeal)
+	deals.Put("/:id/status", h.Transition)
 	deals.Put("/:id/close", h.Close)
 	deals.Get("/:id/messages", h.ListMessages)
 	deals.Post("/:id/messages", h.PostMessage)
@@ -119,6 +120,27 @@ func (h *Handler) Close(c *fiber.Ctx) error {
 		return respondErr(c, err)
 	}
 	return c.SendStatus(http.StatusOK)
+}
+
+// Transition godoc
+// @Summary Advance a deal to a new status (state machine)
+// @Tags deals
+// @Security BearerAuth
+// @Param id path string true "Deal ID"
+// @Param request body TransitionRequest true "Target status"
+// @Success 200 {object} Deal
+// @Router /deals/{id}/status [put]
+func (h *Handler) Transition(c *fiber.Ctx) error {
+	var req TransitionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
+	}
+	userID := c.Locals("user_id").(string)
+	d, err := h.service.Transition(c.Context(), c.Params("id"), userID, req.Status)
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(d)
 }
 
 // ListMessages godoc

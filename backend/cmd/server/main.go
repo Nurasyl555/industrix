@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -29,10 +30,13 @@ import (
 	"github.com/industrix/backend/modules/marketplace"
 	"github.com/industrix/backend/modules/media"
 	"github.com/industrix/backend/modules/notification"
+	"github.com/industrix/backend/modules/payment"
+	"github.com/industrix/backend/modules/search"
 	"github.com/industrix/backend/pkg/jwt"
 	"github.com/industrix/backend/pkg/logger"
 	"github.com/industrix/backend/pkg/postgres"
 	"github.com/industrix/backend/pkg/redis"
+	"github.com/industrix/backend/platform/events"
 	mw "github.com/industrix/backend/platform/middleware"
 )
 
@@ -78,21 +82,50 @@ func main() {
 	privateKey, publicKey := loadRSAKeys(l)
 	jwtClient := jwt.NewClient(privateKey, publicKey)
 
+	// Event bus — Kafka producer with graceful no-op fallback when unavailable.
+	publisher, closePublisher := events.Setup(ctx, l)
+	defer func() {
+		if err := closePublisher(); err != nil {
+			l.Error().Err(err).Msg("Failed to close event publisher")
+		}
+	}()
+
 	// === Modules ===
 
 	// Notification service is created first — other modules receive it as a
-	// contracts.Notifier to emit user-facing events.
-	notificationMod := notification.NewModule(pgClient)
+	// contracts.Notifier to emit user-facing events. Its Kafka consumer powers
+	// multi-channel dispatch (notification.dispatch topic).
+	notificationMod := notification.NewModule(ctx, pgClient,
+		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")),
+		"industrix-notification")
 	notifier := notificationMod.Service
+	if notificationMod.Consumer != nil {
+		go notificationMod.Consumer.Start(ctx)
+		defer notificationMod.Consumer.Close()
+	}
 
 	identityMod := identity.NewModule(pgClient, redisClient, jwtClient)
 	integrityMod := integrity.NewModule(pgClient, notifier)
 	marketplaceMod := marketplace.NewModule(pgClient)
-	catalogMod := catalog.NewModule(pgClient)
-	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier)
-	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient, notifier)
+	catalogMod := catalog.NewModule(pgClient, publisher)
+	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier, publisher)
+	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient, notifier, publisher)
 	bookingMod := booking.NewModule(pgClient, listingMod.Service, notifier)
+	paymentMod := payment.NewModule(pgClient, dealMod.Service, publisher, notifier)
 	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
+
+	// Search — OpenSearch-backed, kept in sync via Kafka consumer.
+	searchMod := search.NewModule(ctx, search.Config{
+		OpenSearchHosts:    getEnv("OPENSEARCH_HOSTS", "http://localhost:9200"),
+		OpenSearchUser:     os.Getenv("OPENSEARCH_USERNAME"),
+		OpenSearchPassword: os.Getenv("OPENSEARCH_PASSWORD"),
+		Brokers:            splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")),
+		ConsumerGroup:      "industrix-search",
+	}, redisClient)
+	if searchMod.Consumer != nil {
+		go searchMod.Consumer.Start(ctx)
+		defer searchMod.Consumer.Close()
+	}
 
 	mediaMod, err := media.NewModule(media.Config{
 		InternalEndpoint: getEnv("MINIO_ENDPOINT", "minio:9000"),
@@ -136,6 +169,7 @@ func main() {
 	catalogMod.Handler.RegisterPublicRoutes(api)
 	listingMod.Handler.RegisterPublicRoutes(api)
 	bookingMod.Handler.RegisterPublicRoutes(api)
+	searchMod.Handler.RegisterPublicRoutes(api)
 
 	// Protected routes (auth required)
 	protected := api.Group("/", authMw.ValidateJWT())
@@ -146,6 +180,7 @@ func main() {
 	listingMod.Handler.RegisterProtectedRoutes(protected)
 	dealMod.Handler.RegisterRoutes(protected)
 	bookingMod.Handler.RegisterProtectedRoutes(protected)
+	paymentMod.Handler.RegisterRoutes(protected)
 	mediaMod.Handler.RegisterRoutes(protected)
 	notificationMod.Handler.RegisterRoutes(protected)
 
@@ -229,4 +264,16 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// splitAndTrim splits a comma-separated env value into a cleaned slice.
+func splitAndTrim(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
