@@ -77,9 +77,9 @@ func (r *Repository) ListMessages(ctx context.Context, dealID string) ([]*DealMe
 func (r *Repository) GetDealByID(ctx context.Context, id string) (*Deal, error) {
 	var d Deal
 	err := r.pg.QueryRow(ctx,
-		`SELECT id, listing_id, buyer_id, seller_id, COALESCE(message, ''), status, created_at, updated_at
+		`SELECT id, listing_id, buyer_id, seller_id, COALESCE(message, ''), status, disputed, created_at, updated_at
 		 FROM deals WHERE id = $1`, id,
-	).Scan(&d.ID, &d.ListingID, &d.BuyerID, &d.SellerID, &d.Message, &d.Status, &d.CreatedAt, &d.UpdatedAt)
+	).Scan(&d.ID, &d.ListingID, &d.BuyerID, &d.SellerID, &d.Message, &d.Status, &d.Disputed, &d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Deal not found")
 	}
@@ -90,7 +90,7 @@ func (r *Repository) GetDealByID(ctx context.Context, id string) (*Deal, error) 
 // seller, most recent first.
 func (r *Repository) ListForUser(ctx context.Context, userID string) ([]*Deal, error) {
 	rows, err := r.pg.Query(ctx,
-		`SELECT id, listing_id, buyer_id, seller_id, COALESCE(message, ''), status, created_at, updated_at
+		`SELECT id, listing_id, buyer_id, seller_id, COALESCE(message, ''), status, disputed, created_at, updated_at
 		 FROM deals WHERE buyer_id = $1 OR seller_id = $1 ORDER BY created_at DESC`, userID,
 	)
 	if err != nil {
@@ -101,12 +101,19 @@ func (r *Repository) ListForUser(ctx context.Context, userID string) ([]*Deal, e
 	var items []*Deal
 	for rows.Next() {
 		var d Deal
-		if err := rows.Scan(&d.ID, &d.ListingID, &d.BuyerID, &d.SellerID, &d.Message, &d.Status, &d.CreatedAt, &d.UpdatedAt); err != nil {
+		if err := rows.Scan(&d.ID, &d.ListingID, &d.BuyerID, &d.SellerID, &d.Message, &d.Status, &d.Disputed, &d.CreatedAt, &d.UpdatedAt); err != nil {
 			continue
 		}
 		items = append(items, &d)
 	}
 	return items, nil
+}
+
+// SetDisputed toggles the freeze flag used to hold a contested deal still.
+func (r *Repository) SetDisputed(ctx context.Context, id string, disputed bool) error {
+	_, err := r.pg.Exec(ctx,
+		"UPDATE deals SET disputed = $2, updated_at = NOW() WHERE id = $1", id, disputed)
+	return err
 }
 
 func (r *Repository) UpdateStatus(ctx context.Context, id, status string) error {

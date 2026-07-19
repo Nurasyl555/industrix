@@ -22,6 +22,7 @@ type Service interface {
 
 	// Contracts
 	contracts.DealProvider
+	contracts.DealFreezer
 }
 
 type service struct {
@@ -129,6 +130,13 @@ func (s *service) Transition(ctx context.Context, id, userID, target string) (*D
 	if err != nil {
 		return nil, err
 	}
+	// Frozen while contested: completing would release escrow to the seller and
+	// cancelling would refund the buyer, either of which would settle the money
+	// before the arbitrator ruled.
+	if d.Disputed {
+		return nil, errors.New(errors.CodeConflict,
+			"This deal is frozen while the dispute is reviewed")
+	}
 	if _, ok := allowedTransitions[target]; !ok && target != StatusCompleted && target != StatusCancelled {
 		return nil, errors.New(errors.CodeValidation, "Unknown deal status: "+target)
 	}
@@ -160,6 +168,14 @@ func (s *service) Transition(ctx context.Context, id, userID, target string) (*D
 func (s *service) Close(ctx context.Context, id, userID string) error {
 	_, err := s.Transition(ctx, id, userID, StatusCancelled)
 	return err
+}
+
+// === Contracts (DealFreezer) ===
+
+// SetDisputed freezes or unfreezes a deal. Called by the dispute module when a
+// dispute is opened and again once it is decided.
+func (s *service) SetDisputed(ctx context.Context, dealID string, disputed bool) error {
+	return s.repo.SetDisputed(ctx, dealID, disputed)
 }
 
 // === Contracts (DealProvider) ===

@@ -42,12 +42,14 @@ func isTerminal(status string) bool {
 // Deal represents a buyer's inquiry on a listing that progresses through the
 // deal state machine (see status constants above and docs/impl-plan.md Phase 3).
 type Deal struct {
-	ID        string    `json:"id"`
-	ListingID string    `json:"listing_id"`
-	BuyerID   string    `json:"buyer_id"`
-	SellerID  string    `json:"seller_id"`
-	Message   string    `json:"message"`
-	Status    string    `json:"status"` // see status constants (inquiry … completed/cancelled)
+	ID        string `json:"id"`
+	ListingID string `json:"listing_id"`
+	BuyerID   string `json:"buyer_id"`
+	SellerID  string `json:"seller_id"`
+	Message   string `json:"message"`
+	Status    string `json:"status"` // see status constants (inquiry … completed/cancelled)
+	// Disputed freezes the deal while an arbitrator reviews an open dispute.
+	Disputed  bool      `json:"disputed"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -23,14 +23,15 @@ type Service interface {
 type service struct {
 	repo     *Repository
 	deals    contracts.DealProvider
+	freezer  contracts.DealFreezer
 	escrow   contracts.EscrowSettler
 	events   contracts.EventPublisher
 	notifier contracts.Notifier
 }
 
-func NewService(repo *Repository, deals contracts.DealProvider, escrow contracts.EscrowSettler,
-	events contracts.EventPublisher, notifier contracts.Notifier) Service {
-	return &service{repo: repo, deals: deals, escrow: escrow, events: events, notifier: notifier}
+func NewService(repo *Repository, deals contracts.DealProvider, freezer contracts.DealFreezer,
+	escrow contracts.EscrowSettler, events contracts.EventPublisher, notifier contracts.Notifier) Service {
+	return &service{repo: repo, deals: deals, freezer: freezer, escrow: escrow, events: events, notifier: notifier}
 }
 
 func (s *service) emit(ctx context.Context, topic string, d *Dispute, decidedBy string) {
@@ -73,6 +74,14 @@ func (s *service) File(ctx context.Context, userID string, req FileDisputeReques
 		d.EvidenceURLs = []string{}
 	}
 	if err := s.repo.Create(ctx, d); err != nil {
+		return nil, err
+	}
+
+	// Freeze the deal before anything else can move it: an unfrozen deal could
+	// be completed or cancelled, settling the escrow behind the arbitrator's
+	// back. If the freeze fails the dispute is meaningless, so undo it.
+	if err := s.freezer.SetDisputed(ctx, d.DealID, true); err != nil {
+		_, _ = s.repo.Resolve(ctx, d.ID, StatusRejected, "Could not freeze the deal", "")
 		return nil, err
 	}
 
@@ -142,6 +151,12 @@ func (s *service) Resolve(ctx context.Context, id, adminID string, req ResolveRe
 		s.escrow.RefundDealEscrow(ctx, d.DealID)
 	case StatusResolvedRelease:
 		s.escrow.ReleaseDealEscrow(ctx, d.DealID)
+	}
+
+	// Settle first, then unfreeze — the other order would briefly let a
+	// participant move the deal and settle the escrow themselves.
+	if err := s.freezer.SetDisputed(ctx, d.DealID, false); err != nil {
+		return nil, err
 	}
 
 	updated, err := s.repo.GetByID(ctx, id)

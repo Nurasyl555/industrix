@@ -35,6 +35,13 @@ type Charger interface {
 	Charge(ctx context.Context, payerID string, amount float64, currency, description string) (paymentID string, err error)
 }
 
+// DealFreezer is implemented by the deal module and consumed by the dispute
+// module. An open dispute freezes the deal: no status transitions until the
+// arbitrator decides, so escrow can't settle itself in the meantime.
+type DealFreezer interface {
+	SetDisputed(ctx context.Context, dealID string, disputed bool) error
+}
+
 // EscrowSettler is implemented by the payment module and consumed by the
 // dispute module to settle a deal's escrow the way arbitration decided.
 // Fire-and-forget, like the event-driven settlement it shares code with:

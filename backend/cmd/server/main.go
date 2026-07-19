@@ -125,7 +125,8 @@ func main() {
 	integrityMod.Service.SetCharger(paymentMod.Service)
 
 	// Disputes arbitrate over a deal's escrow, so they need both by contract.
-	disputeMod := dispute.NewModule(pgClient, dealMod.Service, paymentMod.Service, publisher, notifier)
+	disputeMod := dispute.NewModule(pgClient, dealMod.Service, dealMod.Service,
+		paymentMod.Service, publisher, notifier)
 
 	engagementMod := engagement.NewModule(ctx, pgClient, notifier,
 		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
