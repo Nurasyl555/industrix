@@ -35,6 +35,20 @@ type Charger interface {
 	Charge(ctx context.Context, payerID string, amount float64, currency, description string) (paymentID string, err error)
 }
 
+// EscrowSettler is implemented by the payment module and consumed by the
+// dispute module to settle a deal's escrow the way arbitration decided.
+// Fire-and-forget, like the event-driven settlement it shares code with:
+// per-payment failures are logged, not surfaced to the arbitrator.
+type EscrowSettler interface {
+	// ReleaseDealEscrow pays held funds out to the seller.
+	ReleaseDealEscrow(ctx context.Context, dealID string)
+	// RefundDealEscrow returns held funds to the buyer.
+	RefundDealEscrow(ctx context.Context, dealID string)
+	// HeldAmount reports how much is still in escrow for a deal, so a
+	// resolution can tell the arbitrator when there is nothing left to move.
+	HeldAmount(ctx context.Context, dealID string) float64
+}
+
 // SubscriptionProvider is implemented by the integrity module, consumed by the
 // listing module to enforce per-plan limits.
 type SubscriptionProvider interface {
@@ -79,6 +93,8 @@ const (
 	TopicPaymentRefunded       = "payment.refunded"
 	TopicNotificationDispatch  = "notification.dispatch"
 	TopicSubscriptionActivated = "subscription.activated"
+	TopicDisputeFiled          = "dispute.filed"
+	TopicDisputeResolved       = "dispute.resolved"
 )
 
 // UserBasic is a minimal user DTO for cross-module communication

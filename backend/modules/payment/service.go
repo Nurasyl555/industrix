@@ -22,6 +22,8 @@ type Service interface {
 	// Contracts — Charge bills a platform fee (e.g. a subscription plan)
 	// directly, with no escrow phase and no counterparty.
 	contracts.Charger
+	// EscrowSettler lets arbitration move a deal's escrow either way.
+	contracts.EscrowSettler
 
 	// OnDealCompleted releases every held escrow on a deal (system-triggered by
 	// the deal.status.changed consumer when a deal reaches completed).
@@ -161,9 +163,16 @@ func (s *service) refundHeld(ctx context.Context, p *Payment) (*Payment, error) 
 	return p, nil
 }
 
-// OnDealCompleted releases all held escrow for a deal. Best-effort: per-payment
-// failures are swallowed (the buyer-facing endpoint remains a manual fallback).
-func (s *service) OnDealCompleted(ctx context.Context, dealID string) {
+// === Contracts (EscrowSettler) ===
+//
+// Settlement has two triggers that must behave identically: the deal-status
+// consumer (a deal completing or being cancelled) and dispute arbitration.
+// Both funnel through these two methods.
+
+// ReleaseDealEscrow pays every held escrow on a deal out to the seller.
+// Best-effort: per-payment failures are logged by the caller path, and the
+// buyer-facing endpoint remains a manual fallback.
+func (s *service) ReleaseDealEscrow(ctx context.Context, dealID string) {
 	held, err := s.repo.ListByDealAndStatus(ctx, dealID, StatusHeld)
 	if err != nil {
 		return
@@ -173,8 +182,8 @@ func (s *service) OnDealCompleted(ctx context.Context, dealID string) {
 	}
 }
 
-// OnDealCancelled refunds all held escrow for a deal. Best-effort.
-func (s *service) OnDealCancelled(ctx context.Context, dealID string) {
+// RefundDealEscrow returns every held escrow on a deal to the buyer.
+func (s *service) RefundDealEscrow(ctx context.Context, dealID string) {
 	held, err := s.repo.ListByDealAndStatus(ctx, dealID, StatusHeld)
 	if err != nil {
 		return
@@ -182,6 +191,29 @@ func (s *service) OnDealCancelled(ctx context.Context, dealID string) {
 	for _, p := range held {
 		_, _ = s.refundHeld(ctx, p)
 	}
+}
+
+// HeldAmount totals what is still in escrow for a deal.
+func (s *service) HeldAmount(ctx context.Context, dealID string) float64 {
+	held, err := s.repo.ListByDealAndStatus(ctx, dealID, StatusHeld)
+	if err != nil {
+		return 0
+	}
+	var total float64
+	for _, p := range held {
+		total += p.Amount
+	}
+	return total
+}
+
+// OnDealCompleted releases held escrow when a deal completes.
+func (s *service) OnDealCompleted(ctx context.Context, dealID string) {
+	s.ReleaseDealEscrow(ctx, dealID)
+}
+
+// OnDealCancelled refunds held escrow when a deal is cancelled.
+func (s *service) OnDealCancelled(ctx context.Context, dealID string) {
+	s.RefundDealEscrow(ctx, dealID)
 }
 
 // === Contracts (Charger) ===

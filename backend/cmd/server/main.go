@@ -25,6 +25,7 @@ import (
 	"github.com/industrix/backend/modules/booking"
 	"github.com/industrix/backend/modules/catalog"
 	"github.com/industrix/backend/modules/deal"
+	"github.com/industrix/backend/modules/dispute"
 	"github.com/industrix/backend/modules/engagement"
 	"github.com/industrix/backend/modules/identity"
 	"github.com/industrix/backend/modules/integrity"
@@ -123,6 +124,9 @@ func main() {
 	// (payment → deal → listing → integrity), so the charger is wired here.
 	integrityMod.Service.SetCharger(paymentMod.Service)
 
+	// Disputes arbitrate over a deal's escrow, so they need both by contract.
+	disputeMod := dispute.NewModule(pgClient, dealMod.Service, paymentMod.Service, publisher, notifier)
+
 	engagementMod := engagement.NewModule(ctx, pgClient, notifier,
 		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
 	if engagementMod.Consumer != nil {
@@ -211,6 +215,7 @@ func main() {
 	paymentMod.Handler.RegisterRoutes(protected)
 	engagementMod.Handler.RegisterProtectedRoutes(protected)
 	analyticsMod.Handler.RegisterProtectedRoutes(protected)
+	disputeMod.Handler.RegisterProtectedRoutes(protected)
 	mediaMod.Handler.RegisterRoutes(protected)
 	notificationMod.Handler.RegisterRoutes(protected)
 
@@ -218,6 +223,7 @@ func main() {
 	adminRoutes := api.Group("/", authMw.ValidateJWT(), authMw.RequireAdmin())
 	adminMod.Handler.RegisterRoutes(adminRoutes)
 	analyticsMod.Handler.RegisterAdminRoutes(adminRoutes)
+	disputeMod.Handler.RegisterAdminRoutes(adminRoutes)
 
 	// WebSocket (self-authenticates via cookie, mounted outside /api/v1)
 	dealMod.Handler.RegisterWebSocket(app)
