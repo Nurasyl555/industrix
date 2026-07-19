@@ -11,10 +11,15 @@
 
 name: CD Production
 
+# Auto-deploy is disabled: there is no production server yet. This workflow now
+# only runs when started manually (Actions tab -> "CD Production" -> "Run
+# workflow"). To turn it back on for release tags, uncomment the `push`/`tags`
+# trigger and set the PROD_* secrets.
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+  # push:
+  #   tags:
+  #     - "v*"
 
 env:
   REGISTRY: ghcr.io

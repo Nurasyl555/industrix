@@ -23,9 +23,14 @@
 
 name: CD Staging
 
+# Auto-deploy is disabled: there is no staging server yet, so the deploy step
+# would always fail. This workflow now only runs when started manually (the
+# Actions tab -> "CD Staging" -> "Run workflow"). To turn auto-deploy back on
+# once a server and the STAGING_* secrets exist, uncomment the `push` trigger.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
 
 env:
   REGISTRY: ghcr.io
