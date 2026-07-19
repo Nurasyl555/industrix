@@ -80,7 +80,11 @@ jobs:
       - name: Set up buf
         uses: bufbuild/buf-setup-action@v1
         with:
-          version: '1.28'
+          # Must be a full release tag — '1.28' isn't a valid tag (buf tags are
+          # v1.28.1 etc.), which made the setup action 404 on release lookup.
+          # github_token avoids the unauthenticated API rate limit.
+          version: '1.28.1'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate proto
         run: ./scripts/proto-gen.sh
