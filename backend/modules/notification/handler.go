@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/industrix/backend/pkg/errors"
+	"github.com/industrix/backend/platform/httperr"
 )
 
 type Handler struct {
@@ -24,9 +24,11 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	n.Put("/:id/read", h.MarkRead)
 }
 
-func respondErr(c *fiber.Ctx, err error) error {
-	return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Something went wrong"))
-}
+// respondErr maps a service error to its HTTP response. This used to return a
+// blanket 500, so validation and not-found errors from the service surfaced as
+// internal errors; platform/httperr maps domain errors properly and logs the
+// rest.
+func respondErr(c *fiber.Ctx, err error) error { return httperr.Respond(c, err) }
 
 // List godoc
 // @Summary List the current user's notifications

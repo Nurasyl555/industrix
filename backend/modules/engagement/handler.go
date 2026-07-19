@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/industrix/backend/platform/httperr"
 
 	"github.com/industrix/backend/pkg/errors"
 )
@@ -31,12 +32,9 @@ func (h *Handler) RegisterProtectedRoutes(router fiber.Router) {
 	router.Get("/my-favorites", h.ListFavorites)
 }
 
-func respondErr(c *fiber.Ctx, err error) error {
-	if domainErr, ok := err.(*errors.Error); ok {
-		return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
-	}
-	return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Something went wrong"))
-}
+// respondErr maps a service error to its HTTP response. See platform/httperr —
+// unexpected errors are logged there before the generic 500 goes out.
+func respondErr(c *fiber.Ctx, err error) error { return httperr.Respond(c, err) }
 
 // AddFavorite godoc
 // @Summary Add a listing to the watchlist

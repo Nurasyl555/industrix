@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/industrix/backend/pkg/errors"
+	"github.com/industrix/backend/platform/httperr"
 )
 
 // Handler handles integrity HTTP requests
@@ -34,12 +35,9 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	sub.Put("/", h.ChangePlan)
 }
 
-func respondErr(c *fiber.Ctx, err error) error {
-	if domainErr, ok := err.(*errors.Error); ok {
-		return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
-	}
-	return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Something went wrong"))
-}
+// respondErr maps a service error to its HTTP response. See platform/httperr —
+// unexpected errors are logged there before the generic 500 goes out.
+func respondErr(c *fiber.Ctx, err error) error { return httperr.Respond(c, err) }
 
 // CreateCompany godoc
 // @Summary Create a company
