@@ -6,24 +6,26 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, CalendarDays, Handshake, Heart, LogOut } from "lucide-react";
 import { getCurrentUser, logout, type CurrentUser } from "@/lib/user";
 import { unreadCount } from "@/lib/notification";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const NAV_LINKS = [
-  { label: "Home", href: "/home" },
-  { label: "Products", href: "/shop/catalog" },
-  { label: "Sell Equipment", href: "/shop/sell" },
-  { label: "My Company", href: "/account/company" },
-  { label: "About Us", href: "/about-us" },
+const NAV_LINKS: { labelKey: TranslationKey; href: string }[] = [
+  { labelKey: "nav.catalog", href: "/shop/catalog" },
+  { labelKey: "nav.sell", href: "/shop/sell" },
+  { labelKey: "nav.account", href: "/account/company" },
+  { labelKey: "nav.about", href: "/about-us" },
 ];
 
-const ACTION_LINKS = [
-  { icon: CalendarDays, href: "/shop/bookings", label: "My Bookings" },
-  { icon: Handshake, href: "/shop/deals", label: "My Deals" },
-  { icon: Heart, href: "/shop/favorites", label: "Favorites" },
+const ACTION_LINKS: { icon: typeof CalendarDays; href: string; labelKey: TranslationKey }[] = [
+  { icon: CalendarDays, href: "/shop/bookings", labelKey: "nav.bookings" },
+  { icon: Handshake, href: "/shop/deals", labelKey: "nav.deals" },
+  { icon: Heart, href: "/shop/favorites", labelKey: "nav.favorites" },
 ];
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -72,34 +74,23 @@ export function Navbar() {
 
         {/* Nav links */}
         <ul className="hidden list-none items-center justify-center gap-8 md:flex">
-          {NAV_LINKS.map((link) =>
-            link.href ? (
-              <li key={link.label}>
-                <Link
-                  href={link.href}
-                  className="text-base font-medium text-gray-700 no-underline transition-colors hover:text-amber-500"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ) : (
-              <li key={link.label}>
-                <span
-                  title="Coming soon"
-                  className="cursor-not-allowed text-base font-medium text-gray-400 select-none"
-                >
-                  {link.label}
-                </span>
-              </li>
-            )
-          )}
+          {NAV_LINKS.map((link) => (
+            <li key={link.labelKey}>
+              <Link
+                href={link.href}
+                className="text-base font-medium text-gray-700 no-underline transition-colors hover:text-amber-500"
+              >
+                {t(link.labelKey)}
+              </Link>
+            </li>
+          ))}
           {user?.role === "admin" && (
             <li>
               <Link
                 href="/admin"
                 className="text-base font-bold text-amber-600 no-underline transition-colors hover:text-amber-500"
               >
-                Admin
+                {t("nav.admin")}
               </Link>
             </li>
           )}
@@ -121,27 +112,19 @@ export function Navbar() {
             )}
           </Link>
 
-          {ACTION_LINKS.map(({ icon: Icon, href, label }) =>
-            href ? (
-              <Link
-                key={label}
-                href={href}
-                aria-label={label}
-                className="cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
-              >
-                <Icon size={20} />
-              </Link>
-            ) : (
-              <span
-                key={label}
-                title="Coming soon"
-                aria-label={`${label} (coming soon)`}
-                className="cursor-not-allowed border-none bg-transparent p-1 text-gray-300"
-              >
-                <Icon size={20} />
-              </span>
-            )
-          )}
+          {ACTION_LINKS.map(({ icon: Icon, href, labelKey }) => (
+            <Link
+              key={labelKey}
+              href={href}
+              aria-label={t(labelKey)}
+              title={t(labelKey)}
+              className="cursor-pointer border-none bg-transparent p-1 text-gray-600 transition-colors hover:text-amber-500"
+            >
+              <Icon size={20} />
+            </Link>
+          ))}
+
+          <LanguageSwitcher />
 
           {/* Auth state — only render once we know it, to avoid a flash */}
           {loaded && user ? (
@@ -152,10 +135,10 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                aria-label="Sign out"
+                aria-label={t("nav.signOut")}
                 className="flex items-center gap-1.5 rounded-4xl border border-gray-200 px-4 py-1 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 max-h-8"
               >
-                <LogOut size={15} /> Sign Out
+                <LogOut size={15} /> {t("nav.signOut")}
               </button>
             </div>
           ) : loaded ? (
@@ -164,7 +147,7 @@ export function Navbar() {
               className="rounded-4xl bg-gray-900 px-5 py-1 font-semibold text-white no-underline transition-colors hover:bg-gray-700 max-h-8"
               style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
             >
-              Sign In
+              {t("nav.login")}
             </Link>
           ) : (
             // Reserve space while auth state is loading

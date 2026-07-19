@@ -9,11 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { type SortOption, type ViewMode } from "@/types";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "newest",     label: "Newest first"      },
-  { value: "price_asc",  label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
+const SORT_OPTIONS: { value: SortOption; labelKey: TranslationKey }[] = [
+  { value: "newest",     labelKey: "sort.newest"    },
+  { value: "price_asc",  labelKey: "sort.priceAsc"  },
+  { value: "price_desc", labelKey: "sort.priceDesc" },
 ];
 
 interface CatalogHeaderProps {
@@ -31,6 +32,7 @@ export function CatalogHeader({
   onSortChange,
   onViewChange,
 }: CatalogHeaderProps) {
+  const { t } = useI18n();
   return (
     <div className="mb-4">
       {/* Title row */}
@@ -40,16 +42,14 @@ export function CatalogHeader({
             className="text-[28px] font-extrabold text-gray-900 leading-tight"
             style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
           >
-            {total} Listings
+            {t("catalog.found")}: {total}
           </h1>
         </div>
 
         {/* Sort + view toggle */}
         <div className="flex items-center gap-3 mt-1">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] text-gray-500 whitespace-nowrap">
-              Sort by:
-            </span>
+            {/* No "sort by" label — the trigger already shows the active option. */}
             <Select value={sort} onValueChange={(v) => onSortChange(v as SortOption)}>
               <SelectTrigger className="h-9 text-[13px] w-[160px] border-gray-200">
                 <SelectValue />
@@ -57,7 +57,7 @@ export function CatalogHeader({
               <SelectContent>
                 {SORT_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value} className="text-[13px]">
-                    {o.label}
+                    {t(o.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
