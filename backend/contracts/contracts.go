@@ -28,6 +28,13 @@ type DealProvider interface {
 	GetDealBasic(ctx context.Context, dealID string) (*DealBasic, error)
 }
 
+// Charger is implemented by the payment module and consumed by the integrity
+// module to bill subscription plans. It is a direct capture, not escrow: there
+// is no counterparty to release funds to, the platform is the payee.
+type Charger interface {
+	Charge(ctx context.Context, payerID string, amount float64, currency, description string) (paymentID string, err error)
+}
+
 // SubscriptionProvider is implemented by the integrity module, consumed by the
 // listing module to enforce per-plan limits.
 type SubscriptionProvider interface {
@@ -59,18 +66,19 @@ type EventPublisher interface {
 // modules. Kept in sync with infra/kafka/topics.sh (topics are pre-created;
 // auto-create is disabled on the broker).
 const (
-	TopicEquipmentCreated     = "equipment.created"
-	TopicEquipmentUpdated     = "equipment.updated"
-	TopicEquipmentDeleted     = "equipment.deleted"
-	TopicListingSubmitted     = "listing.submitted"
-	TopicListingPublished     = "listing.published"
-	TopicListingDeactivated   = "listing.deactivated"
-	TopicListingPriceChanged  = "listing.price_changed"
-	TopicDealStatusChanged    = "deal.status.changed"
-	TopicPaymentCompleted     = "payment.completed"
-	TopicPaymentFailed        = "payment.failed"
-	TopicPaymentRefunded      = "payment.refunded"
-	TopicNotificationDispatch = "notification.dispatch"
+	TopicEquipmentCreated      = "equipment.created"
+	TopicEquipmentUpdated      = "equipment.updated"
+	TopicEquipmentDeleted      = "equipment.deleted"
+	TopicListingSubmitted      = "listing.submitted"
+	TopicListingPublished      = "listing.published"
+	TopicListingDeactivated    = "listing.deactivated"
+	TopicListingPriceChanged   = "listing.price_changed"
+	TopicDealStatusChanged     = "deal.status.changed"
+	TopicPaymentCompleted      = "payment.completed"
+	TopicPaymentFailed         = "payment.failed"
+	TopicPaymentRefunded       = "payment.refunded"
+	TopicNotificationDispatch  = "notification.dispatch"
+	TopicSubscriptionActivated = "subscription.activated"
 )
 
 // UserBasic is a minimal user DTO for cross-module communication

@@ -18,6 +18,9 @@ type Provider interface {
 	Hold(ctx context.Context, amount float64, currency string) (ref string, err error)
 	Release(ctx context.Context, ref string) error
 	Refund(ctx context.Context, ref string) error
+	// Charge captures funds immediately, with no escrow phase — used for
+	// platform fees such as subscription plans.
+	Charge(ctx context.Context, amount float64, currency string) (ref string, err error)
 }
 
 // KaspiProvider is a stub implementation of the Kaspi Pay escrow flow. It does
@@ -48,4 +51,10 @@ func (p *KaspiProvider) Release(_ context.Context, ref string) error {
 func (p *KaspiProvider) Refund(_ context.Context, ref string) error {
 	p.log.Info().Str("ref", ref).Msg("escrow refund (stub)")
 	return nil
+}
+
+func (p *KaspiProvider) Charge(_ context.Context, amount float64, currency string) (string, error) {
+	ref := "kaspi_chg_" + uuid.NewString()
+	p.log.Info().Float64("amount", amount).Str("currency", currency).Str("ref", ref).Msg("direct charge (stub)")
+	return ref, nil
 }

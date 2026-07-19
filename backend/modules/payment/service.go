@@ -19,6 +19,10 @@ type Service interface {
 	Get(ctx context.Context, id, userID string) (*Payment, error)
 	ListMine(ctx context.Context, userID string) ([]*Payment, error)
 
+	// Contracts — Charge bills a platform fee (e.g. a subscription plan)
+	// directly, with no escrow phase and no counterparty.
+	contracts.Charger
+
 	// OnDealCompleted releases every held escrow on a deal (system-triggered by
 	// the deal.status.changed consumer when a deal reaches completed).
 	OnDealCompleted(ctx context.Context, dealID string)
@@ -178,6 +182,52 @@ func (s *service) OnDealCancelled(ctx context.Context, dealID string) {
 	for _, p := range held {
 		_, _ = s.refundHeld(ctx, p)
 	}
+}
+
+// === Contracts (Charger) ===
+
+// Charge captures a platform fee immediately. Unlike escrow there is no payee
+// and nothing to release later; a failed capture is recorded as a failed
+// payment so the attempt stays visible in the user's history.
+func (s *service) Charge(ctx context.Context, payerID string, amount float64, currency, description string) (string, error) {
+	if payerID == "" {
+		return "", errors.New(errors.CodeValidation, "Payer is required")
+	}
+	if amount <= 0 {
+		return "", errors.New(errors.CodeValidation, "Amount must be greater than 0")
+	}
+	if currency == "" {
+		currency = "KZT"
+	}
+
+	p := &Payment{
+		Kind:        KindSubscription,
+		Description: description,
+		PayerID:     payerID,
+		Amount:      amount,
+		Currency:    currency,
+		Provider:    s.provider.Name(),
+		Status:      StatusPending,
+	}
+	if err := s.repo.Create(ctx, p); err != nil {
+		return "", err
+	}
+
+	ref, err := s.provider.Charge(ctx, amount, currency)
+	if err != nil {
+		p.Status = StatusFailed
+		_ = s.repo.UpdateStatus(ctx, p.ID, StatusFailed, "")
+		s.emit(ctx, contracts.TopicPaymentFailed, p)
+		return "", errors.New(errors.CodeInternal, "Payment failed")
+	}
+
+	p.Status = StatusReleased // captured outright — nothing is held
+	p.ProviderRef = ref
+	if err := s.repo.UpdateStatus(ctx, p.ID, StatusReleased, ref); err != nil {
+		return "", err
+	}
+	s.emit(ctx, contracts.TopicPaymentCompleted, p)
+	return p.ID, nil
 }
 
 func (s *service) Get(ctx context.Context, id, userID string) (*Payment, error) {

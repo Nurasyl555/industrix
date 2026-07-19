@@ -15,11 +15,21 @@ const (
 	StatusFailed   = "failed"
 )
 
-// Payment is an escrow record tied to a deal. The buyer (payer) funds it; the
-// seller (payee) receives it on release.
+// Payment kinds. Escrow is held then released to a seller; a subscription
+// charge is captured immediately and has no deal or payee.
+const (
+	KindEscrow       = "escrow"
+	KindSubscription = "subscription"
+)
+
+// Payment is a money movement. For escrow it is tied to a deal: the buyer
+// (payer) funds it and the seller (payee) receives it on release. For a
+// subscription charge there is no deal and no payee — the platform is paid.
 type Payment struct {
 	ID          string    `json:"id"`
-	DealID      string    `json:"deal_id"`
+	Kind        string    `json:"kind"`
+	Description string    `json:"description,omitempty"`
+	DealID      string    `json:"deal_id,omitempty"`
 	PayerID     string    `json:"payer_id"`
 	PayeeID     string    `json:"payee_id"`
 	Amount      float64   `json:"amount"`

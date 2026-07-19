@@ -11,10 +11,11 @@ type Module struct {
 	Service Service // also satisfies contracts.CompanyProvider
 }
 
-// NewModule wires internal dependencies and returns the module
-func NewModule(pg *postgres.Client, notifier contracts.Notifier) *Module {
+// NewModule wires internal dependencies and returns the module. The billing
+// dependency is injected later via Service.SetCharger — see the comment there.
+func NewModule(pg *postgres.Client, notifier contracts.Notifier, events contracts.EventPublisher) *Module {
 	repo := NewRepository(pg)
-	svc := NewService(repo, notifier)
+	svc := NewService(repo, notifier, events)
 	handler := NewHandler(svc)
 	return &Module{
 		Handler: handler,

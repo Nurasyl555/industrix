@@ -30,6 +30,7 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 
 	sub := router.Group("/subscription")
 	sub.Get("/", h.GetSubscription)
+	sub.Get("/plans", h.Plans)
 	sub.Put("/", h.ChangePlan)
 }
 
@@ -102,6 +103,16 @@ func (h *Handler) GetSubscription(c *fiber.Ctx) error {
 		return respondErr(c, err)
 	}
 	return c.JSON(sub)
+}
+
+// Plans godoc
+// @Summary List subscription plans with prices and listing limits
+// @Tags subscription
+// @Security BearerAuth
+// @Success 200 {array} PlanOption
+// @Router /subscription/plans [get]
+func (h *Handler) Plans(c *fiber.Ctx) error {
+	return c.JSON(Plans())
 }
 
 // ChangePlan godoc

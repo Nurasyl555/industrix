@@ -107,7 +107,7 @@ func main() {
 	}
 
 	identityMod := identity.NewModule(pgClient, redisClient, jwtClient)
-	integrityMod := integrity.NewModule(pgClient, notifier)
+	integrityMod := integrity.NewModule(pgClient, notifier, publisher)
 	marketplaceMod := marketplace.NewModule(pgClient)
 	catalogMod := catalog.NewModule(pgClient, publisher)
 	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier, publisher, integrityMod.Service)
@@ -119,6 +119,10 @@ func main() {
 		go paymentMod.Consumer.Start(ctx)
 		defer paymentMod.Consumer.Close()
 	}
+	// Close the billing cycle: integrity was built before payment existed
+	// (payment → deal → listing → integrity), so the charger is wired here.
+	integrityMod.Service.SetCharger(paymentMod.Service)
+
 	engagementMod := engagement.NewModule(ctx, pgClient, notifier,
 		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
 	if engagementMod.Consumer != nil {

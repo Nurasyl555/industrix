@@ -17,22 +17,36 @@ func NewRepository(pg *postgres.Client) *Repository {
 }
 
 func (r *Repository) Create(ctx context.Context, p *Payment) error {
+	// deal_id / payee_id are absent for subscription charges — store NULL so
+	// the UUID columns and the escrow-needs-deal check stay valid.
+	var dealID, payeeID interface{}
+	if p.DealID != "" {
+		dealID = p.DealID
+	}
+	if p.PayeeID != "" {
+		payeeID = p.PayeeID
+	}
+	kind := p.Kind
+	if kind == "" {
+		kind = KindEscrow
+	}
 	return r.pg.QueryRow(ctx,
-		`INSERT INTO payments (deal_id, payer_id, payee_id, amount, currency, provider, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO payments (deal_id, payer_id, payee_id, amount, currency, provider, status, kind, description)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 RETURNING id, created_at, updated_at`,
-		p.DealID, p.PayerID, p.PayeeID, p.Amount, p.Currency, p.Provider, p.Status,
+		dealID, p.PayerID, payeeID, p.Amount, p.Currency, p.Provider, p.Status, kind, p.Description,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
 func (r *Repository) GetByID(ctx context.Context, id string) (*Payment, error) {
 	var p Payment
 	err := r.pg.QueryRow(ctx,
-		`SELECT id, deal_id, payer_id, payee_id, amount, currency, provider, status,
-		        COALESCE(provider_ref, ''), created_at, updated_at
+		`SELECT id, COALESCE(deal_id::text, ''), payer_id, COALESCE(payee_id::text, ''),
+		        amount, currency, provider, status, COALESCE(provider_ref, ''),
+		        kind, COALESCE(description, ''), created_at, updated_at
 		 FROM payments WHERE id = $1`, id,
 	).Scan(&p.ID, &p.DealID, &p.PayerID, &p.PayeeID, &p.Amount, &p.Currency,
-		&p.Provider, &p.Status, &p.ProviderRef, &p.CreatedAt, &p.UpdatedAt)
+		&p.Provider, &p.Status, &p.ProviderRef, &p.Kind, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Payment not found")
 	}
@@ -51,8 +65,9 @@ func (r *Repository) UpdateStatus(ctx context.Context, id, status, providerRef s
 // deal-status consumer to find held escrow to release/refund).
 func (r *Repository) ListByDealAndStatus(ctx context.Context, dealID, status string) ([]*Payment, error) {
 	rows, err := r.pg.Query(ctx,
-		`SELECT id, deal_id, payer_id, payee_id, amount, currency, provider, status,
-		        COALESCE(provider_ref, ''), created_at, updated_at
+		`SELECT id, COALESCE(deal_id::text, ''), payer_id, COALESCE(payee_id::text, ''),
+		        amount, currency, provider, status, COALESCE(provider_ref, ''),
+		        kind, COALESCE(description, ''), created_at, updated_at
 		 FROM payments WHERE deal_id = $1 AND status = $2`, dealID, status,
 	)
 	if err != nil {
@@ -64,7 +79,7 @@ func (r *Repository) ListByDealAndStatus(ctx context.Context, dealID, status str
 	for rows.Next() {
 		var p Payment
 		if err := rows.Scan(&p.ID, &p.DealID, &p.PayerID, &p.PayeeID, &p.Amount, &p.Currency,
-			&p.Provider, &p.Status, &p.ProviderRef, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.Provider, &p.Status, &p.ProviderRef, &p.Kind, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			continue
 		}
 		out = append(out, &p)
@@ -75,8 +90,9 @@ func (r *Repository) ListByDealAndStatus(ctx context.Context, dealID, status str
 // ListForUser returns payments where the user is payer or payee (their history).
 func (r *Repository) ListForUser(ctx context.Context, userID string) ([]*Payment, error) {
 	rows, err := r.pg.Query(ctx,
-		`SELECT id, deal_id, payer_id, payee_id, amount, currency, provider, status,
-		        COALESCE(provider_ref, ''), created_at, updated_at
+		`SELECT id, COALESCE(deal_id::text, ''), payer_id, COALESCE(payee_id::text, ''),
+		        amount, currency, provider, status, COALESCE(provider_ref, ''),
+		        kind, COALESCE(description, ''), created_at, updated_at
 		 FROM payments WHERE payer_id = $1 OR payee_id = $1 ORDER BY created_at DESC`, userID,
 	)
 	if err != nil {
@@ -88,7 +104,7 @@ func (r *Repository) ListForUser(ctx context.Context, userID string) ([]*Payment
 	for rows.Next() {
 		var p Payment
 		if err := rows.Scan(&p.ID, &p.DealID, &p.PayerID, &p.PayeeID, &p.Amount, &p.Currency,
-			&p.Provider, &p.Status, &p.ProviderRef, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.Provider, &p.Status, &p.ProviderRef, &p.Kind, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			continue
 		}
 		out = append(out, &p)
