@@ -152,6 +152,9 @@ func main() {
 		AccessKey:        getEnv("MINIO_ROOT_USER", "minio"),
 		SecretKey:        getEnv("MINIO_ROOT_PASSWORD", "minio123"),
 		UseSSL:           getEnv("MINIO_USE_SSL", "false") == "true",
+		ImgproxyURL:      os.Getenv("IMGPROXY_URL"),
+		ImgproxyKey:      os.Getenv("IMGPROXY_KEY"),
+		ImgproxySalt:     os.Getenv("IMGPROXY_SALT"),
 	})
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to init media module")
@@ -190,6 +193,7 @@ func main() {
 	bookingMod.Handler.RegisterPublicRoutes(api)
 	searchMod.Handler.RegisterPublicRoutes(api)
 	engagementMod.Handler.RegisterPublicRoutes(api)
+	mediaMod.Handler.RegisterPublicRoutes(api)
 
 	// Protected routes (auth required)
 	protected := api.Group("/", authMw.ValidateJWT())

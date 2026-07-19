@@ -26,6 +26,12 @@ type Config struct {
 	AccessKey        string
 	SecretKey        string
 	UseSSL           bool
+
+	// imgproxy renders resized variants. Empty ImgproxyURL disables the
+	// /media/variant endpoint (it then returns a configuration error).
+	ImgproxyURL  string // browser-reachable, e.g. http://localhost:8082
+	ImgproxyKey  string // hex
+	ImgproxySalt string // hex
 }
 
 // NewModule wires the media module. It ensures the public bucket exists (via
@@ -67,6 +73,14 @@ func NewModule(cfg Config) (*Module, error) {
 		scheme = "https"
 	}
 	publicBase := scheme + "://" + cfg.PublicEndpoint + "/" + bucketName
+	internalBase := scheme + "://" + cfg.InternalEndpoint + "/" + bucketName
 
-	return &Module{Handler: NewHandler(presign, publicBase)}, nil
+	imgproxy := NewImgproxy(cfg.ImgproxyURL, cfg.ImgproxyKey, cfg.ImgproxySalt, publicBase, internalBase)
+	if imgproxy.Enabled() {
+		log.Info().Str("imgproxy", cfg.ImgproxyURL).Msg("image variants enabled")
+	} else {
+		log.Warn().Msg("IMGPROXY_URL not set — /media/variant will be unavailable")
+	}
+
+	return &Module{Handler: NewHandler(presign, publicBase, imgproxy)}, nil
 }

@@ -208,11 +208,20 @@ services:
     ports:
       - "8082:8080"
     environment:
-      - IMGPROXY_KEY=your-imgproxy-signing-key
-      - IMGPROXY_SECRET=your-imgproxy-secret
+      # Signing key/salt MUST be hex and MUST be set as a pair — imgproxy
+      # refuses to start otherwise (the old IMGPROXY_SECRET was not a real
+      # variable, so signing was never actually configured). Dev values only:
+      # override them in production.
+      - IMGPROXY_KEY=943b421c9eb07c830af81030552c86009268de4e532ba2ee2eab8247c6da0881
+      - IMGPROXY_SALT=520f986b998545b4785e0defbc4f3c1203f22de2374a3d53cb7a7fe9fea309c5
+      # Only ever fetch source images from our own object storage. Both names
+      # resolve on the docker network: the compose service name and the
+      # explicit container name.
+      - IMGPROXY_ALLOWED_SOURCES=http://minio:9000/,http://industrix-minio:9000/
       - IMGPROXY_MAX_SOURCE_SIZE=50000000
-      - IMGPROXY_MAX_RESIZING_DURATION=30s
-      - IMGPROXY_DOWNLOAD_TIMEOUT=60s
+      # These are plain integer seconds — "30s"/"60s" are rejected at startup.
+      - IMGPROXY_MAX_RESIZING_DURATION=30
+      - IMGPROXY_DOWNLOAD_TIMEOUT=60
     healthcheck:
       test: curl -f http://localhost:8080/health || exit 1
       interval: 30s

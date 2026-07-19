@@ -20,15 +20,44 @@ type presigner interface {
 type Handler struct {
 	presign    presigner
 	publicBase string // e.g. http://localhost:9000/equipment-media
+	imgproxy   *Imgproxy
 }
 
-func NewHandler(presign presigner, publicBase string) *Handler {
-	return &Handler{presign: presign, publicBase: publicBase}
+func NewHandler(presign presigner, publicBase string, imgproxy *Imgproxy) *Handler {
+	return &Handler{presign: presign, publicBase: publicBase, imgproxy: imgproxy}
 }
 
 // RegisterRoutes mounts the protected media routes.
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	router.Post("/media/upload-url", h.UploadURL)
+}
+
+// RegisterPublicRoutes mounts the image variant endpoint. It is public because
+// images are shown to anonymous browsers, and it takes no credentials — the
+// signing key stays server-side.
+func (h *Handler) RegisterPublicRoutes(router fiber.Router) {
+	router.Get("/media/variant", h.Variant)
+}
+
+// Variant godoc
+// @Summary Redirect to a resized rendition of a stored image
+// @Tags media
+// @Param src query string true "Stored image URL"
+// @Param preset query string false "thumb | card | full (default card)"
+// @Success 302
+// @Router /media/variant [get]
+func (h *Handler) Variant(c *fiber.Ctx) error {
+	preset := c.Query("preset", "card")
+	target, err := h.imgproxy.URL(c.Query("src"), preset)
+	if err != nil {
+		if domainErr, ok := err.(*errors.Error); ok {
+			return c.Status(errors.HTTPStatus(domainErr.Code)).JSON(domainErr)
+		}
+		return c.Status(http.StatusInternalServerError).JSON(errors.New(errors.CodeInternal, "Something went wrong"))
+	}
+	// Redirect rather than proxy the bytes: imgproxy serves and caches them, and
+	// the browser gets to cache the final URL too.
+	return c.Redirect(target, http.StatusFound)
 }
 
 // allowedExt maps a content type to a file extension. Restricting types keeps
