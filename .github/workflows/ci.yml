@@ -33,11 +33,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      # Go linting
+      # Go linting. working-directory must be backend/ — the repo root is a Go
+      # workspace (go.work), not a module, so `golangci-lint run ./...` from the
+      # root fails with "directory prefix . does not contain modules".
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.64.8
+          working-directory: backend
 
       # Go vet
       - name: Run go vet

@@ -1,0 +1,18 @@
+# golangci-lint config (v1). Generated files (*.pb.go, docs) carry a
+# "DO NOT EDIT" header and are skipped by the default exclusions.
+run:
+  timeout: 5m
+
+issues:
+  exclude-rules:
+    # Deferred: pkg/tracer still uses the deprecated OpenTelemetry Jaeger
+    # exporter. Migrating to OTLP is tracked as Phase 7 observability work.
+    - path: pkg/tracer/tracer.go
+      linters: [staticcheck]
+      text: "SA1019"
+    # False positive: l.Fatal() (zerolog) calls os.Exit, so execution never
+    # continues past the nil guard — but staticcheck doesn't model Fatal as
+    # terminating, so it flags a nil-pointer deref that can't happen.
+    - path: cmd/server/main.go
+      linters: [staticcheck]
+      text: "SA5011"

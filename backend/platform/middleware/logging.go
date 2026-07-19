@@ -9,6 +9,12 @@ import (
 	"github.com/industrix/backend/pkg/logger"
 )
 
+// ctxKey is a private type for context keys, so values can't collide with keys
+// set by other packages using the same string.
+type ctxKey string
+
+const traceIDKey ctxKey = "trace_id"
+
 type LoggingMiddleware struct {
 	logger *logger.Logger
 }
@@ -26,7 +32,7 @@ func (m *LoggingMiddleware) RequestLogger() fiber.Handler {
 		}
 
 		c.Set("X-Trace-ID", traceID)
-		ctx := context.WithValue(c.Context(), "trace_id", traceID)
+		ctx := context.WithValue(c.Context(), traceIDKey, traceID)
 		c.SetUserContext(ctx)
 
 		err := c.Next()

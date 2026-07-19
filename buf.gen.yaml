@@ -1,8 +1,12 @@
 version: v1
 plugins:
-  - plugin: buf.build/protocolbuffers/go
+  # Plugin versions are pinned so `buf generate` is reproducible: the CI proto
+  # job regenerates and fails on any git diff, so an unpinned (floating) plugin
+  # version would break the build whenever a newer plugin ships. Keep these in
+  # sync with the versions recorded in the generated *.pb.go headers.
+  - plugin: buf.build/protocolbuffers/go:v1.36.11
     out: backend/gen/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go
+  - plugin: buf.build/grpc/go:v1.6.1
     out: backend/gen/go
     opt: paths=source_relative

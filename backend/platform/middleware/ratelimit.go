@@ -38,7 +38,9 @@ func (m *RateLimitMiddleware) SlidingWindow() fiber.Handler {
 		}
 
 		if count == 1 {
-			m.redisClient.Expire(context.Background(), key, m.window)
+			// Best-effort TTL on the first hit; a failure just means the window
+			// key lingers until Redis evicts it.
+			_, _ = m.redisClient.Expire(context.Background(), key, m.window)
 		}
 
 		if count > int64(m.limit) {
