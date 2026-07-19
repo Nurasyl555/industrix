@@ -209,6 +209,12 @@ func (s *service) cacheSet(ctx context.Context, key string, r *Result) {
 	if s.cache == nil {
 		return
 	}
+	// Never cache an empty result. Indexing is asynchronous (Kafka consumer +
+	// OpenSearch refresh), so a query run moments before a listing lands would
+	// otherwise pin "nothing found" for the whole TTL even once it's live.
+	if r == nil || r.Total == 0 {
+		return
+	}
 	b, err := json.Marshal(r)
 	if err != nil {
 		return

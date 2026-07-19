@@ -21,6 +21,7 @@ import (
 	_ "github.com/industrix/backend/docs"
 
 	"github.com/industrix/backend/modules/admin"
+	"github.com/industrix/backend/modules/analytics"
 	"github.com/industrix/backend/modules/booking"
 	"github.com/industrix/backend/modules/catalog"
 	"github.com/industrix/backend/modules/deal"
@@ -124,6 +125,12 @@ func main() {
 		go engagementMod.Consumer.Start(ctx)
 		defer engagementMod.Consumer.Close()
 	}
+	analyticsMod := analytics.NewModule(ctx, pgClient,
+		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
+	if analyticsMod.Consumer != nil {
+		go analyticsMod.Consumer.Start(ctx)
+		defer analyticsMod.Consumer.Close()
+	}
 	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
 
 	// Search — OpenSearch-backed, kept in sync via Kafka consumer.
@@ -195,12 +202,14 @@ func main() {
 	bookingMod.Handler.RegisterProtectedRoutes(protected)
 	paymentMod.Handler.RegisterRoutes(protected)
 	engagementMod.Handler.RegisterProtectedRoutes(protected)
+	analyticsMod.Handler.RegisterProtectedRoutes(protected)
 	mediaMod.Handler.RegisterRoutes(protected)
 	notificationMod.Handler.RegisterRoutes(protected)
 
 	// Admin routes — protected + admin-role gated
 	adminRoutes := api.Group("/", authMw.ValidateJWT(), authMw.RequireAdmin())
 	adminMod.Handler.RegisterRoutes(adminRoutes)
+	analyticsMod.Handler.RegisterAdminRoutes(adminRoutes)
 
 	// WebSocket (self-authenticates via cookie, mounted outside /api/v1)
 	dealMod.Handler.RegisterWebSocket(app)

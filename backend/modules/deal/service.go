@@ -78,6 +78,12 @@ func (s *service) CreateDeal(ctx context.Context, buyerID string, req CreateDeal
 	if err := s.repo.CreateDeal(ctx, d); err != nil {
 		return nil, err
 	}
+	// Report creation on the same status topic (from "" to inquiry) so
+	// consumers — analytics especially — see the deal enter the funnel.
+	s.emit(ctx, contracts.TopicDealStatusChanged, d.ID, dealStatusEvent{
+		ID: d.ID, ListingID: d.ListingID, BuyerID: d.BuyerID, SellerID: d.SellerID,
+		From: "", To: StatusInquiry,
+	})
 	if s.notifier != nil {
 		s.notifier.Notify(ctx, d.SellerID, "inquiry", "You have a new inquiry on your listing", "/shop/deals/"+d.ID)
 	}
