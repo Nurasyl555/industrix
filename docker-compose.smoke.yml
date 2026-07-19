@@ -1,0 +1,7 @@
+# Local smoke-test override: the host already runs a native PostgreSQL on 5432,
+# which shadows the container's published port. Expose the container DB on 5433
+# so a host-run backend can reach it unambiguously.
+services:
+  postgres:
+    ports:
+      - "5433:5432"

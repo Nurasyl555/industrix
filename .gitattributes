@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell scripts must stay LF even on Windows checkouts — they run inside Linux
+# containers (e.g. infra/kafka/topics.sh), where CRLF breaks the interpreter.
+*.sh text eol=lf

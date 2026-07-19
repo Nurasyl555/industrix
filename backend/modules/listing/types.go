@@ -10,6 +10,7 @@ type Listing struct {
 	ListingType string    `json:"listing_type"` // sale, rental
 	Price       float64   `json:"price"`
 	PricePeriod string    `json:"price_period,omitempty"` // day, week, month — rental only
+	PricingType string    `json:"pricing_type"`           // fixed, negotiable
 	Status      string    `json:"status"`                 // draft, active, archived
 	ViewCount   int       `json:"view_count"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -30,6 +31,7 @@ type ListingView struct {
 	ListingType string    `json:"listing_type"`
 	Price       float64   `json:"price"`
 	PricePeriod string    `json:"price_period,omitempty"`
+	PricingType string    `json:"pricing_type"`
 	Status      string    `json:"status"`
 	ViewCount   int       `json:"view_count"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -41,12 +43,14 @@ type CreateListingRequest struct {
 	ListingType string  `json:"listing_type"`
 	Price       float64 `json:"price"`
 	PricePeriod string  `json:"price_period"`
+	PricingType string  `json:"pricing_type"` // fixed (default) | negotiable
 }
 
 // UpdateListingRequest represents a request to update price/type
 type UpdateListingRequest struct {
 	Price       float64 `json:"price"`
 	PricePeriod string  `json:"price_period"`
+	PricingType string  `json:"pricing_type"`
 }
 
 // ListListingsFilter represents query filters for browsing active listings

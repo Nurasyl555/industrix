@@ -24,6 +24,7 @@ import (
 	"github.com/industrix/backend/modules/booking"
 	"github.com/industrix/backend/modules/catalog"
 	"github.com/industrix/backend/modules/deal"
+	"github.com/industrix/backend/modules/engagement"
 	"github.com/industrix/backend/modules/identity"
 	"github.com/industrix/backend/modules/integrity"
 	"github.com/industrix/backend/modules/listing"
@@ -117,6 +118,12 @@ func main() {
 		go paymentMod.Consumer.Start(ctx)
 		defer paymentMod.Consumer.Close()
 	}
+	engagementMod := engagement.NewModule(ctx, pgClient, notifier,
+		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
+	if engagementMod.Consumer != nil {
+		go engagementMod.Consumer.Start(ctx)
+		defer engagementMod.Consumer.Close()
+	}
 	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
 
 	// Search — OpenSearch-backed, kept in sync via Kafka consumer.
@@ -175,6 +182,7 @@ func main() {
 	listingMod.Handler.RegisterPublicRoutes(api)
 	bookingMod.Handler.RegisterPublicRoutes(api)
 	searchMod.Handler.RegisterPublicRoutes(api)
+	engagementMod.Handler.RegisterPublicRoutes(api)
 
 	// Protected routes (auth required)
 	protected := api.Group("/", authMw.ValidateJWT())
@@ -186,6 +194,7 @@ func main() {
 	dealMod.Handler.RegisterRoutes(protected)
 	bookingMod.Handler.RegisterProtectedRoutes(protected)
 	paymentMod.Handler.RegisterRoutes(protected)
+	engagementMod.Handler.RegisterProtectedRoutes(protected)
 	mediaMod.Handler.RegisterRoutes(protected)
 	notificationMod.Handler.RegisterRoutes(protected)
 

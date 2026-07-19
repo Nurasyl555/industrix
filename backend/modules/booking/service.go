@@ -16,6 +16,8 @@ type Service interface {
 	BookedRanges(ctx context.Context, listingID string) ([]*DateRange, error)
 	ListMine(ctx context.Context, renterID string) ([]*Booking, error)
 	Cancel(ctx context.Context, id, userID string) error
+	// Quote estimates the rental cost for a listing over a date range.
+	Quote(ctx context.Context, listingID, startDate, endDate string) (*Quote, error)
 }
 
 type service struct {
@@ -28,20 +30,32 @@ func NewService(repo *Repository, listings contracts.ListingProvider, notifier c
 	return &service{repo: repo, listings: listings, notifier: notifier}
 }
 
+// parseRange validates a date range and returns the inclusive day count.
+func parseRange(startStr, endStr string) (start, end time.Time, days int, err error) {
+	start, err = time.Parse(dateLayout, startStr)
+	if err != nil {
+		return start, end, 0, errors.New(errors.CodeValidation, "Invalid start date")
+	}
+	end, err = time.Parse(dateLayout, endStr)
+	if err != nil {
+		return start, end, 0, errors.New(errors.CodeValidation, "Invalid end date")
+	}
+	if end.Before(start) {
+		return start, end, 0, errors.New(errors.CodeValidation, "End date must be on or after start date")
+	}
+	// Inclusive of both ends — a same-day rental is one day (matches the DB
+	// exclusion constraint's '[]' range).
+	days = int(end.Sub(start).Hours()/24) + 1
+	return start, end, days, nil
+}
+
 func (s *service) CreateBooking(ctx context.Context, renterID string, req CreateBookingRequest) (*Booking, error) {
 	if req.ListingID == "" {
 		return nil, errors.New(errors.CodeValidation, "Listing is required")
 	}
-	start, err := time.Parse(dateLayout, req.StartDate)
+	start, _, days, err := parseRange(req.StartDate, req.EndDate)
 	if err != nil {
-		return nil, errors.New(errors.CodeValidation, "Invalid start date")
-	}
-	end, err := time.Parse(dateLayout, req.EndDate)
-	if err != nil {
-		return nil, errors.New(errors.CodeValidation, "Invalid end date")
-	}
-	if end.Before(start) {
-		return nil, errors.New(errors.CodeValidation, "End date must be on or after start date")
+		return nil, err
 	}
 	// Compare against today's date (midnight) so booking for today is allowed.
 	today := time.Now().Truncate(24 * time.Hour)
@@ -64,11 +78,12 @@ func (s *service) CreateBooking(ctx context.Context, renterID string, req Create
 	}
 
 	b := &Booking{
-		ListingID: req.ListingID,
-		RenterID:  renterID,
-		OwnerID:   l.SellerID,
-		StartDate: req.StartDate,
-		EndDate:   req.EndDate,
+		ListingID:  req.ListingID,
+		RenterID:   renterID,
+		OwnerID:    l.SellerID,
+		StartDate:  req.StartDate,
+		EndDate:    req.EndDate,
+		TotalPrice: rentalTotal(l.Price, l.PricePeriod, days),
 	}
 	// The DB exclusion constraint is the race-free guard against double booking.
 	if err := s.repo.Create(ctx, b); err != nil {
@@ -78,6 +93,33 @@ func (s *service) CreateBooking(ctx context.Context, renterID string, req Create
 		s.notifier.Notify(ctx, b.OwnerID, "booking", "Your rental was booked for "+b.StartDate+" → "+b.EndDate, "/shop/bookings")
 	}
 	return b, nil
+}
+
+func (s *service) Quote(ctx context.Context, listingID, startDate, endDate string) (*Quote, error) {
+	if listingID == "" {
+		return nil, errors.New(errors.CodeValidation, "Listing is required")
+	}
+	_, _, days, err := parseRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	l, err := s.listings.GetListingBasic(ctx, listingID)
+	if err != nil {
+		return nil, errors.New(errors.CodeValidation, "Listing does not exist")
+	}
+	if l.ListingType != "rental" {
+		return nil, errors.New(errors.CodeValidation, "This listing is not for rent")
+	}
+	return &Quote{
+		ListingID: listingID,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Days:      days,
+		Period:    l.PricePeriod,
+		UnitPrice: l.Price,
+		Units:     rentalUnits(l.PricePeriod, days),
+		Total:     rentalTotal(l.Price, l.PricePeriod, days),
+	}, nil
 }
 
 func (s *service) BookedRanges(ctx context.Context, listingID string) ([]*DateRange, error) {

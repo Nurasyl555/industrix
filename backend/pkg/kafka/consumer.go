@@ -49,6 +49,25 @@ func NewConsumer(ctx context.Context, cfg *ConsumerConfig, handlers map[string]M
 
 	log := logger.New("kafka-consumer")
 
+	// Sanitize zero-valued fields so a caller-supplied config that only sets
+	// brokers/group/topics still yields a valid sarama config (Fetch.Min must
+	// be > 0, etc.).
+	if cfg.MinBytes <= 0 {
+		cfg.MinBytes = 1
+	}
+	if cfg.MaxBytes <= 0 {
+		cfg.MaxBytes = 10 * 1024 * 1024
+	}
+	if cfg.MaxWaitTime <= 0 {
+		cfg.MaxWaitTime = time.Second
+	}
+	if cfg.RetryBackoff <= 0 {
+		cfg.RetryBackoff = time.Second
+	}
+	if cfg.CommitInterval <= 0 {
+		cfg.CommitInterval = time.Second
+	}
+
 	config := sarama.NewConfig()
 	config.ClientID = cfg.ClientID
 	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}

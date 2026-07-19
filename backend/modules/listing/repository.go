@@ -25,9 +25,9 @@ func (r *Repository) CreateListing(ctx context.Context, l *Listing) error {
 		pricePeriod = l.PricePeriod
 	}
 	err := r.pg.QueryRow(ctx,
-		`INSERT INTO listings (equipment_id, seller_id, listing_type, price, price_period, status)
-		 VALUES ($1, $2, $3, $4, $5, 'draft') RETURNING id, status, created_at, updated_at`,
-		l.EquipmentID, l.SellerID, l.ListingType, l.Price, pricePeriod,
+		`INSERT INTO listings (equipment_id, seller_id, listing_type, price, price_period, pricing_type, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'draft') RETURNING id, status, created_at, updated_at`,
+		l.EquipmentID, l.SellerID, l.ListingType, l.Price, pricePeriod, l.PricingType,
 	).Scan(&l.ID, &l.Status, &l.CreatedAt, &l.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create listing: %w", err)
@@ -38,9 +38,9 @@ func (r *Repository) CreateListing(ctx context.Context, l *Listing) error {
 func (r *Repository) GetListingByID(ctx context.Context, id string) (*Listing, error) {
 	var l Listing
 	err := r.pg.QueryRow(ctx,
-		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, view_count, created_at, updated_at
+		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), pricing_type, status, view_count, created_at, updated_at
 		 FROM listings WHERE id = $1`, id,
-	).Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt)
+	).Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.PricingType, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Listing not found")
 	}
@@ -51,11 +51,11 @@ func (r *Repository) GetListingViewByID(ctx context.Context, id string) (*Listin
 	var v ListingView
 	err := r.pg.QueryRow(ctx,
 		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.pricing_type, l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE l.id = $1`, id,
 	).Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-		&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt)
+		&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.PricingType, &v.Status, &v.ViewCount, &v.CreatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Listing not found")
 	}
@@ -67,7 +67,7 @@ func (r *Repository) GetListingViewByID(ctx context.Context, id string) (*Listin
 func (r *Repository) ListByStatusView(ctx context.Context, status string) ([]*ListingView, error) {
 	rows, err := r.pg.Query(ctx,
 		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.pricing_type, l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE l.status = $1 ORDER BY l.created_at ASC`, status,
 	)
@@ -80,7 +80,7 @@ func (r *Repository) ListByStatusView(ctx context.Context, status string) ([]*Li
 	for rows.Next() {
 		var v ListingView
 		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
+			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.PricingType, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
 			continue
 		}
 		items = append(items, &v)
@@ -142,7 +142,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 	offset := (f.Page - 1) * f.Limit
 	query := fmt.Sprintf(
 		`SELECT l.id, l.equipment_id, e.title, e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.pricing_type, l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE %s ORDER BY %s LIMIT $%d OFFSET $%d`,
 		whereClause, orderBy, argN, argN+1,
@@ -159,7 +159,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 	for rows.Next() {
 		var v ListingView
 		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
+			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.PricingType, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
 			continue
 		}
 		items = append(items, &v)
@@ -175,7 +175,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 
 func (r *Repository) ListBySeller(ctx context.Context, sellerID string) ([]*Listing, error) {
 	rows, err := r.pg.Query(ctx,
-		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, view_count, created_at, updated_at
+		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), pricing_type, status, view_count, created_at, updated_at
 		 FROM listings WHERE seller_id = $1 ORDER BY created_at DESC`, sellerID,
 	)
 	if err != nil {
@@ -186,7 +186,7 @@ func (r *Repository) ListBySeller(ctx context.Context, sellerID string) ([]*List
 	var items []*Listing
 	for rows.Next() {
 		var l Listing
-		if err := rows.Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.PricingType, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt); err != nil {
 			continue
 		}
 		items = append(items, &l)
@@ -204,14 +204,14 @@ func (r *Repository) CountBySellerStatuses(ctx context.Context, sellerID string,
 	return n, err
 }
 
-func (r *Repository) UpdatePrice(ctx context.Context, id string, price float64, pricePeriod string) error {
+func (r *Repository) UpdatePrice(ctx context.Context, id string, price float64, pricePeriod, pricingType string) error {
 	var period interface{}
 	if pricePeriod != "" {
 		period = pricePeriod
 	}
 	_, err := r.pg.Exec(ctx,
-		"UPDATE listings SET price = $1, price_period = $2, updated_at = NOW() WHERE id = $3",
-		price, period, id,
+		"UPDATE listings SET price = $1, price_period = $2, pricing_type = $3, updated_at = NOW() WHERE id = $4",
+		price, period, pricingType, id,
 	)
 	return err
 }

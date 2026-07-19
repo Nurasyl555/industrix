@@ -20,6 +20,7 @@ func NewHandler(service Service) *Handler {
 // can show which dates are taken without requiring a login.
 func (h *Handler) RegisterPublicRoutes(router fiber.Router) {
 	router.Get("/listings/:id/booked-dates", h.BookedDates)
+	router.Get("/listings/:id/quote", h.Quote)
 }
 
 // RegisterProtectedRoutes registers the auth-gated booking actions.
@@ -50,6 +51,22 @@ func (h *Handler) BookedDates(c *fiber.Ctx) error {
 		return respondErr(c, err)
 	}
 	return c.JSON(ranges)
+}
+
+// Quote godoc
+// @Summary Estimate rental cost for a listing over a date range
+// @Tags bookings
+// @Param id path string true "Listing ID"
+// @Param start query string true "Start date (YYYY-MM-DD)"
+// @Param end query string true "End date (YYYY-MM-DD)"
+// @Success 200 {object} Quote
+// @Router /listings/{id}/quote [get]
+func (h *Handler) Quote(c *fiber.Ctx) error {
+	q, err := h.service.Quote(c.Context(), c.Params("id"), c.Query("start"), c.Query("end"))
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(q)
 }
 
 // Create godoc

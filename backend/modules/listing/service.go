@@ -56,6 +56,15 @@ type listingEvent struct {
 	Status      string  `json:"status"`
 }
 
+// priceChangedEvent is the payload published on listing.price_changed.
+type priceChangedEvent struct {
+	ID          string  `json:"id"`
+	EquipmentID string  `json:"equipment_id"`
+	SellerID    string  `json:"seller_id"`
+	OldPrice    float64 `json:"old_price"`
+	NewPrice    float64 `json:"new_price"`
+}
+
 func toListingEvent(l *Listing) listingEvent {
 	return listingEvent{
 		ID:          l.ID,
@@ -76,7 +85,29 @@ func (s *service) emit(ctx context.Context, topic, key string, payload any) {
 }
 
 var validListingTypes = map[string]bool{"sale": true, "rental": true}
-var validPricePeriods = map[string]bool{"": true, "day": true, "week": true, "month": true}
+var validRentalPeriods = map[string]bool{"day": true, "week": true, "month": true}
+var validPricingTypes = map[string]bool{"fixed": true, "negotiable": true}
+
+// normalizePricing validates and normalizes the pricing fields against the
+// listing type: rentals must carry a per-period rate (day/week/month), sales
+// carry no period, and every listing has a fixed or negotiable pricing model.
+func normalizePricing(listingType, period, pricingType string) (string, string, error) {
+	if pricingType == "" {
+		pricingType = "fixed"
+	}
+	if !validPricingTypes[pricingType] {
+		return "", "", errors.New(errors.CodeValidation, "Pricing type must be 'fixed' or 'negotiable'")
+	}
+	switch listingType {
+	case "rental":
+		if !validRentalPeriods[period] {
+			return "", "", errors.New(errors.CodeValidation, "Rental listings require a price period: 'day', 'week' or 'month'")
+		}
+	default: // sale
+		period = "" // a sale has no rental period
+	}
+	return period, pricingType, nil
+}
 
 func (s *service) CreateListing(ctx context.Context, sellerID string, req CreateListingRequest) (*Listing, error) {
 	if req.EquipmentID == "" {
@@ -88,8 +119,9 @@ func (s *service) CreateListing(ctx context.Context, sellerID string, req Create
 	if req.Price <= 0 {
 		return nil, errors.New(errors.CodeValidation, "Price must be greater than 0")
 	}
-	if !validPricePeriods[req.PricePeriod] {
-		return nil, errors.New(errors.CodeValidation, "Price period must be 'day', 'week' or 'month'")
+	period, pricingType, err := normalizePricing(req.ListingType, req.PricePeriod, req.PricingType)
+	if err != nil {
+		return nil, err
 	}
 
 	eq, err := s.equipment.GetEquipmentBasic(ctx, req.EquipmentID)
@@ -105,7 +137,8 @@ func (s *service) CreateListing(ctx context.Context, sellerID string, req Create
 		SellerID:    sellerID,
 		ListingType: req.ListingType,
 		Price:       req.Price,
-		PricePeriod: req.PricePeriod,
+		PricePeriod: period,
+		PricingType: pricingType,
 	}
 	if err := s.repo.CreateListing(ctx, l); err != nil {
 		return nil, err
@@ -153,15 +186,27 @@ func (s *service) UpdateListing(ctx context.Context, id, sellerID string, req Up
 	if req.Price <= 0 {
 		return nil, errors.New(errors.CodeValidation, "Price must be greater than 0")
 	}
-	if !validPricePeriods[req.PricePeriod] {
-		return nil, errors.New(errors.CodeValidation, "Price period must be 'day', 'week' or 'month'")
+	period, pricingType, err := normalizePricing(l.ListingType, req.PricePeriod, req.PricingType)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.repo.UpdatePrice(ctx, id, req.Price, req.PricePeriod); err != nil {
+	oldPrice := l.Price
+	if err := s.repo.UpdatePrice(ctx, id, req.Price, period, pricingType); err != nil {
 		return nil, err
 	}
 	l.Price = req.Price
-	l.PricePeriod = req.PricePeriod
+	l.PricePeriod = period
+	l.PricingType = pricingType
+
+	// Emit a price-change event so engagement can record history and fire
+	// price-drop alerts to watchers.
+	if oldPrice != req.Price {
+		s.emit(ctx, contracts.TopicListingPriceChanged, id, priceChangedEvent{
+			ID: id, EquipmentID: l.EquipmentID, SellerID: l.SellerID,
+			OldPrice: oldPrice, NewPrice: req.Price,
+		})
+	}
 	return l, nil
 }
 
@@ -264,5 +309,7 @@ func (s *service) GetListingBasic(ctx context.Context, listingID string) (*contr
 		SellerID:    l.SellerID,
 		Status:      l.Status,
 		ListingType: l.ListingType,
+		Price:       l.Price,
+		PricePeriod: l.PricePeriod,
 	}, nil
 }

@@ -65,6 +65,7 @@ const (
 	TopicListingSubmitted     = "listing.submitted"
 	TopicListingPublished     = "listing.published"
 	TopicListingDeactivated   = "listing.deactivated"
+	TopicListingPriceChanged  = "listing.price_changed"
 	TopicDealStatusChanged    = "deal.status.changed"
 	TopicPaymentCompleted     = "payment.completed"
 	TopicPaymentFailed        = "payment.failed"
@@ -100,7 +101,9 @@ type ListingBasic struct {
 	EquipmentID string
 	SellerID    string
 	Status      string
-	ListingType string // sale | rental
+	ListingType string  // sale | rental
+	Price       float64 // period rate for rentals
+	PricePeriod string  // day | week | month (rentals only)
 }
 
 // DealBasic is a minimal deal DTO for cross-module communication

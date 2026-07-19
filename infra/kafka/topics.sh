@@ -2,7 +2,7 @@
 
 # Wait for Kafka to be ready
 echo "Waiting for Kafka to be ready..."
-cub kafka-ready -b kafka:9092 1 20
+cub kafka-ready -b kafka:29092 1 20
 
 # Create topics
 topics=(
@@ -15,6 +15,7 @@ topics=(
   "listing.submitted"
   "listing.published"
   "listing.deactivated"
+  "listing.price_changed"
   "deal.status.changed"
   "payment.completed"
   "payment.failed"
@@ -33,7 +34,7 @@ topics=(
 )
 
 for topic in "${topics[@]}"; do
-  kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 --topic "$topic"
+  kafka-topics --create --if-not-exists --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 --topic "$topic"
   echo "Created topic: $topic"
 done
 

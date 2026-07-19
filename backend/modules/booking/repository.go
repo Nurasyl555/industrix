@@ -23,9 +23,9 @@ var ErrOverlap = errors.New(errors.CodeConflict, "Those dates are already booked
 
 func (r *Repository) Create(ctx context.Context, b *Booking) error {
 	err := r.pg.QueryRow(ctx,
-		`INSERT INTO bookings (listing_id, renter_id, owner_id, start_date, end_date)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at`,
-		b.ListingID, b.RenterID, b.OwnerID, b.StartDate, b.EndDate,
+		`INSERT INTO bookings (listing_id, renter_id, owner_id, start_date, end_date, total_price)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status, created_at`,
+		b.ListingID, b.RenterID, b.OwnerID, b.StartDate, b.EndDate, b.TotalPrice,
 	).Scan(&b.ID, &b.Status, &b.CreatedAt)
 	if err != nil {
 		// The exclusion constraint surfaces as a 23P01 exclusion_violation.
@@ -63,7 +63,7 @@ func (r *Repository) ConfirmedRanges(ctx context.Context, listingID string) ([]*
 func (r *Repository) ListByRenter(ctx context.Context, renterID string) ([]*Booking, error) {
 	rows, err := r.pg.Query(ctx,
 		`SELECT id, listing_id, renter_id, owner_id, to_char(start_date, 'YYYY-MM-DD'),
-		        to_char(end_date, 'YYYY-MM-DD'), status, created_at
+		        to_char(end_date, 'YYYY-MM-DD'), status, total_price, created_at
 		 FROM bookings WHERE renter_id = $1 ORDER BY start_date DESC`, renterID,
 	)
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *Repository) ListByRenter(ctx context.Context, renterID string) ([]*Book
 	var out []*Booking
 	for rows.Next() {
 		var b Booking
-		if err := rows.Scan(&b.ID, &b.ListingID, &b.RenterID, &b.OwnerID, &b.StartDate, &b.EndDate, &b.Status, &b.CreatedAt); err != nil {
+		if err := rows.Scan(&b.ID, &b.ListingID, &b.RenterID, &b.OwnerID, &b.StartDate, &b.EndDate, &b.Status, &b.TotalPrice, &b.CreatedAt); err != nil {
 			continue
 		}
 		out = append(out, &b)
@@ -86,9 +86,9 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*Booking, error) {
 	var b Booking
 	err := r.pg.QueryRow(ctx,
 		`SELECT id, listing_id, renter_id, owner_id, to_char(start_date, 'YYYY-MM-DD'),
-		        to_char(end_date, 'YYYY-MM-DD'), status, created_at
+		        to_char(end_date, 'YYYY-MM-DD'), status, total_price, created_at
 		 FROM bookings WHERE id = $1`, id,
-	).Scan(&b.ID, &b.ListingID, &b.RenterID, &b.OwnerID, &b.StartDate, &b.EndDate, &b.Status, &b.CreatedAt)
+	).Scan(&b.ID, &b.ListingID, &b.RenterID, &b.OwnerID, &b.StartDate, &b.EndDate, &b.Status, &b.TotalPrice, &b.CreatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Booking not found")
 	}
