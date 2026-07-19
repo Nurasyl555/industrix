@@ -13,6 +13,7 @@ type Service interface {
 
 	CreateEquipment(ctx context.Context, ownerID string, req CreateEquipmentRequest) (*Equipment, error)
 	GetEquipment(ctx context.Context, id string) (*Equipment, error)
+	CompareEquipment(ctx context.Context, ids []string) ([]*Equipment, error)
 	ListEquipment(ctx context.Context, f ListEquipmentFilter) ([]*Equipment, int64, error)
 	UpdateEquipment(ctx context.Context, id, ownerID string, req UpdateEquipmentRequest) (*Equipment, error)
 	DeleteEquipment(ctx context.Context, id, ownerID string) error
@@ -111,6 +112,18 @@ func (s *service) CreateEquipment(ctx context.Context, ownerID string, req Creat
 
 func (s *service) GetEquipment(ctx context.Context, id string) (*Equipment, error) {
 	return s.repo.GetEquipmentByID(ctx, id)
+}
+
+// CompareEquipment returns full details for 2–10 equipment ids for a
+// side-by-side comparison view.
+func (s *service) CompareEquipment(ctx context.Context, ids []string) ([]*Equipment, error) {
+	if len(ids) < 2 {
+		return nil, errors.New(errors.CodeValidation, "Provide at least 2 ids to compare")
+	}
+	if len(ids) > 10 {
+		ids = ids[:10]
+	}
+	return s.repo.ListEquipmentByIDs(ctx, ids)
 }
 
 func (s *service) ListEquipment(ctx context.Context, f ListEquipmentFilter) ([]*Equipment, int64, error) {

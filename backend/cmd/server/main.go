@@ -108,10 +108,15 @@ func main() {
 	integrityMod := integrity.NewModule(pgClient, notifier)
 	marketplaceMod := marketplace.NewModule(pgClient)
 	catalogMod := catalog.NewModule(pgClient, publisher)
-	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier, publisher)
+	listingMod := listing.NewModule(pgClient, catalogMod.Service, notifier, publisher, integrityMod.Service)
 	dealMod := deal.NewModule(pgClient, listingMod.Service, jwtClient, notifier, publisher)
 	bookingMod := booking.NewModule(pgClient, listingMod.Service, notifier)
-	paymentMod := payment.NewModule(pgClient, dealMod.Service, publisher, notifier)
+	paymentMod := payment.NewModule(ctx, pgClient, dealMod.Service, publisher, notifier,
+		splitAndTrim(getEnv("KAFKA_BROKERS", "localhost:9092")))
+	if paymentMod.Consumer != nil {
+		go paymentMod.Consumer.Start(ctx)
+		defer paymentMod.Consumer.Close()
+	}
 	adminMod := admin.NewModule(integrityMod.Service, listingMod.Service)
 
 	// Search — OpenSearch-backed, kept in sync via Kafka consumer.

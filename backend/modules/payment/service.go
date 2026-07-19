@@ -18,6 +18,13 @@ type Service interface {
 	Refund(ctx context.Context, id, userID string) (*Payment, error)
 	Get(ctx context.Context, id, userID string) (*Payment, error)
 	ListMine(ctx context.Context, userID string) ([]*Payment, error)
+
+	// OnDealCompleted releases every held escrow on a deal (system-triggered by
+	// the deal.status.changed consumer when a deal reaches completed).
+	OnDealCompleted(ctx context.Context, dealID string)
+	// OnDealCancelled refunds every held escrow on a deal (system-triggered when
+	// a deal is cancelled).
+	OnDealCancelled(ctx context.Context, dealID string)
 }
 
 type service struct {
@@ -103,6 +110,20 @@ func (s *service) Release(ctx context.Context, id, userID string) (*Payment, err
 	if p.PayerID != userID {
 		return nil, errors.New(errors.CodeUnauthorized, "Only the payer can release escrow")
 	}
+	return s.releaseHeld(ctx, p)
+}
+
+func (s *service) Refund(ctx context.Context, id, userID string) (*Payment, error) {
+	p, err := s.requireParticipant(ctx, id, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.refundHeld(ctx, p)
+}
+
+// releaseHeld performs the actual escrow release. Shared by the buyer-facing
+// endpoint and the deal-completed consumer — no authorization is done here.
+func (s *service) releaseHeld(ctx context.Context, p *Payment) (*Payment, error) {
 	if p.Status != StatusHeld {
 		return nil, errors.New(errors.CodeConflict, "Only a held payment can be released")
 	}
@@ -118,11 +139,9 @@ func (s *service) Release(ctx context.Context, id, userID string) (*Payment, err
 	return p, nil
 }
 
-func (s *service) Refund(ctx context.Context, id, userID string) (*Payment, error) {
-	p, err := s.requireParticipant(ctx, id, userID)
-	if err != nil {
-		return nil, err
-	}
+// refundHeld performs the actual escrow refund. Shared by the endpoint and the
+// deal-cancelled consumer — no authorization is done here.
+func (s *service) refundHeld(ctx context.Context, p *Payment) (*Payment, error) {
 	if p.Status != StatusHeld {
 		return nil, errors.New(errors.CodeConflict, "Only a held payment can be refunded")
 	}
@@ -136,6 +155,29 @@ func (s *service) Refund(ctx context.Context, id, userID string) (*Payment, erro
 	s.emit(ctx, contracts.TopicPaymentRefunded, p)
 	s.notify(ctx, p.PayerID, "payment_refunded", "Your escrow payment has been refunded")
 	return p, nil
+}
+
+// OnDealCompleted releases all held escrow for a deal. Best-effort: per-payment
+// failures are swallowed (the buyer-facing endpoint remains a manual fallback).
+func (s *service) OnDealCompleted(ctx context.Context, dealID string) {
+	held, err := s.repo.ListByDealAndStatus(ctx, dealID, StatusHeld)
+	if err != nil {
+		return
+	}
+	for _, p := range held {
+		_, _ = s.releaseHeld(ctx, p)
+	}
+}
+
+// OnDealCancelled refunds all held escrow for a deal. Best-effort.
+func (s *service) OnDealCancelled(ctx context.Context, dealID string) {
+	held, err := s.repo.ListByDealAndStatus(ctx, dealID, StatusHeld)
+	if err != nil {
+		return
+	}
+	for _, p := range held {
+		_, _ = s.refundHeld(ctx, p)
+	}
 }
 
 func (s *service) Get(ctx context.Context, id, userID string) (*Payment, error) {

@@ -38,9 +38,9 @@ func (r *Repository) CreateListing(ctx context.Context, l *Listing) error {
 func (r *Repository) GetListingByID(ctx context.Context, id string) (*Listing, error) {
 	var l Listing
 	err := r.pg.QueryRow(ctx,
-		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, created_at, updated_at
+		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, view_count, created_at, updated_at
 		 FROM listings WHERE id = $1`, id,
-	).Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.CreatedAt, &l.UpdatedAt)
+	).Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Listing not found")
 	}
@@ -51,11 +51,11 @@ func (r *Repository) GetListingViewByID(ctx context.Context, id string) (*Listin
 	var v ListingView
 	err := r.pg.QueryRow(ctx,
 		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE l.id = $1`, id,
 	).Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-		&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt)
+		&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt)
 	if err != nil {
 		return nil, errors.New(errors.CodeNotFound, "Listing not found")
 	}
@@ -67,7 +67,7 @@ func (r *Repository) GetListingViewByID(ctx context.Context, id string) (*Listin
 func (r *Repository) ListByStatusView(ctx context.Context, status string) ([]*ListingView, error) {
 	rows, err := r.pg.Query(ctx,
 		`SELECT l.id, l.equipment_id, e.title, COALESCE(e.description, ''), e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE l.status = $1 ORDER BY l.created_at ASC`, status,
 	)
@@ -80,7 +80,7 @@ func (r *Repository) ListByStatusView(ctx context.Context, status string) ([]*Li
 	for rows.Next() {
 		var v ListingView
 		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.Description, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt); err != nil {
+			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
 			continue
 		}
 		items = append(items, &v)
@@ -142,7 +142,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 	offset := (f.Page - 1) * f.Limit
 	query := fmt.Sprintf(
 		`SELECT l.id, l.equipment_id, e.title, e.category_id, COALESCE(e.region, ''), e.condition, COALESCE(e.image_url, ''),
-		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.created_at
+		        l.seller_id, l.listing_type, l.price, COALESCE(l.price_period, ''), l.status, l.view_count, l.created_at
 		 FROM listings l JOIN equipment e ON e.id = l.equipment_id
 		 WHERE %s ORDER BY %s LIMIT $%d OFFSET $%d`,
 		whereClause, orderBy, argN, argN+1,
@@ -159,7 +159,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 	for rows.Next() {
 		var v ListingView
 		if err := rows.Scan(&v.ID, &v.EquipmentID, &v.Title, &v.CategoryID, &v.Region, &v.Condition, &v.ImageURL,
-			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.CreatedAt); err != nil {
+			&v.SellerID, &v.ListingType, &v.Price, &v.PricePeriod, &v.Status, &v.ViewCount, &v.CreatedAt); err != nil {
 			continue
 		}
 		items = append(items, &v)
@@ -175,7 +175,7 @@ func (r *Repository) ListActive(ctx context.Context, f ListListingsFilter) ([]*L
 
 func (r *Repository) ListBySeller(ctx context.Context, sellerID string) ([]*Listing, error) {
 	rows, err := r.pg.Query(ctx,
-		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, created_at, updated_at
+		`SELECT id, equipment_id, seller_id, listing_type, price, COALESCE(price_period, ''), status, view_count, created_at, updated_at
 		 FROM listings WHERE seller_id = $1 ORDER BY created_at DESC`, sellerID,
 	)
 	if err != nil {
@@ -186,12 +186,22 @@ func (r *Repository) ListBySeller(ctx context.Context, sellerID string) ([]*List
 	var items []*Listing
 	for rows.Next() {
 		var l Listing
-		if err := rows.Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.CreatedAt, &l.UpdatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.EquipmentID, &l.SellerID, &l.ListingType, &l.Price, &l.PricePeriod, &l.Status, &l.ViewCount, &l.CreatedAt, &l.UpdatedAt); err != nil {
 			continue
 		}
 		items = append(items, &l)
 	}
 	return items, nil
+}
+
+// CountBySellerStatuses counts a seller's listings in any of the given statuses
+// (used to enforce subscription plan limits).
+func (r *Repository) CountBySellerStatuses(ctx context.Context, sellerID string, statuses []string) (int, error) {
+	var n int
+	err := r.pg.QueryRow(ctx,
+		`SELECT COUNT(*) FROM listings WHERE seller_id = $1 AND status = ANY($2)`,
+		sellerID, statuses).Scan(&n)
+	return n, err
 }
 
 func (r *Repository) UpdatePrice(ctx context.Context, id string, price float64, pricePeriod string) error {
@@ -208,6 +218,14 @@ func (r *Repository) UpdatePrice(ctx context.Context, id string, price float64, 
 
 func (r *Repository) UpdateStatus(ctx context.Context, id, status string) error {
 	_, err := r.pg.Exec(ctx, "UPDATE listings SET status = $1, updated_at = NOW() WHERE id = $2", status, id)
+	return err
+}
+
+// IncrementViewCount atomically bumps the view counter for an active listing.
+// Non-active listings are ignored so drafts/archived views aren't counted.
+func (r *Repository) IncrementViewCount(ctx context.Context, id string) error {
+	_, err := r.pg.Exec(ctx,
+		"UPDATE listings SET view_count = view_count + 1 WHERE id = $1 AND status = 'active'", id)
 	return err
 }
 

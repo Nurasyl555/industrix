@@ -28,6 +28,14 @@ type DealProvider interface {
 	GetDealBasic(ctx context.Context, dealID string) (*DealBasic, error)
 }
 
+// SubscriptionProvider is implemented by the integrity module, consumed by the
+// listing module to enforce per-plan limits.
+type SubscriptionProvider interface {
+	// ListingLimit returns the maximum number of live/pending listings allowed
+	// for the user's current plan. -1 means unlimited.
+	ListingLimit(ctx context.Context, userID string) int
+}
+
 // Notifier is implemented by the notification module and consumed by any module
 // that emits user-facing events. Fire-and-forget: emitting a notification must
 // never fail the underlying operation, so there's no error return.

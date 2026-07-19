@@ -47,6 +47,31 @@ func (r *Repository) UpdateStatus(ctx context.Context, id, status, providerRef s
 	return err
 }
 
+// ListByDealAndStatus returns a deal's payments in a given status (used by the
+// deal-status consumer to find held escrow to release/refund).
+func (r *Repository) ListByDealAndStatus(ctx context.Context, dealID, status string) ([]*Payment, error) {
+	rows, err := r.pg.Query(ctx,
+		`SELECT id, deal_id, payer_id, payee_id, amount, currency, provider, status,
+		        COALESCE(provider_ref, ''), created_at, updated_at
+		 FROM payments WHERE deal_id = $1 AND status = $2`, dealID, status,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*Payment
+	for rows.Next() {
+		var p Payment
+		if err := rows.Scan(&p.ID, &p.DealID, &p.PayerID, &p.PayeeID, &p.Amount, &p.Currency,
+			&p.Provider, &p.Status, &p.ProviderRef, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			continue
+		}
+		out = append(out, &p)
+	}
+	return out, nil
+}
+
 // ListForUser returns payments where the user is payer or payee (their history).
 func (r *Repository) ListForUser(ctx context.Context, userID string) ([]*Payment, error) {
 	rows, err := r.pg.Query(ctx,

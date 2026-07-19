@@ -127,6 +127,30 @@ func (r *Repository) ListEquipment(ctx context.Context, f ListEquipmentFilter) (
 	return items, total, nil
 }
 
+// ListEquipmentByIDs fetches multiple equipment records for side-by-side
+// comparison. id is cast to text so a malformed id yields no match rather than
+// a query error.
+func (r *Repository) ListEquipmentByIDs(ctx context.Context, ids []string) ([]*Equipment, error) {
+	rows, err := r.pg.Query(ctx,
+		`SELECT id, owner_id, category_id, title, COALESCE(description, ''), condition, COALESCE(region, ''), COALESCE(image_url, ''), created_at, updated_at
+		 FROM equipment WHERE id::text = ANY($1)`, ids,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*Equipment
+	for rows.Next() {
+		var eq Equipment
+		if err := rows.Scan(&eq.ID, &eq.OwnerID, &eq.CategoryID, &eq.Title, &eq.Description, &eq.Condition, &eq.Region, &eq.ImageURL, &eq.CreatedAt, &eq.UpdatedAt); err != nil {
+			continue
+		}
+		items = append(items, &eq)
+	}
+	return items, nil
+}
+
 func (r *Repository) UpdateEquipment(ctx context.Context, eq *Equipment) error {
 	_, err := r.pg.Exec(ctx,
 		`UPDATE equipment SET title = $1, description = $2, condition = $3, region = $4, image_url = $5, updated_at = NOW()

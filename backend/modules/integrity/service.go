@@ -18,8 +18,13 @@ type Service interface {
 	ListCompaniesByStatus(ctx context.Context, status string) ([]*Company, error)
 	SetCompanyStatus(ctx context.Context, id string, status CompanyStatus, note string) error
 
+	// Subscriptions
+	GetSubscription(ctx context.Context, userID string) (*Subscription, error)
+	ChangePlan(ctx context.Context, userID, plan string) (*Subscription, error)
+
 	// Contracts
 	contracts.CompanyProvider
+	contracts.SubscriptionProvider
 }
 
 type service struct {
@@ -83,6 +88,50 @@ func (s *service) SetCompanyStatus(ctx context.Context, id string, status Compan
 		}
 	}
 	return nil
+}
+
+// === Subscriptions ===
+
+// GetSubscription returns the user's subscription, defaulting to the free plan
+// when no row exists.
+func (s *service) GetSubscription(ctx context.Context, userID string) (*Subscription, error) {
+	plan, status, expiresAt, updatedAt, ok, _ := s.repo.GetSubscriptionRow(ctx, userID)
+	if !ok {
+		return &Subscription{
+			UserID: userID, Plan: PlanFree, Status: "active",
+			ListingLimit: listingLimitFor(PlanFree),
+		}, nil
+	}
+	return &Subscription{
+		UserID: userID, Plan: plan, Status: status,
+		ListingLimit: listingLimitFor(plan), ExpiresAt: expiresAt, UpdatedAt: updatedAt,
+	}, nil
+}
+
+// ChangePlan sets the user's plan. This is the MVP self-serve path — real
+// billing (charging the tariff via the payment module) is a later step.
+func (s *service) ChangePlan(ctx context.Context, userID, plan string) (*Subscription, error) {
+	if !validPlans[plan] {
+		return nil, errors.New(errors.CodeValidation, "Unknown plan: "+plan)
+	}
+	if err := s.repo.UpsertPlan(ctx, userID, plan); err != nil {
+		return nil, err
+	}
+	if s.notifier != nil {
+		s.notifier.Notify(ctx, userID, "subscription_changed", "Your plan is now "+plan, "/account/subscription")
+	}
+	return s.GetSubscription(ctx, userID)
+}
+
+// === Contracts (SubscriptionProvider) ===
+
+// ListingLimit returns the current plan's listing cap (-1 = unlimited).
+func (s *service) ListingLimit(ctx context.Context, userID string) int {
+	sub, err := s.GetSubscription(ctx, userID)
+	if err != nil {
+		return listingLimitFor(PlanFree)
+	}
+	return sub.ListingLimit
 }
 
 // === Contracts (CompanyProvider) ===

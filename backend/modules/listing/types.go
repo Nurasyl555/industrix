@@ -11,6 +11,7 @@ type Listing struct {
 	Price       float64   `json:"price"`
 	PricePeriod string    `json:"price_period,omitempty"` // day, week, month — rental only
 	Status      string    `json:"status"`                 // draft, active, archived
+	ViewCount   int       `json:"view_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -30,6 +31,7 @@ type ListingView struct {
 	Price       float64   `json:"price"`
 	PricePeriod string    `json:"price_period,omitempty"`
 	Status      string    `json:"status"`
+	ViewCount   int       `json:"view_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

@@ -27,6 +27,10 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	companies.Put("/:id", h.UpdateCompany)
 
 	router.Get("/my-company", h.GetMyCompany)
+
+	sub := router.Group("/subscription")
+	sub.Get("/", h.GetSubscription)
+	sub.Put("/", h.ChangePlan)
 }
 
 func respondErr(c *fiber.Ctx, err error) error {
@@ -83,6 +87,41 @@ func (h *Handler) GetMyCompany(c *fiber.Ctx) error {
 		return respondErr(c, err)
 	}
 	return c.JSON(company)
+}
+
+// GetSubscription godoc
+// @Summary Get the current user's subscription (defaults to free)
+// @Tags subscription
+// @Security BearerAuth
+// @Success 200 {object} Subscription
+// @Router /subscription [get]
+func (h *Handler) GetSubscription(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	sub, err := h.service.GetSubscription(c.Context(), userID)
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(sub)
+}
+
+// ChangePlan godoc
+// @Summary Change the current user's subscription plan
+// @Tags subscription
+// @Security BearerAuth
+// @Param request body ChangePlanRequest true "New plan"
+// @Success 200 {object} Subscription
+// @Router /subscription [put]
+func (h *Handler) ChangePlan(c *fiber.Ctx) error {
+	var req ChangePlanRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(errors.New(errors.CodeValidation, "Invalid request body"))
+	}
+	userID := c.Locals("user_id").(string)
+	sub, err := h.service.ChangePlan(c.Context(), userID, req.Plan)
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(sub)
 }
 
 // GetCompany godoc

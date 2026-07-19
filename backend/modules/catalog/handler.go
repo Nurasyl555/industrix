@@ -3,6 +3,7 @@ package catalog
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/industrix/backend/pkg/errors"
@@ -23,6 +24,7 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) RegisterPublicRoutes(router fiber.Router) {
 	catalog := router.Group("/catalog")
 	catalog.Get("/categories", h.ListCategories)
+	catalog.Get("/compare", h.Compare)
 	catalog.Get("/equipment", h.ListEquipment)
 	catalog.Get("/equipment/:id", h.GetEquipment)
 }
@@ -125,6 +127,26 @@ func (h *Handler) ListEquipment(c *fiber.Ctx) error {
 		"page":  filter.Page,
 		"limit": filter.Limit,
 	})
+}
+
+// Compare godoc
+// @Summary Compare several equipment items side by side
+// @Tags catalog
+// @Param ids query string true "Comma-separated equipment IDs (2–10)"
+// @Success 200 {object} map[string]interface{}
+// @Router /catalog/compare [get]
+func (h *Handler) Compare(c *fiber.Ctx) error {
+	var ids []string
+	for _, part := range strings.Split(c.Query("ids"), ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			ids = append(ids, p)
+		}
+	}
+	items, err := h.service.CompareEquipment(c.Context(), ids)
+	if err != nil {
+		return respondErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
 }
 
 // UpdateEquipment godoc

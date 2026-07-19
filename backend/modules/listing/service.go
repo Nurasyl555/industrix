@@ -32,12 +32,17 @@ type service struct {
 	equipment contracts.EquipmentProvider
 	notifier  contracts.Notifier
 	events    contracts.EventPublisher
+	subs      contracts.SubscriptionProvider
 }
 
 // NewService creates a new listing service
-func NewService(repo *Repository, equipment contracts.EquipmentProvider, notifier contracts.Notifier, events contracts.EventPublisher) Service {
-	return &service{repo: repo, equipment: equipment, notifier: notifier, events: events}
+func NewService(repo *Repository, equipment contracts.EquipmentProvider, notifier contracts.Notifier, events contracts.EventPublisher, subs contracts.SubscriptionProvider) Service {
+	return &service{repo: repo, equipment: equipment, notifier: notifier, events: events, subs: subs}
 }
+
+// liveStatuses are the listing states that count against a seller's plan limit:
+// pending moderation and live listings both occupy a slot.
+var liveStatuses = []string{"moderation", "active"}
 
 // listingEvent is the payload published on listing.* topics — enough for search
 // indexing without consumers calling back into listing.
@@ -109,6 +114,9 @@ func (s *service) CreateListing(ctx context.Context, sellerID string, req Create
 }
 
 func (s *service) GetListing(ctx context.Context, id string) (*ListingView, error) {
+	// Count this detail view before reading, so the returned count is fresh.
+	// Best-effort: a counter failure must not break the read.
+	_ = s.repo.IncrementViewCount(ctx, id)
 	return s.repo.GetListingViewByID(ctx, id)
 }
 
@@ -163,6 +171,19 @@ func (s *service) Publish(ctx context.Context, id, sellerID string) error {
 	l, err := s.requireOwner(ctx, id, sellerID)
 	if err != nil {
 		return err
+	}
+	// Enforce the seller's subscription plan limit before the listing occupies a
+	// live/pending slot. A draft going to moderation counts against the cap.
+	if s.subs != nil {
+		if limit := s.subs.ListingLimit(ctx, sellerID); limit >= 0 {
+			count, err := s.repo.CountBySellerStatuses(ctx, sellerID, liveStatuses)
+			if err != nil {
+				return err
+			}
+			if count >= limit {
+				return errors.New(errors.CodeConflict, "Listing limit reached for your plan — upgrade to publish more")
+			}
+		}
 	}
 	if err := s.repo.UpdateStatus(ctx, id, "moderation"); err != nil {
 		return err
