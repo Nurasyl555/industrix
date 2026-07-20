@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { ProductCard } from "./ProductCard";
 import { listActiveListings, type ListingView } from "@/lib/listing";
 
 export function FeaturedEquipment() {
+  const { t } = useI18n();
   const [items, setItems] = useState<ListingView[]>([]);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function FeaturedEquipment() {
           className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-10 py-5 text-[15px] h-auto rounded-xl"
           style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
         >
-          <Link href="/shop/catalog">View All Listings</Link>
+          <Link href="/shop/catalog">{t("home.viewAllListings")}</Link>
         </Button>
       </div>
     </section>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { Search, Shield, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link"
 
 export function HeroBanner() {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
 
   return (
@@ -32,7 +34,7 @@ export function HeroBanner() {
           style={{ fontFamily: "var(--font-inter, 'Outfit', sans-serif)" }}
         >
           The Trusted Marketplace for
-          <span className="block text-amber-400">Heavy Machinery</span>
+          <span className="block text-amber-400">{t("home.heroTagline")}</span>
         </h1>
 
         <p className="mt-4 text-[14px] text-white/60 leading-relaxed max-w-base mx-auto">
@@ -46,7 +48,7 @@ export function HeroBanner() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="What equipment are you looking for..."
+            placeholder={t("home.searchPlaceholder")}
             className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[14px] placeholder:text-gray-400 rounded-none h-13 px-5"
           />
           <Link

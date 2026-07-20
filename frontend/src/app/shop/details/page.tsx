@@ -6,6 +6,7 @@ import { Mail, MapPin, ShieldCheck, Tag } from "lucide-react";
 import { getListing, type ListingView } from "@/lib/listing";
 import { createDeal } from "@/lib/deal";
 import { friendlyError } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import { WishlistButton } from "../components/WishlistButton";
 import { SellerReviews } from "../components/SellerReviews";
 import { RentalCalendar } from "../components/RentalCalendar";
@@ -19,6 +20,7 @@ function formatPrice(item: ListingView) {
 }
 
 function DetailsContent() {
+  const { t } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("id") ?? "";
@@ -34,7 +36,7 @@ function DetailsContent() {
 
   useEffect(() => {
     if (!id) {
-      setError("No listing specified.");
+      setError(t("detail.noneSpecified"));
       setLoading(false);
       return;
     }
@@ -68,7 +70,7 @@ function DetailsContent() {
   if (error || !listing) {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500">
-        {error || "Listing not found."}
+        {error || t("detail.notFound")}
       </main>
     );
   }
@@ -86,7 +88,7 @@ function DetailsContent() {
                 <img src={listing.image_url || "/pics/sample.jpg"} alt={listing.title} className="h-full w-full object-cover" />
                 <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
                   <span className="rounded-md bg-sky-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-                    {listing.listing_type === "rental" ? "For Rent" : "For Sale"}
+                    {listing.listing_type === "rental" ? t("listingType.rental") : t("listingType.sale")}
                   </span>
                   <span className="rounded-md bg-black/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
                     {listing.condition}
@@ -113,13 +115,13 @@ function DetailsContent() {
                 </span>
               )}
               <span className="flex items-center gap-1.5">
-                <Tag size={14} /> {listing.condition === "new" ? "New" : "Used"}
+                <Tag size={14} /> {listing.condition === "new" ? t("condition.new") : t("condition.used")}
               </span>
             </div>
 
             {listing.description && (
               <section className="space-y-4">
-                <h2 className="text-2xl font-semibold text-slate-900">Description</h2>
+                <h2 className="text-2xl font-semibold text-slate-900">{t("detail.description")}</h2>
                 <p className="max-w-4xl text-base leading-8 text-slate-600">{listing.description}</p>
               </section>
             )}
@@ -135,14 +137,14 @@ function DetailsContent() {
 
                 {sent ? (
                   <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
-                    Your message was sent to the seller.
+                    {t("detail.messageSent")}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Introduce yourself and ask about this listing…"
+                      placeholder={t("detail.messagePlaceholder")}
                       rows={3}
                       className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
@@ -152,7 +154,7 @@ function DetailsContent() {
                       disabled={sending}
                       className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60"
                     >
-                      <Mail size={16} /> {sending ? "Sending…" : "Contact Seller"}
+                      <Mail size={16} /> {sending ? t("common.sending") : t("detail.contactSeller")}
                     </button>
                   </div>
                 )}

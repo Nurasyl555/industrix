@@ -8,6 +8,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loginWithEmail, friendlyError } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -33,14 +35,14 @@ export default function LoginPage() {
     let ok = true;
     setEmailErr(""); setPasswordErr("");
     if (!email.trim()) {
-      setEmailErr("Email is required"); ok = false;
+      setEmailErr(t("valid.emailRequired")); ok = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailErr("Enter a valid email address"); ok = false;
+      setEmailErr(t("valid.emailInvalid")); ok = false;
     }
     if (!password) {
-      setPasswordErr("Password is required"); ok = false;
+      setPasswordErr(t("valid.passwordRequired")); ok = false;
     } else if (password.length < 8) {
-      setPasswordErr("At least 8 characters"); ok = false;
+      setPasswordErr(t("valid.passwordShort")); ok = false;
     }
     return ok;
   }
@@ -70,7 +72,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Log In</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.login.title")}</CardTitle>
         </CardHeader>
 
         <CardContent>
@@ -82,11 +84,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("common.email")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Email..."
+                placeholder={t("common.email")}
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setEmailErr(""); }}
                 className={emailErr ? "border-destructive" : ""}
@@ -95,11 +97,11 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("common.password")}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Password"
+                placeholder={t("common.password")}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setPasswordErr(""); }}
                 className={passwordErr ? "border-destructive" : ""}
@@ -112,20 +114,22 @@ export default function LoginPage() {
                 href="/auth/forgot-password"
                 className="text-sm text-primary hover:underline"
               >
-                Forgot password?
+                {t("auth.login.forgot")}
               </Link>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in…" : "Continue"}
+              {loading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
           </form>
         </CardContent>
 
         <CardFooter className="flex-col gap-1 text-center text-sm text-muted-foreground">
-          <span>Already have an account?</span>
+          {/* The link goes to registration, so the prompt must invite signing
+              up — it previously read "Already have an account? Sign In". */}
+          <span>{t("auth.login.noAccount")}</span>
           <Link href="/auth/register" className="font-semibold text-primary hover:underline">
-            Sign In
+            {t("auth.login.toRegister")}
           </Link>
         </CardFooter>
       </Card>

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { type ViewMode } from "@/types";
 import { type ListingView } from "@/lib/listing";
 import { WishlistButton } from "./WishlistButton";
+import { useI18n } from "@/lib/i18n";
 
 function formatPrice(item: ListingView) {
   const price = "$" + item.price.toLocaleString("en-US");
@@ -31,6 +32,7 @@ function ConditionBadge({ condition }: { condition: ListingView["condition"] }) 
 
 /* ─── GRID CARD ─────────────────────────────────────────────── */
 function GridCard({ item }: { item: ListingView }) {
+  const { t } = useI18n();
   return (
     <Link
       href={`/shop/details?id=${item.id}`}
@@ -58,7 +60,7 @@ function GridCard({ item }: { item: ListingView }) {
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-gray-500 mb-3">
           <span className="flex items-center gap-1.5">
             <Tag size={12} className="text-gray-400 shrink-0" />
-            {item.listing_type === "rental" ? "For Rent" : "For Sale"}
+            {item.listing_type === "rental" ? t("listingType.rental") : t("listingType.sale")}
           </span>
           {item.region && (
             <span className="flex items-center gap-1.5">
@@ -73,7 +75,7 @@ function GridCard({ item }: { item: ListingView }) {
           variant="outline"
           className="w-full h-9 text-[13px] font-semibold border-gray-200 hover:border-gray-400 mt-auto"
         >
-          <span>View Details</span>
+          <span>{t("card.viewDetails")}</span>
         </Button>
       </div>
     </Link>
@@ -82,6 +84,7 @@ function GridCard({ item }: { item: ListingView }) {
 
 /* ─── LIST CARD ──────────────────────────────────────────────── */
 function ListCard({ item }: { item: ListingView }) {
+  const { t } = useI18n();
   return (
     <Link
       href={`/shop/details?id=${item.id}`}
@@ -112,7 +115,7 @@ function ListCard({ item }: { item: ListingView }) {
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-gray-500 mb-2">
           <span className="flex items-center gap-1.5">
             <Tag size={12} className="text-gray-400" />
-            {item.listing_type === "rental" ? "For Rent" : "For Sale"}
+            {item.listing_type === "rental" ? t("listingType.rental") : t("listingType.sale")}
           </span>
           {item.region && (
             <span className="flex items-center gap-1.5">
@@ -129,7 +132,7 @@ function ListCard({ item }: { item: ListingView }) {
             size="sm"
             className="h-8 text-[12px] font-semibold border-gray-200 hover:border-gray-400 px-5"
           >
-            <span>View Details</span>
+            <span>{t("card.viewDetails")}</span>
           </Button>
         </div>
       </div>

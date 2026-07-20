@@ -1,7 +1,11 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function CtaBanner() {
+  const { t } = useI18n();
   return (
     <div className="max-w-7xl mx-auto px-6 mb-14">
       <div
@@ -29,7 +33,7 @@ export function CtaBanner() {
               className="bg-gray-900 hover:bg-gray-700 text-white font-bold px-6"
               style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
             >
-              <Link href="/shop/sell">Start Selling Now</Link>
+              <Link href="/shop/sell">{t("home.startSelling")}</Link>
             </Button>
             <Button
               asChild
@@ -37,7 +41,7 @@ export function CtaBanner() {
               className="border-2 border-white/70 text-white bg-transparent hover:bg-white/15 hover:border-white font-bold px-6"
               style={{ fontFamily: "var(--font-gotham, 'Outfit', sans-serif)" }}
             >
-              <Link href="/shop/catalog">Learn More</Link>
+              <Link href="/shop/catalog">{t("home.learnMore")}</Link>
             </Button>
           </div>
         </div>

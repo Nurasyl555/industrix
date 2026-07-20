@@ -14,11 +14,13 @@ import {
   postDealMessage,
   dealSocketURL,
   closeDeal,
+  isTerminalDeal,
   type Deal,
   type DealMessage,
 } from "@/lib/deal";
 import { getListing, type ListingView } from "@/lib/listing";
 import { friendlyError } from "@/lib/api";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
 function mySide(deal: Deal): string {
@@ -26,6 +28,7 @@ function mySide(deal: Deal): string {
 }
 
 export default function DealChatPage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const dealId = String(params.id);
@@ -104,7 +107,7 @@ export default function DealChatPage() {
 
   async function handleSend() {
     const text = body.trim();
-    if (!text || !deal || deal.status === "closed") return;
+    if (!text || !deal || isTerminalDeal(deal.status) || deal.disputed) return;
     setBody("");
 
     const ws = wsRef.current;
@@ -126,7 +129,7 @@ export default function DealChatPage() {
     if (!deal) return;
     try {
       await closeDeal(dealId);
-      setDeal({ ...deal, status: "closed" });
+      setDeal({ ...deal, status: "cancelled" });
     } catch (err) {
       setError(friendlyError(err));
     }
@@ -144,25 +147,25 @@ export default function DealChatPage() {
           </Link>
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold text-gray-900">
-              {listing ? listing.title : "Conversation"}
+              {listing ? listing.title : ""}
             </p>
             <p className="text-xs text-gray-500">
-              {deal && (deal.role === "buyer" ? "You inquired · " : "Inquiry received · ")}
+              {deal && `${deal.role === "buyer" ? t("deals.youInquired") : t("deals.inquiryReceived")} · `}
               <span className={connected ? "text-emerald-600" : "text-gray-400"}>
-                {connected ? "● live" : "○ offline"}
+                {connected ? t("thread.live") : t("thread.offline")}
               </span>
-              {deal?.status === "closed" && " · closed"}
+              {deal && isTerminalDeal(deal.status) && ` · ${t(`dealStatus.${deal.status}` as TranslationKey)}`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {listing && (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/shop/details?id=${deal?.listing_id}`}>Listing</Link>
+              <Link href={`/shop/details?id=${deal?.listing_id}`}>{t("thread.viewListing")}</Link>
             </Button>
           )}
-          {deal?.status === "inquiry" && (
-            <Button variant="outline" size="sm" onClick={handleClose}>Close</Button>
+          {deal && !isTerminalDeal(deal.status) && !deal.disputed && (
+            <Button variant="outline" size="sm" onClick={handleClose}>{t("thread.close")}</Button>
           )}
         </div>
       </div>
@@ -171,9 +174,9 @@ export default function DealChatPage() {
       <div className="flex-1 overflow-y-auto py-4">
         {error && <div className="mb-3 rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div>}
         {loading ? (
-          <div className="py-24 text-center text-sm text-gray-400">Loading…</div>
+          <div className="py-24 text-center text-sm text-gray-400">{t("common.loading")}</div>
         ) : messages.length === 0 ? (
-          <div className="py-24 text-center text-sm text-gray-400">No messages yet. Say hello 👋</div>
+          <div className="py-24 text-center text-sm text-gray-400">{t("thread.noMessages")}</div>
         ) : (
           <div className="flex flex-col gap-2">
             {messages.map((m) => {
@@ -196,9 +199,9 @@ export default function DealChatPage() {
       </div>
 
       {/* Composer */}
-      {deal?.status === "closed" ? (
+      {deal && (isTerminalDeal(deal.status) || deal.disputed) ? (
         <div className="border-t border-gray-200 py-4 text-center text-sm text-gray-400">
-          This deal is closed — replies are disabled.
+          {deal.disputed ? t("thread.frozenNotice") : t("thread.closedNotice")}
         </div>
       ) : (
         <div className="flex items-center gap-2 border-t border-gray-200 pt-3">
@@ -206,7 +209,7 @@ export default function DealChatPage() {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
-            placeholder="Type a message…"
+            placeholder={t("thread.messagePlaceholder")}
             className="flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <Button onClick={handleSend} disabled={!body.trim()} className="rounded-full h-10 w-10 p-0">

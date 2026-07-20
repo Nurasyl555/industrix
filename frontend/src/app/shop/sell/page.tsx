@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { listCategories, createEquipment, type Category } from "@/lib/catalog";
 import { createListing, publishListing, type ListingType, type PricePeriod } from "@/lib/listing";
+import { useI18n } from "@/lib/i18n";
 import { getMyCompany } from "@/lib/company";
 import { getCurrentUser } from "@/lib/user";
 import { uploadImage } from "@/lib/media";
@@ -20,6 +21,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function SellPage() {
+  const { t } = useI18n();
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -57,7 +59,7 @@ export default function SellPage() {
     setError("");
 
     if (!title.trim() || !categoryId || !price) {
-      setError("Please fill in title, category, and price.");
+      setError(t("sell.requiredFields"));
       return;
     }
 
@@ -103,15 +105,14 @@ export default function SellPage() {
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Register your company first</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t("sell.needCompanyTitle")}</CardTitle>
             <CardDescription>
-              Only registered companies can list equipment. It takes a minute — your
-              BIN and contact details.
+              {t("sell.needCompanyText")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link href="/account/company">Register company</Link>
+              <Link href="/account/company">{t("sell.registerCompany")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -123,8 +124,8 @@ export default function SellPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4 py-10">
       <Card className="w-full max-w-lg shadow-sm">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">List your equipment</CardTitle>
-          <CardDescription>Your listing is submitted for moderation and goes live once an admin approves it.</CardDescription>
+          <CardTitle className="text-2xl font-bold">{t("sell.formTitle")}</CardTitle>
+          <CardDescription>{t("sell.formSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -133,13 +134,13 @@ export default function SellPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="2018 Caterpillar 320 Excavator" />
+              <Label htmlFor="title">{t("sell.fieldTitle")}</Label>
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("sell.titlePlaceholder")} />
             </div>
 
             {/* Photo */}
             <div className="space-y-1.5">
-              <Label htmlFor="photo">Photo</Label>
+              <Label htmlFor="photo">{t("sell.photo")}</Label>
               <div className="flex items-center gap-4">
                 <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
                   {imageUrl ? (
@@ -175,14 +176,14 @@ export default function SellPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t("sell.category")}</Label>
               <select
                 id="category"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
               >
-                <option value="">Select a category…</option>
+                <option value="">{t("sell.selectCategory")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -190,7 +191,7 @@ export default function SellPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("sell.description")}</Label>
               <textarea
                 id="description"
                 value={description}
@@ -202,60 +203,60 @@ export default function SellPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="condition">Condition</Label>
+                <Label htmlFor="condition">{t("filters.condition")}</Label>
                 <select
                   id="condition"
                   value={condition}
                   onChange={(e) => setCondition(e.target.value as "new" | "used")}
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                 >
-                  <option value="used">Used</option>
-                  <option value="new">New</option>
+                  <option value="used">{t("condition.used")}</option>
+                  <option value="new">{t("condition.new")}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="region">Region</Label>
-                <Input id="region" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Almaty" />
+                <Label htmlFor="region">{t("sell.region")}</Label>
+                <Input id="region" value={region} onChange={(e) => setRegion(e.target.value)} placeholder={t("sell.regionPlaceholder")} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="listingType">Sale or Rent</Label>
+                <Label htmlFor="listingType">{t("filters.saleOrRent")}</Label>
                 <select
                   id="listingType"
                   value={listingType}
                   onChange={(e) => setListingType(e.target.value as ListingType)}
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                 >
-                  <option value="sale">For Sale</option>
-                  <option value="rental">For Rent</option>
+                  <option value="sale">{t("listingType.sale")}</option>
+                  <option value="rental">{t("listingType.rental")}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="price">Price ($)</Label>
+                <Label htmlFor="price">{t("sell.price")}</Label>
                 <Input id="price" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
               </div>
             </div>
 
             {listingType === "rental" && (
               <div className="space-y-1.5">
-                <Label htmlFor="pricePeriod">Per</Label>
+                <Label htmlFor="pricePeriod">{t("sell.per")}</Label>
                 <select
                   id="pricePeriod"
                   value={pricePeriod}
                   onChange={(e) => setPricePeriod(e.target.value as PricePeriod)}
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                 >
-                  <option value="day">Day</option>
-                  <option value="week">Week</option>
-                  <option value="month">Month</option>
+                  <option value="day">{t("period.day")}</option>
+                  <option value="week">{t("period.week")}</option>
+                  <option value="month">{t("period.month")}</option>
                 </select>
               </div>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Publishing…" : "Publish Listing"}
+              {loading ? t("sell.publishing") : t("sell.publish")}
             </Button>
           </form>
         </CardContent>

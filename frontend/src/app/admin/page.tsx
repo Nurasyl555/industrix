@@ -21,9 +21,11 @@ import { type Company } from "@/lib/company";
 import { type ListingView } from "@/lib/listing";
 import { getCurrentUser } from "@/lib/user";
 import { friendlyError } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
 export default function AdminPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [tab, setTab] = useState<"companies" | "listings">("companies");
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -67,20 +69,20 @@ export default function AdminPage() {
     }
   }
 
-  if (loading) return <div className="py-24 text-center text-gray-400">Loading…</div>;
+  if (loading) return <div className="py-24 text-center text-gray-400">{t("common.loading")}</div>;
 
   if (denied) {
     return (
       <div className="py-24 text-center">
-        <p className="text-lg font-semibold text-gray-700">Admin access required</p>
-        <p className="mt-1 text-sm text-gray-400">This page is only available to administrators.</p>
+        <p className="text-lg font-semibold text-gray-700">{t("admin.accessRequired")}</p>
+        <p className="mt-1 text-sm text-gray-400">{t("admin.accessHint")}</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
-      <h1 className="mb-6 text-2xl font-extrabold text-gray-900">Admin console</h1>
+      <h1 className="mb-6 text-2xl font-extrabold text-gray-900">{t("admin.title")}</h1>
 
       {error && <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
 
@@ -89,19 +91,19 @@ export default function AdminPage() {
           onClick={() => setTab("companies")}
           className={`rounded-full px-4 py-1.5 text-sm font-semibold ${tab === "companies" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
         >
-          Companies ({companies.length})
+          {t("admin.tabCompanies")} ({companies.length})
         </button>
         <button
           onClick={() => setTab("listings")}
           className={`rounded-full px-4 py-1.5 text-sm font-semibold ${tab === "listings" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}
         >
-          Listings ({listings.length})
+          {t("admin.tabListings")} ({listings.length})
         </button>
       </div>
 
       {tab === "companies" && (
         <div className="flex flex-col gap-3">
-          {companies.length === 0 && <p className="py-16 text-center text-sm text-gray-400">No companies awaiting verification.</p>}
+          {companies.length === 0 && <p className="py-16 text-center text-sm text-gray-400">{t("admin.noCompanies")}</p>}
           {companies.map((c) => (
             <div key={c.id} className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4">
               <div className="min-w-0">
@@ -111,10 +113,10 @@ export default function AdminPage() {
               </div>
               <div className="flex shrink-0 gap-2">
                 <Button size="sm" onClick={() => act(() => verifyCompany(c.id), loadCompanies)}>
-                  <Check size={15} /> Verify
+                  <Check size={15} /> {t("admin.verify")}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => act(() => rejectCompany(c.id, "Rejected by admin"), loadCompanies)}>
-                  <X size={15} /> Reject
+                <Button size="sm" variant="outline" onClick={() => act(() => rejectCompany(c.id, t("admin.rejectedByAdmin")), loadCompanies)}>
+                  <X size={15} /> {t("admin.reject")}
                 </Button>
               </div>
             </div>
@@ -124,7 +126,7 @@ export default function AdminPage() {
 
       {tab === "listings" && (
         <div className="flex flex-col gap-3">
-          {listings.length === 0 && <p className="py-16 text-center text-sm text-gray-400">No listings awaiting moderation.</p>}
+          {listings.length === 0 && <p className="py-16 text-center text-sm text-gray-400">{t("admin.noListings")}</p>}
           {listings.map((l) => (
             <div key={l.id} className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4">
               <div className="min-w-0">
@@ -132,15 +134,15 @@ export default function AdminPage() {
                   {l.title}
                 </Link>
                 <p className="text-sm text-gray-500">
-                  {l.listing_type === "rental" ? "For Rent" : "For Sale"} · ${l.price.toLocaleString()} · {l.condition} · {l.region || "—"}
+                  {l.listing_type === "rental" ? t("listingType.rental") : t("listingType.sale")} · ${l.price.toLocaleString()} · {l.condition} · {l.region || "—"}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <Button size="sm" onClick={() => act(() => approveListing(l.id), loadListings)}>
-                  <Check size={15} /> Approve
+                  <Check size={15} /> {t("admin.approve")}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => act(() => rejectListing(l.id), loadListings)}>
-                  <X size={15} /> Reject
+                  <X size={15} /> {t("admin.reject")}
                 </Button>
               </div>
             </div>

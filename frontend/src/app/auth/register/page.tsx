@@ -14,13 +14,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-type Role = "Buyer" | "Seller" | "Service Provider";
+// The role's stored value is separate from its label: the label is translated,
+// so using it as the value would make the selection change meaning with the
+// interface language.
+type Role = "buyer" | "seller" | "provider";
 type Step = 1 | 2 | 3;
-const ROLES: Role[] = ["Buyer", "Seller", "Service Provider"];
+
+const ROLES: { value: Role; labelKey: TranslationKey }[] = [
+  { value: "buyer", labelKey: "role.buyer" },
+  { value: "seller", labelKey: "role.seller" },
+  { value: "provider", labelKey: "role.provider" },
+];
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [step, setStep] = useState<Step>(1);
 
@@ -48,30 +58,30 @@ export default function RegisterPage() {
   // ── Validation ──────────────────────────────────────────────────────────────
 
   function validateStep1() {
-    if (!role) { setRoleErr("Please select a role to continue"); return false; }
+    if (!role) { setRoleErr(t("valid.roleRequired")); return false; }
     setRoleErr(""); return true;
   }
 
   function validateStep2() {
     let ok = true;
     setNameErr(""); setEmailErr(""); setPhoneErr("");
-    if (!fullName.trim()) { setNameErr("Full name is required"); ok = false; }
-    if (!email.trim()) { setEmailErr("Email is required"); ok = false; }
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailErr("Enter a valid email"); ok = false; }
-    if (!phone.trim()) { setPhoneErr("Phone number is required"); ok = false; }
-    else if (!/^\+?[\d\s\-()]{7,15}$/.test(phone)) { setPhoneErr("Enter a valid phone number"); ok = false; }
+    if (!fullName.trim()) { setNameErr(t("valid.nameRequired")); ok = false; }
+    if (!email.trim()) { setEmailErr(t("valid.emailRequired")); ok = false; }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailErr(t("valid.emailInvalid")); ok = false; }
+    if (!phone.trim()) { setPhoneErr(t("valid.phoneRequired")); ok = false; }
+    else if (!/^\+?[\d\s\-()]{7,15}$/.test(phone)) { setPhoneErr(t("valid.phoneInvalid")); ok = false; }
     return ok;
   }
 
   function validateStep3() {
     let ok = true;
     setPasswordErr(""); setConfirmErr("");
-    if (!password) { setPasswordErr("Password is required"); ok = false; }
+    if (!password) { setPasswordErr(t("valid.passwordRequired")); ok = false; }
     else if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
-      setPasswordErr("Use at least 8 characters, including a letter and a number"); ok = false;
+      setPasswordErr(t("valid.passwordWeak")); ok = false;
     }
-    if (!confirmPassword) { setConfirmErr("Please re-enter your password"); ok = false; }
-    else if (password !== confirmPassword) { setConfirmErr("Passwords do not match"); ok = false; }
+    if (!confirmPassword) { setConfirmErr(t("valid.passwordRepeat")); ok = false; }
+    else if (password !== confirmPassword) { setConfirmErr(t("valid.passwordMismatch")); ok = false; }
     return ok;
   }
 
@@ -107,9 +117,9 @@ export default function RegisterPage() {
 
   const Footer = () => (
     <CardFooter className="flex-col gap-0.5 text-center text-sm text-muted-foreground pt-0">
-      <span>Already have an account?</span>
+      <span>{t("auth.register.haveAccount")}</span>
       <Link href="/auth/login" className="font-bold text-primary hover:underline">
-        Sign In
+        {t("auth.register.toLogin")}
       </Link>
     </CardFooter>
   );
@@ -124,8 +134,8 @@ export default function RegisterPage() {
         {step === 1 && (
           <>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
-              <CardDescription>Choose how you want to use the platform</CardDescription>
+              <CardTitle className="text-2xl font-bold">{t("auth.register.title")}</CardTitle>
+              <CardDescription>{t("auth.register.chooseRole")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {apiError && (
@@ -133,22 +143,22 @@ export default function RegisterPage() {
               )}
               {ROLES.map((r) => (
                 <button
-                  key={r}
+                  key={r.value}
                   type="button"
-                  onClick={() => { setRole(r); setRoleErr(""); }}
+                  onClick={() => { setRole(r.value); setRoleErr(""); }}
                   className={cn(
                     "w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors",
-                    role === r
+                    role === r.value
                       ? "border-primary bg-background font-medium"
                       : "border-border bg-background hover:border-muted-foreground/40"
                   )}
                 >
-                  {r}
+                  {t(r.labelKey)}
                 </button>
               ))}
               {roleErr && <p className="text-xs text-destructive">{roleErr}</p>}
               <div className="pt-2">
-                <Button className="w-full" onClick={handleNext}>Continue</Button>
+                <Button className="w-full" onClick={handleNext}>{t("common.continue")}</Button>
               </div>
             </CardContent>
             <Footer />
@@ -159,7 +169,7 @@ export default function RegisterPage() {
         {step === 2 && (
           <>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("auth.register.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {apiError && (
@@ -167,7 +177,7 @@ export default function RegisterPage() {
               )}
               <div>
                 <Input
-                  placeholder="Full name..."
+                  placeholder={t("common.fullName")}
                   value={fullName}
                   onChange={(e) => { setFullName(e.target.value); setNameErr(""); }}
                   className={nameErr ? "border-destructive" : ""}
@@ -177,7 +187,7 @@ export default function RegisterPage() {
               <div>
                 <Input
                   type="email"
-                  placeholder="Email..."
+                  placeholder={t("common.email")}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailErr(""); }}
                   className={emailErr ? "border-destructive" : ""}
@@ -187,7 +197,7 @@ export default function RegisterPage() {
               <div>
                 <Input
                   type="tel"
-                  placeholder="Phone number..."
+                  placeholder={t("common.phone")}
                   value={phone}
                   onChange={(e) => { setPhone(e.target.value); setPhoneErr(""); }}
                   className={phoneErr ? "border-destructive" : ""}
@@ -195,7 +205,7 @@ export default function RegisterPage() {
                 {phoneErr && <p className="text-xs text-destructive mt-1">{phoneErr}</p>}
               </div>
               <div className="pt-2">
-                <Button className="w-full" onClick={handleNext}>Continue</Button>
+                <Button className="w-full" onClick={handleNext}>{t("common.continue")}</Button>
               </div>
             </CardContent>
             <Footer />
@@ -206,7 +216,7 @@ export default function RegisterPage() {
         {step === 3 && (
           <>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Create your password</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("auth.register.passwordTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               {apiError && (
@@ -216,7 +226,7 @@ export default function RegisterPage() {
                 <div>
                   <Input
                     type="password"
-                    placeholder="Create a password"
+                    placeholder={t("auth.register.createPassword")}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setPasswordErr(""); }}
                     className={passwordErr ? "border-destructive" : ""}
@@ -226,7 +236,7 @@ export default function RegisterPage() {
                 <div>
                   <Input
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder={t("auth.register.repeatPassword")}
                     value={confirmPassword}
                     onChange={(e) => { setConfirm(e.target.value); setConfirmErr(""); }}
                     className={confirmErr ? "border-destructive" : ""}
@@ -238,7 +248,7 @@ export default function RegisterPage() {
                 </p>
                 <div className="pt-2">
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account…" : "Continue"}
+                    {loading ? t("auth.register.creating") : t("common.continue")}
                   </Button>
                 </div>
               </form>

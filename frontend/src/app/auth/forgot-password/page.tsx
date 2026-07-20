@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 const OTP_LENGTH   = 6;
 const TIMER_START  = 60; // seconds — matches Redis OTP TTL
 
 export default function ForgotPasswordPage() {
+  const { t } = useI18n();
   const router = useRouter();
 
   const [step, setStep]         = useState<1 | 2>(1);
@@ -54,7 +56,7 @@ export default function ForgotPasswordPage() {
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
     setContactErr(""); setApiError("");
-    if (!contact.trim()) { setContactErr("Please enter your email or phone number"); return; }
+    if (!contact.trim()) { setContactErr(t("valid.contactRequired")); return; }
     setLoading(true);
     try {
       // Identity module expects phone for OTP; if email is entered backend resolves it
@@ -122,9 +124,9 @@ export default function ForgotPasswordPage() {
     } catch (err) {
       const e = err as { code?: string };
       if (e?.code === "UNAUTHORIZED") {
-        setApiError("Incorrect code. Please check and try again.");
+        setApiError(t("valid.codeWrong"));
       } else if (e?.code === "NOT_FOUND") {
-        setApiError("This code has expired. Request a new one.");
+        setApiError(t("valid.codeExpired"));
         setDigits(Array(OTP_LENGTH).fill(""));
         inputRefs.current[0]?.focus();
       } else {
@@ -163,7 +165,7 @@ export default function ForgotPasswordPage() {
         {step === 1 && (
           <>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("auth.forgot.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               {apiError && (
@@ -172,7 +174,7 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleSendCode} noValidate className="space-y-4">
                 <div>
                   <Input
-                    placeholder="Enter your email or phone number"
+                    placeholder={t("auth.forgot.emailOrPhone")}
                     value={contact}
                     onChange={(e) => { setContact(e.target.value); setContactErr(""); }}
                     className={contactErr ? "border-destructive" : ""}
@@ -181,7 +183,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <div className="pt-6">
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Sending…" : "Send code"}
+                    {loading ? t("common.sending") : t("auth.forgot.sendCode")}
                   </Button>
                 </div>
               </form>
@@ -193,9 +195,9 @@ export default function ForgotPasswordPage() {
         {step === 2 && (
           <>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("auth.forgot.title")}</CardTitle>
               <CardDescription className="text-sm">
-                Enter the 6-digit code we sent to your email or phone number.
+                {t("auth.forgot.codeSent")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -238,10 +240,10 @@ export default function ForgotPasswordPage() {
                     onClick={handleResend}
                     className="text-primary hover:underline font-medium"
                   >
-                    Resend code
+                    {t("auth.verify.resend")}
                   </button>
                 ) : (
-                  <>You can resend the code in{" "}
+                  <>{t("auth.verify.resendIn")}{" "}
                     <span className="font-mono font-semibold text-foreground tabular-nums">
                       {formatTime(secondsLeft)}
                     </span>
@@ -254,7 +256,7 @@ export default function ForgotPasswordPage() {
                 onClick={handleVerify}
                 disabled={!isComplete || loading}
               >
-                {loading ? "Verifying…" : "Verify"}
+                {loading ? t("auth.verify.verifying") : t("auth.verify.submit")}
               </Button>
             </CardContent>
           </>

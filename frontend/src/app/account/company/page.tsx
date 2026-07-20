@@ -10,29 +10,36 @@ import { BadgeCheck, Clock, XCircle } from "lucide-react";
 import { getMyCompany, type Company } from "@/lib/company";
 import { getCurrentUser } from "@/lib/user";
 import CompanyRegistrationForm from "@/components/CompanyRegistrationForm";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const STATUS_UI: Record<Company["status"], { icon: React.ReactNode; label: string; cls: string; note: string }> = {
+// Holds keys rather than text: this map is built once at module load, so
+// baking strings in here would freeze them to whatever locale was active first.
+const STATUS_UI: Record<
+  Company["status"],
+  { icon: React.ReactNode; labelKey: TranslationKey; cls: string; noteKey: TranslationKey }
+> = {
   pending: {
     icon: <Clock size={18} />,
-    label: "Pending review",
+    labelKey: "company.statusPending",
     cls: "bg-amber-50 border-amber-200 text-amber-800",
-    note: "Your company is awaiting verification by an administrator. You can already list equipment.",
+    noteKey: "company.notePending",
   },
   verified: {
     icon: <BadgeCheck size={18} />,
-    label: "Verified",
+    labelKey: "company.statusVerified",
     cls: "bg-emerald-50 border-emerald-200 text-emerald-800",
-    note: "Your company is verified. Buyers see a verified badge on your listings.",
+    noteKey: "company.noteVerified",
   },
   rejected: {
     icon: <XCircle size={18} />,
-    label: "Rejected",
+    labelKey: "company.statusRejected",
     cls: "bg-rose-50 border-rose-200 text-rose-800",
-    note: "Your company registration was rejected. See the reviewer note below.",
+    noteKey: "company.noteRejected",
   },
 };
 
 export default function CompanyPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +58,7 @@ export default function CompanyPage() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   if (loading) {
-    return <div className="py-24 text-center text-gray-400">Loading…</div>;
+    return <div className="py-24 text-center text-gray-400">{t("common.loading")}</div>;
   }
 
   if (!company) {
@@ -62,26 +69,26 @@ export default function CompanyPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="mb-6 text-2xl font-extrabold text-gray-900">My Company</h1>
+      <h1 className="mb-6 text-2xl font-extrabold text-gray-900">{t("company.title")}</h1>
 
       <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${ui.cls}`}>
         {ui.icon}
         <div>
-          <p className="font-semibold">{ui.label}</p>
-          <p className="mt-0.5 text-sm opacity-90">{ui.note}</p>
+          <p className="font-semibold">{t(ui.labelKey)}</p>
+          <p className="mt-0.5 text-sm opacity-90">{t(ui.noteKey)}</p>
           {company.status === "rejected" && company.reviewer_note && (
-            <p className="mt-2 text-sm font-medium">Reviewer note: {company.reviewer_note}</p>
+            <p className="mt-2 text-sm font-medium">{t("company.reviewerNote")}: {company.reviewer_note}</p>
           )}
         </div>
       </div>
 
       <div className="space-y-3 rounded-xl border border-gray-200 p-5">
-        <Row label="Legal name" value={company.name} />
+        <Row label={t("company.legalName")} value={company.name} />
         <Row label="BIN" value={company.bin} />
-        <Row label="Email" value={company.email} />
-        <Row label="Phone" value={company.phone} />
-        <Row label="Address" value={company.address} />
-        {company.website && <Row label="Website" value={company.website} />}
+        <Row label={t("common.email")} value={company.email} />
+        <Row label={t("common.phone")} value={company.phone} />
+        <Row label={t("company.address")} value={company.address} />
+        {company.website && <Row label={t("company.website")} value={company.website} />}
       </div>
     </div>
   );

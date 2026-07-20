@@ -11,6 +11,7 @@ import {
   type Reputation,
 } from "@/lib/review";
 import { getCurrentUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import { friendlyError } from "@/lib/api";
 
 const TIER_STYLE: Record<string, string> = {
@@ -57,6 +58,7 @@ function Stars({
 }
 
 export function SellerReviews({ sellerId }: { sellerId: string }) {
+  const { t } = useI18n();
   const [reputation, setReputation] = useState<Reputation | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSeller, setIsSeller] = useState(false);
@@ -83,7 +85,7 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
   }, [sellerId]);
 
   async function handleSubmit() {
-    if (rating < 1) { setError("Please pick a rating."); return; }
+    if (rating < 1) { setError(t("reviews.pickRating")); return; }
     setSubmitting(true);
     setError("");
     try {
@@ -100,7 +102,7 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
 
   return (
     <section className="space-y-5">
-      <h2 className="text-2xl font-semibold text-slate-900">Seller reviews</h2>
+      <h2 className="text-2xl font-semibold text-slate-900">{t("reviews.title")}</h2>
 
       {/* Reputation summary */}
       <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5">
@@ -120,21 +122,21 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
         )}
       </div>
 
-      {/* Leave a review */}
+      {/* {t("reviews.leave")} */}
       {signedIn && !isSeller && (
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-sm font-semibold text-slate-800">Leave a review</p>
+          <p className="text-sm font-semibold text-slate-800">{t("reviews.leave")}</p>
           <Stars value={rating} size={22} onPick={setRating} />
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
-            placeholder="Share your experience with this seller…"
+            placeholder={t("reviews.placeholder")}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           {error && <p className="text-sm text-rose-600">{error}</p>}
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit review"}
+            {submitting ? t("reviews.submitting") : t("reviews.submit")}
           </Button>
         </div>
       )}

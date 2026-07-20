@@ -6,6 +6,7 @@ import { PriceAlert } from "./components/PriceAlert";
 import { CategoryTabs } from "./components/CategoryTabs";
 import { FavoritesGrid } from "./components/FavoritesGrid";
 import { useFavorites } from "@/store/favorites-store";
+import { useI18n } from "@/lib/i18n";
 
 export default function FavoritesPage() {
   const { items } = useFavorites();

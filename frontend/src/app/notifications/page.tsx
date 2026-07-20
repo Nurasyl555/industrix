@@ -14,6 +14,7 @@ import {
   type Notification,
 } from "@/lib/notification";
 import { friendlyError } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
 function timeAgo(iso: string): string {
@@ -27,6 +28,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function NotificationsPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,10 +69,10 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-white">
       <div className="mx-auto max-w-2xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-gray-900">Notifications</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900">{t("notifications.title")}</h1>
           {hasUnread && (
             <Button variant="outline" size="sm" onClick={handleMarkAll}>
-              <CheckCheck size={15} /> Mark all read
+              <CheckCheck size={15} /> {t("notifications.markAllRead")}
             </Button>
           )}
         </div>
@@ -78,11 +80,11 @@ export default function NotificationsPage() {
         {error && <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
 
         {loading ? (
-          <div className="py-24 text-center text-[14px] text-gray-400">Loading…</div>
+          <div className="py-24 text-center text-[14px] text-gray-400">{t("common.loading")}</div>
         ) : items.length === 0 ? (
           <div className="py-24 text-center text-[14px] text-gray-400">
             <Bell size={28} className="mx-auto mb-2 text-gray-300" />
-            No notifications yet.
+            {t("notifications.empty")}
           </div>
         ) : (
           <div className="flex flex-col gap-2">

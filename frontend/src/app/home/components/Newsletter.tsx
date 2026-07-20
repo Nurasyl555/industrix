@@ -1,16 +1,18 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export function Newsletter() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
 
   const handleSubscribe = () => {
     if (!email) return;
     // TODO: wire up to your API
-    console.log("Subscribed:", email);
+    console.log(t("home.subscribed") + ":", email);
     setEmail("");
   };
 
@@ -33,7 +35,7 @@ export function Newsletter() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
-          placeholder="Your email"
+          placeholder={t("home.newsletterEmail")}
           className="flex-1 h-full border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-[14px] rounded-none px-5"
         />
         <Button

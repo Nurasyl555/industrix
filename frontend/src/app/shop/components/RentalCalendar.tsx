@@ -9,6 +9,7 @@ import {
   type DateRange,
 } from "@/lib/booking";
 import { getCurrentUser } from "@/lib/user";
+import { useI18n } from "@/lib/i18n";
 import { friendlyError } from "@/lib/api";
 import { type ListingView } from "@/lib/listing";
 
@@ -43,6 +44,7 @@ function daysInclusive(a: Date, b: Date) {
 const PERIOD_DAYS: Record<string, number> = { day: 1, week: 7, month: 30 };
 
 export function RentalCalendar({ listing }: { listing: ListingView }) {
+  const { t } = useI18n();
   const today = startOfDay(new Date());
   const [view, setView] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [booked, setBooked] = useState<Set<string>>(new Set());
@@ -146,7 +148,7 @@ export function RentalCalendar({ listing }: { listing: ListingView }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">Rental availability</h3>
+        <h3 className="text-sm font-semibold text-slate-900">{t("rental.availability")}</h3>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1 text-rose-500">
             <span className="h-2 w-2 rounded-full bg-rose-400" /> Booked
@@ -225,13 +227,13 @@ export function RentalCalendar({ listing }: { listing: ListingView }) {
       )}
 
       {isOwner ? (
-        <p className="text-center text-xs text-slate-400">This is your listing.</p>
+        <p className="text-center text-xs text-slate-400">{t("rental.ownListing")}</p>
       ) : signedIn ? (
         <Button className="w-full" disabled={!start || !end || submitting} onClick={handleBook}>
-          {submitting ? "Booking…" : start && end ? "Book these dates" : "Select start and end dates"}
+          {submitting ? t("rental.booking") : start && end ? t("rental.book") : t("rental.selectDates")}
         </Button>
       ) : (
-        <p className="text-center text-xs text-slate-400">Sign in to book this equipment.</p>
+        <p className="text-center text-xs text-slate-400">{t("rental.signInToBook")}</p>
       )}
     </div>
   );

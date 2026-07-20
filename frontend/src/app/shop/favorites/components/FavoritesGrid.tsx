@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, ShoppingCart } from "lucide-react";
@@ -12,6 +13,7 @@ function formatPrice(n: number) {
 }
 
 function FavoriteCard({ item }: { item: ListingView }) {
+  const { t } = useI18n();
   return (
     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
       {/* Image */}
@@ -60,7 +62,7 @@ function FavoriteCard({ item }: { item: ListingView }) {
               size="sm"
               className="text-[12px] h-8 px-3 border-gray-200 hover:border-gray-400"
             >
-              <Link href={`/shop/details?id=${item.id}`}>View Details</Link>
+              <Link href={`/shop/details?id=${item.id}`}>{t("card.viewDetails")}</Link>
             </Button>
             <Button
               variant="outline"
@@ -81,6 +83,7 @@ interface FavoritesGridProps {
 }
 
 export function FavoritesGrid({ items }: FavoritesGridProps) {
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-3 gap-5 mt-6">
       {items.map((item) => (

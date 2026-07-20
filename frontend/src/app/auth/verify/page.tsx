@@ -9,11 +9,13 @@ import { verifyPhoneOTP, requestPhoneOTP, friendlyError } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 const OTP_LENGTH  = 6;
 const TIMER_START = 60;
 
 function VerifyContent() {
+  const { t }   = useI18n();
   const router  = useRouter();
   const params  = useSearchParams();
   const phone   = params.get("phone") ?? "";
@@ -96,9 +98,9 @@ function VerifyContent() {
     } catch (err) {
       const e = err as { code?: string };
       if (e?.code === "UNAUTHORIZED") {
-        setApiError("Incorrect code. Please check and try again.");
+        setApiError(t("valid.codeWrong"));
       } else if (e?.code === "NOT_FOUND") {
-        setApiError("This code has expired. Please request a new one.");
+        setApiError(t("valid.codeExpired"));
         setDigits(Array(OTP_LENGTH).fill(""));
         inputRefs.current[0]?.focus();
       } else {
@@ -131,9 +133,9 @@ function VerifyContent() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-lg shadow-sm">
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-2xl font-bold">Verify your account</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.verify.title")}</CardTitle>
           <CardDescription>
-            Enter the 6-digit code we sent to{" "}
+            {t("auth.verify.codeSentTo")}{" "}
             <span className="font-medium text-foreground">{phone || email}</span>
           </CardDescription>
         </CardHeader>
@@ -142,7 +144,7 @@ function VerifyContent() {
 
           {success && (
             <div className="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-              Verified! Redirecting…
+              {t("auth.verify.success")}
             </div>
           )}
 
@@ -165,7 +167,7 @@ function VerifyContent() {
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onFocus={(e) => e.target.select()}
                 disabled={loading || success}
-                aria-label={`Digit ${i + 1}`}
+                aria-label={`${t("auth.verify.digit")} ${i + 1}`}
                 className={cn(
                   "w-12 h-12 text-center text-lg font-semibold rounded-lg border bg-background",
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
@@ -181,10 +183,10 @@ function VerifyContent() {
           <p className="text-center text-sm text-muted-foreground">
             {canResend ? (
               <button type="button" onClick={handleResend} className="text-primary hover:underline font-medium">
-                Resend code
+                {t("auth.verify.resend")}
               </button>
             ) : (
-              <>You can resend the code in{" "}
+              <>{t("auth.verify.resendIn")}{" "}
                 <span className="font-mono font-semibold text-foreground tabular-nums">
                   {formatTime(secondsLeft)}
                 </span>
@@ -193,7 +195,7 @@ function VerifyContent() {
           </p>
 
           <Button className="w-full" onClick={handleVerify} disabled={!isComplete || loading || success}>
-            {loading ? "Verifying…" : "Verify"}
+            {loading ? t("auth.verify.verifying") : t("auth.verify.submit")}
           </Button>
 
         </CardContent>
@@ -204,7 +206,7 @@ function VerifyContent() {
 
 export default function VerifyPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" />}>
       <VerifyContent />
     </Suspense>
   );

@@ -3,13 +3,36 @@
 
 import { authGet, authPost, authPut } from "./api";
 
+/**
+ * Deal statuses, matching the backend state machine:
+ * inquiry → negotiation → confirmed → in_progress → completed, with cancelled
+ * reachable from any live state. The old "closed" value is gone — it was
+ * migrated to "cancelled" server-side.
+ */
+export type DealStatus =
+  | "inquiry"
+  | "negotiation"
+  | "confirmed"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
+/** Statuses that admit no further transitions. */
+export const TERMINAL_DEAL_STATUSES: DealStatus[] = ["completed", "cancelled"];
+
+export function isTerminalDeal(status: DealStatus): boolean {
+  return TERMINAL_DEAL_STATUSES.includes(status);
+}
+
 export interface Deal {
   id: string;
   listing_id: string;
   buyer_id: string;
   seller_id: string;
   message: string;
-  status: "inquiry" | "closed";
+  status: DealStatus;
+  /** True while a dispute on this deal is being arbitrated; blocks transitions. */
+  disputed: boolean;
   created_at: string;
   updated_at: string;
   role: "buyer" | "seller";

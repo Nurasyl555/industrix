@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
 import { MapPin, Tag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ item }: ProductCardProps) {
+  const { t } = useI18n();
   return (
     <Card className="overflow-hidden rounded-3xl border border-gray-200 p-0 hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
       <div className="relative h-56 w-full overflow-hidden rounded-t-3xl bg-sky-100">
@@ -45,7 +47,7 @@ export function ProductCard({ item }: ProductCardProps) {
 
         <div className="mb-1.5 flex items-center gap-1.5 text-[12px] text-gray-500">
           <Tag size={12} className="shrink-0" />
-          {item.listing_type === "rental" ? "For Rent" : "For Sale"}
+          {item.listing_type === "rental" ? t("listingType.rental") : t("listingType.sale")}
         </div>
 
         {item.region && (

@@ -1,33 +1,41 @@
+"use client";
+
 import Link from "next/link";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const marketplaceLinks = [
-  { label: "Buy Equipment", href: "#" },
-  { label: "Sell Equipment", href: "#" },
-  { label: "Rent Equipment", href: "#" },
-  { label: "Auction Calendar", href: "#" },
+// Links carry a key, not text: these arrays are built once at module load, so
+// storing translated labels would pin them to whichever locale loaded first.
+type FooterLink = { labelKey: TranslationKey; href: string };
+
+const marketplaceLinks: FooterLink[] = [
+  { labelKey: "footer.buyEquipment", href: "/shop/catalog" },
+  { labelKey: "footer.sellEquipment", href: "/shop/sell" },
+  { labelKey: "footer.rentEquipment", href: "/shop/catalog" },
+  { labelKey: "footer.auctionCalendar", href: "#" },
 ];
 
-const companyLinks = [
-  { label: "About Us", href: "#" },
-  { label: "Careers", href: "#" },
-  { label: "Partners", href: "#" },
-  { label: "News", href: "#" },
+const companyLinks: FooterLink[] = [
+  { labelKey: "footer.aboutUs", href: "/about-us" },
+  { labelKey: "footer.careers", href: "#" },
+  { labelKey: "footer.partners", href: "#" },
+  { labelKey: "footer.news", href: "#" },
 ];
 
-const supportLinks = [
-  { label: "Help Center", href: "#" },
-  { label: "Safety", href: "#" },
-  { label: "Contact", href: "#" },
-  { label: "Terms of Service", href: "#" },
+const supportLinks: FooterLink[] = [
+  { labelKey: "footer.helpCenter", href: "#" },
+  { labelKey: "footer.safety", href: "#" },
+  { labelKey: "footer.contact", href: "#" },
+  { labelKey: "footer.terms", href: "#" },
 ];
 
-const legalLinks = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Cookie Policy", href: "#" },
-  { label: "Accessibility", href: "#" },
+const legalLinks: FooterLink[] = [
+  { labelKey: "footer.privacyPolicy", href: "#" },
+  { labelKey: "footer.cookiePolicy", href: "#" },
+  { labelKey: "footer.accessibility", href: "#" },
 ];
 
 export function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-[#E5E7EB] bg-[#F9FAFB] text-[#64748B]">
       <div className="mx-auto max-w-7xl px-8 py-10 lg:px-12">
@@ -107,9 +115,9 @@ export function Footer() {
             </div>
           </div>
 
-          <FooterColumn title="Marketplace" links={marketplaceLinks} />
-          <FooterColumn title="Company" links={companyLinks} />
-          <FooterColumn title="Support" links={supportLinks} />
+          <FooterColumn titleKey="footer.marketplace" links={marketplaceLinks} />
+          <FooterColumn titleKey="footer.company" links={companyLinks} />
+          <FooterColumn titleKey="footer.support" links={supportLinks} />
         </div>
       </div>
 
@@ -120,11 +128,11 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             {legalLinks.map((link) => (
               <Link
-                key={link.label}
+                key={link.labelKey}
                 href={link.href}
                 className="transition hover:text-[#0F172A]"
               >
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             ))}
           </div>
@@ -135,25 +143,26 @@ export function Footer() {
 }
 
 type FooterColumnProps = {
-  title: string;
-  links: { label: string; href: string }[];
+  titleKey: TranslationKey;
+  links: FooterLink[];
 };
 
-function FooterColumn({ title, links }: FooterColumnProps) {
+function FooterColumn({ titleKey, links }: FooterColumnProps) {
+  const { t } = useI18n();
   return (
     <div>
       <h3 className="text-lg font-bold uppercase tracking-[0.12em] text-[#0F172A]">
-        {title}
+        {t(titleKey)}
       </h3>
 
       <ul className="mt-4 space-y-3">
         {links.map((link) => (
-          <li key={link.label}>
+          <li key={link.labelKey}>
             <Link
               href={link.href}
               className="text-[14px] text-[#94A3B8] transition hover:text-[#0F172A]"
             >
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           </li>
         ))}
